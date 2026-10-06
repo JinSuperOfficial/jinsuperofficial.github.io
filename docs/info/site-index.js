@@ -277,6 +277,9 @@ window.SITE_INDEX = {
               "children": [
                 {
                   "name": "1.归途且慢.html"
+                },
+                {
+                  "name": "枣香童年.html"
                 }
               ]
             },
@@ -370,9 +373,6 @@ window.SITE_INDEX = {
           "name": "idea/",
           "dir": true,
           "children": [
-            {
-              "name": "枣香童年.md"
-            },
             {
               "name": "index.md"
             }
