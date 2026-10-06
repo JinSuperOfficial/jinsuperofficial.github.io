@@ -106,19 +106,41 @@
 
   *{box-sizing:border-box;margin:0;padding:0}
 
+  /* ---------- 页面背景：四张底纹随机拼一条（见 JS 的 paintPageBg） ----------
+     底色挪到 html 上、body 只留两团光晕 —— 这样 .bg 层（z-index:-1）
+     才露得出来（body 上再压一层不透明底色的话它会整个被盖住）。 */
+  html{ background-color:var(--bg); }
+
   body{
     min-height:100vh;
-    background:
+    background-image:
       radial-gradient(880px 520px at 12% -8%, var(--glow-1), transparent 62%),
-      radial-gradient(760px 480px at 92% 4%, var(--glow-2), transparent 60%),
-      var(--bg);
+      radial-gradient(760px 480px at 92% 4%, var(--glow-2), transparent 60%);
     color:var(--ink);
     font-family:var(--sans);
     font-size:16px;
     line-height:1.7;
     -webkit-font-smoothing:antialiased;
     padding:clamp(28px,6vw,76px) clamp(16px,5vw,40px) clamp(48px,8vw,100px);
-    transition:background .5s ease, color .3s ease;
+    transition:background-color .5s ease, color .3s ease;
+  }
+
+  /* 底纹层：四张 1:1 的图，单张按 tile 宽铺；屏幕比一张宽就接下一张，
+     每张都向下平铺（repeat-y）。位置/尺寸由 JS 按视口宽度算。
+     图片本身已经很淡，再压一层纸张薄纱 —— 只当纹理看，不抢正文。 */
+  .bg{
+    position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-repeat:repeat-y;
+    background-position:0 0;
+    background-size:var(--bg-tile,720px) auto;
+  }
+  .bg::after{
+    content:''; position:absolute; inset:0;
+    background:color-mix(in srgb, var(--bg) var(--bg-veil,62%), transparent);
+  }
+  @media (prefers-color-scheme: dark){
+    /* 深色下底图还是浅色纸，必须压得更狠，不然浅底 + 浅字没法看 */
+    .bg::after{ --bg-veil:90%; }
   }
 
   .page{max-width:820px;margin:0 auto}
@@ -133,6 +155,9 @@
     flex-wrap:wrap;
     margin-bottom:16px;
   }
+
+  /* 头部右上角：切换背景 + 更多工具，两个按钮同排，窄屏自动换行 */
+  .head-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 
   .kicker{
     display:inline-flex;
@@ -154,6 +179,7 @@
 
   /* ---------- 更多 811 工具（跳 /811/index.html） ---------- */
   .more-btn{
+    cursor:pointer;
     display:inline-flex;
     align-items:center;
     gap:7px;
@@ -379,6 +405,52 @@
   }
   @media (prefers-color-scheme: dark){
     .subject .dot{ filter:brightness(1.15) saturate(1.05); }
+  }
+
+  /* ---------- 科目背景图（可以没有，没有也好看） ----------
+     图由脚本登记（见 JS 里的 HW_ART）→ /asset/homework/*.jpg，1:1 方图。
+     这里只管怎么摆。从下往上三层，缺任何一层都有下一层接着：
+
+       1) background-color  --hw-tint  科目色混纸张   ← 图没来 / 图挂了 / 高对比度模式
+       2) --hw-img          科目背景图（cover 裁切）
+       3) --hw-scrim        顶部纸张渐变               ← 科目名压在图上也要够对比
+
+     自动拓展出来的科目（EXTRA_COLORS 那套）没有图，落在第 1 层，
+     不需要为它们改 CSS。 */
+  :root{
+    --hw-scrim: linear-gradient(180deg,
+      color-mix(in srgb, var(--paper) 90%, transparent) 0%,
+      color-mix(in srgb, var(--paper) 54%, transparent) 36%,
+      color-mix(in srgb, var(--paper) 8%,  transparent) 100%);
+  }
+  tbody tr{
+    /* 半透明：行 hover 的高亮还能透出来（纸张色在 .card 上，底下是同一张纸） */
+    --hw-tint: color-mix(in srgb, var(--c, var(--olive)) 13%, transparent);
+  }
+  tbody td:first-child{
+    background-color: var(--hw-tint);
+    background-image:
+      var(--hw-scrim, none),
+      var(--hw-img, none);
+    background-repeat: no-repeat, no-repeat;
+    background-position: center top, center center;
+    background-size: 100% 100%, cover;
+  }
+  /* 脚本探到图不在盘上 → 撤掉那一层，退回「底色 + 科目色点纹」 */
+  tbody tr.hw-noimg{ --hw-img: none; }
+  tbody tr.hw-noimg td:first-child{
+    background-image:
+      var(--hw-scrim, none),
+      radial-gradient(color-mix(in srgb, var(--c, var(--olive)) 20%, transparent) 1px, transparent 1.4px);
+    background-repeat: no-repeat, repeat;
+    background-size: 100% 100%, 9px 9px;
+  }
+  /* 要更高对比度 / 要打印：留底色，别让图掺进来 */
+  @media (prefers-contrast: more){
+    tbody td:first-child{ background-image: none; }
+  }
+  @media print{
+    tbody td:first-child{ background-image: none; }
   }
 
   .hw-list{list-style:none;display:grid;gap:11px}
@@ -679,6 +751,61 @@
     }
   }
 
+  /* ---------- 彩蛋：全屏书堆底图 + 两侧竖排字 ----------
+     默认 opacity:0 + visibility:hidden（不用 display:none —— 那样没法淡入），
+     命中条件时 JS 给这个容器加上 .show-easter-egg → 1.5s 淡入。
+
+     它是**底图层**（z-index:-1，在 .bg 之后所以盖住随机底纹、在正文之下）：
+     书堆只占四边，正中留白让作业卡片照常浮在上面，字也贴着左右边缘，
+     所以彩蛋出现时作业依然完全可读。
+     字一律 HTML + CSS 叠上去，绝不让 AI 往图里画字（中文必糊）。 */
+  .easter{
+    position:fixed; inset:0; z-index:-1; pointer-events:none;
+    opacity:0; visibility:hidden;
+    transition:opacity 1.5s ease, visibility 0s linear 1.5s;
+    background:
+      url('../asset/homework/egg_background.jpg') center / cover no-repeat,
+      var(--bg);
+  }
+  .easter.show-easter-egg{
+    opacity:1; visibility:visible;
+    transition:opacity 1.5s ease, visibility 0s;
+  }
+  /* 深色模式：底图还是浅色纸，压一层深色薄纱，免得浅字压浅底 */
+  .easter::after{
+    content:''; position:absolute; inset:0; z-index:0;
+    background:color-mix(in srgb, var(--bg) var(--egg-veil,0%), transparent);
+  }
+  @media (prefers-color-scheme: dark){
+    .easter::after{ --egg-veil:88%; }
+  }
+
+  /* 竖排字：贴着左右边缘、落在四周的书堆上，中间大片留白留给作业卡片 */
+  .easter-text{
+    position:absolute; z-index:1; top:50%; transform:translateY(-50%);
+    margin:0;
+    writing-mode:vertical-rl;
+    font-family:var(--serif);
+    font-size:clamp(16px,2.6vw,24px);
+    letter-spacing:.34em;
+    /* 浅色下就是规范里点名的 #8D6959 / #D97757；深色下自动换成亮一档的 */
+    color:var(--oak);
+    text-shadow:
+      0 1px 6px color-mix(in srgb, var(--bg) 92%, transparent),
+      0 0 16px color-mix(in srgb, var(--bg) 78%, transparent);
+  }
+  .easter-text.left{ left:clamp(14px,3.4vw,58px); }
+  .easter-text.right{ right:clamp(14px,3.4vw,58px); color:var(--clay); }
+  @media (prefers-color-scheme: dark){
+    .easter-text.left{ color:#EBD8C4; }
+    .easter-text.right{ color:#F0A98F; }
+  }
+
+  /* 屏太矮：字缩小，别顶出屏幕 */
+  @media (max-height:520px){
+    .easter-text{ font-size:13.5px; letter-spacing:.2em; }
+  }
+
   @media (prefers-reduced-motion: reduce){
     .congrats{transition-duration:1ms}
     .congrats-card{transition-duration:1ms}
@@ -686,6 +813,7 @@
     .more-btn:hover{transform:none}
     tbody tr{transition:none}
     .note{transition:none}
+    .easter{transition-duration:1ms}
   }
 
   @media (max-width:600px){
@@ -700,10 +828,20 @@
     tbody td:first-child{padding-top:16px;padding-bottom:2px}
     tbody td:last-child{padding-bottom:16px}
     .subject{font-size:14.5px}
+    /* 窄屏：科目格子从「竖条」变成「窄横幅」，图跟着换裁切 */
+    tbody tr[data-subject] td:first-child{
+      min-height:86px;
+      padding-top:15px;
+      padding-bottom:12px;
+    }
   }
 </style>
 </head>
 <body>
+
+<!-- 页面底纹层：默认由 JS 把四张 bg_*.jpg 随机拼一条（宽度不够就接下一张，竖向平铺）；
+     右上角「切换背景」按钮可改成固定某一张，或换成彩蛋底图 -->
+<div class="bg" id="bgLayer" aria-hidden="true"></div>
 
 <main class="page">
 
@@ -711,17 +849,30 @@
     <div class="head-top">
       <p class="kicker">Homework · 每日清单</p>
 
-      <!-- ★ 更多 811 工具 → /811/index.html -->
-      <a class="more-btn" href="/811/index.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/>
-          <rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/>
-          <rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/>
-          <rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>
-        </svg>
-        <span>更多811工具</span>
-      </a>
+      <div class="head-acts">
+        <!-- ★ 切换页面背景：随机 → 网格 → 水墨 → 地图 → 植物 → 彩蛋 → 随机 -->
+        <button class="more-btn" id="bgBtn" type="button" title="点一下换一张背景">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="3.5" width="17" height="17" rx="2"/>
+            <path d="M3.5 15.5 9 10l4.5 4.5L17 11l3.5 3.5"/>
+            <circle cx="9" cy="8" r="1.4"/>
+          </svg>
+          <span id="bgBtnText">背景：随机</span>
+        </button>
+
+        <!-- ★ 更多 811 工具 → /811/index.html -->
+        <a class="more-btn" href="/811/index.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/>
+            <rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/>
+            <rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/>
+            <rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>
+          </svg>
+          <span>更多811工具</span>
+        </a>
+      </div>
     </div>
 
     <h1>八年(11)班作业</h1>
@@ -778,6 +929,16 @@
 
 </main>
 
+<!-- ★ 彩蛋底图：默认隐藏（.easter 是 opacity:0 + visibility:hidden），
+     命中条件时 JS 加 .show-easter-egg → 1.5s 淡入。
+     它是 z-index:-1 的**底图层**（盖住随机底纹、在作业卡片之下）：
+     书堆只占四边，正中留白，所以作业照常浮在上面、完全可读。
+     字是 HTML 叠上去的竖排文本，不靠 AI 画。 -->
+<div class="easter" id="easterEgg" aria-hidden="true">
+  <p class="easter-text left">恭喜你看到了个彩蛋</p>
+  <p class="easter-text right">希望你可以写完作业</p>
+</div>
+
 <div class="congrats" id="congrats" role="dialog" aria-modal="true"
      aria-labelledby="congratsTitle" aria-describedby="congratsText">
   <div class="congrats-card">
@@ -805,6 +966,40 @@
     { name:'科学', color:'#6E8B8B', keys:['科学','science','kexue'] },
     { name:'社会', color:'#C08A3E', keys:['社会','social','shehui'] }
   ];
+
+  /* ============ 科目背景图 ============
+     图放 /asset/homework/，1:1 方图，1024×1024。
+     只在这里登记一次（CSS 只管怎么摆）；没登记的科目就没有图，只拿底色。
+     图不在盘上时 probeSubjectArt() 会给那一行加 .hw-noimg，
+     CSS 换成「底色 + 点纹」——不会开天窗，也不会一直报 404。 */
+  const HW_ART = {
+    '语文': '../asset/homework/chinese.jpg',
+    '数学': '../asset/homework/math.jpg',
+    '英语': '../asset/homework/english.jpg',
+    '科学': '../asset/homework/science.jpg',
+    '社会': '../asset/homework/social.jpg'
+  };
+
+  /* 行的内联样式：科目色 + （有图才有的）背景图变量 */
+  function subjectStyle(sub){
+    const url = HW_ART[sub.name];
+    return `--c:${sub.color}` + (url ? `;--hw-img:url('${url}')` : '');
+  }
+
+  const artProbed = {};
+  function probeSubjectArt(){
+    Object.keys(HW_ART).forEach(name => {
+      if(artProbed[name]) return;
+      artProbed[name] = true;
+      const img = new Image();
+      img.onerror = () => {
+        tbody.querySelectorAll('tr[data-subject]').forEach(tr => {
+          if(tr.dataset.subject === name) tr.classList.add('hw-noimg');
+        });
+      };
+      img.src = HW_ART[name];
+    });
+  }
 
   /* ============ 自动拓展科目的配色循环池 ============ */
   const EXTRA_COLORS = [
@@ -864,6 +1059,121 @@
     '科学':  '将自己的DNA打散然后重组一次\n复活任意名字作为单位的科学家',
     '社会':  '当上美国总统\n当上日本首相\n当上俄罗斯沙皇\n测量地球表面积'
   };
+
+  /* ============ 页面底纹：四张图随机拼一条 ============
+     「切换背景」按钮可以在 随机 / 4 张底纹 / 彩蛋 之间轮换，选哪张记在 localStorage。
+     图在 /asset/homework/bg_*.jpg（1:1）。单张按 tile 宽铺；视口比一张宽
+     就「接下一张」（顺序每次打开随机一次，resize 不再重摇，免得来回变），
+     每张都向下平铺（CSS 里 .bg 是 repeat-y）。上面还有一层纸张薄纱。 */
+  const BG_SLUGS = ['bg_grid', 'bg_ink', 'bg_map', 'bg_botanical'];
+  const BG_TILE_MAX = 720;                        /* 单张最多铺这么宽 */
+  const BG_KEY = 'homework.bg';                   /* 记住手动选的那一档 */
+
+  /* 按钮的轮换表：第 0 档是默认的「随机」，往后五张图正好一轮。
+     停在「彩蛋」那一档时，连竖排字一起亮 —— 图和字本来就是同一套。 */
+  const BG_STOPS = [
+    { slug:'auto',           label:'随机', egg:false },
+    { slug:'bg_grid',        label:'网格', egg:false },
+    { slug:'bg_ink',         label:'水墨', egg:false },
+    { slug:'bg_map',         label:'地图', egg:false },
+    { slug:'bg_botanical',   label:'植物', egg:false },
+    { slug:'egg_background', label:'彩蛋', egg:true  }
+  ];
+  const BG_ORDER = (() => {
+    const a = BG_SLUGS.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  })();
+
+  /* 当前停在第几档：存 localStorage，刷新后还停在你手选的那张 */
+  let bgStop = (() => {
+    try{
+      const v = localStorage.getItem(BG_KEY);
+      if(v){
+        const i = BG_STOPS.findIndex(s => s.slug === v);
+        if(i > 0) return i;
+      }
+    }catch(e){}
+    return 0;
+  })();
+
+  /* 自动档 = 四张随机拼一条；手动档 = 全铺你选的那张 */
+  function bgSequence(){
+    const stop = BG_STOPS[bgStop];
+    return stop.slug === 'auto' ? BG_ORDER : [stop.slug];
+  }
+
+  function paintPageBg(){
+    const el = document.getElementById('bgLayer');
+    if(!el) return;
+    const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0) || 1024;
+    const tile = Math.min(BG_TILE_MAX, vw);          /* 窄屏一张铺满 */
+    const need = Math.max(1, Math.ceil(vw / tile));  /* 宽度不够就接下一张 */
+    const seq  = bgSequence();
+    const imgs = [], sizes = [], poss = [];
+    for(let i = 0; i < need; i++){
+      imgs.push(`url('../asset/homework/${seq[i % seq.length]}.jpg')`);
+      sizes.push(`${tile}px`);                 /* 单值 = 宽 tile、高 auto（图是 1:1） */
+      poss.push(`${i * tile}px 0`);
+    }
+    el.style.backgroundImage = imgs.join(', ');
+    el.style.backgroundSize = sizes.join(', ');
+    el.style.backgroundPosition = poss.join(', ');
+    console.log('[homework] 页面底纹：' + seq.join(' / ') + ' → 铺 ' + need + ' 张 · 每张 ' + tile + 'px（视口 ' + vw + 'px）');
+  }
+
+  /* ============ 彩蛋 ============
+     条件：作业条数 ≥ EGG_MIN_ITEMS，或者 EGG_RANDOM 的随机概率。
+     命中就给 #easterEgg 加 .show-easter-egg（CSS 负责 1.5s 淡入）。 */
+  const EGG_MIN_ITEMS = 2;
+  const EGG_RANDOM    = 0.1;
+  let eggAuto = false;                            /* 自动判定的结果；手动选了背景就由那一档说了算 */
+
+  function maybeEgg(subjectCount, itemCount){
+    const enough = itemCount >= EGG_MIN_ITEMS;
+    const lucky  = Math.random() < EGG_RANDOM;
+    const show   = enough || lucky;
+    console.log(
+      `[homework] 彩蛋判定：作业 ${itemCount} 条 / ${subjectCount} 个科目 · ` +
+      `条数条件「≥${EGG_MIN_ITEMS}」${enough ? '命中' : '未中'} · ` +
+      `随机 ${Math.round(EGG_RANDOM * 100)}% ${lucky ? '命中' : '未中'} → ${show ? '显示' : '不显示'}`
+    );
+    eggAuto = show;
+    syncEggLayer();
+    return show;
+  }
+
+  /* 彩蛋是底图层（z-index:-1），不挡任何操作；不想看就点「切换背景」换到别的档。
+     手动停在「彩蛋」那一档时连竖排字一起亮 —— 图和字本来就是同一套东西。 */
+
+  /* 背景层 + 彩蛋层按当前档位同步（手动档覆盖自动判定） */
+  function syncEggLayer(){
+    const egg = document.getElementById('easterEgg');
+    if(!egg) return;
+    const stop = BG_STOPS[bgStop];
+    egg.classList.toggle('show-easter-egg', stop.slug === 'auto' ? eggAuto : stop.egg);
+  }
+
+  function applyBg(){
+    paintPageBg();
+    syncEggLayer();
+    const txt = document.getElementById('bgBtnText');
+    if(txt) txt.textContent = '背景：' + BG_STOPS[bgStop].label;
+  }
+
+  function cycleBg(){
+    bgStop = (bgStop + 1) % BG_STOPS.length;
+    try{ localStorage.setItem(BG_KEY, BG_STOPS[bgStop].slug); }catch(e){}
+    applyBg();
+    console.log('[homework] 切换到背景：' + BG_STOPS[bgStop].label + '（' + BG_STOPS[bgStop].slug + '）');
+  }
+
+  const bgBtn = document.getElementById('bgBtn');
+  if(bgBtn) bgBtn.addEventListener('click', cycleBg);
+
 
   /* ============ 色调系统 ============ */
   const STEPS = 15;
@@ -1133,6 +1443,7 @@
     const allSubjects = BASE_SUBJECTS.concat(collectExtraSubjects(src));
 
     let html = '';
+    let hwSubjects = 0, hwItems = 0;
 
     allSubjects.forEach(sub => {
       let raw = null;
@@ -1140,6 +1451,8 @@
         if(src[k] !== null && src[k] !== undefined){ raw = src[k]; break; }
       }
       const list = toList(raw);
+      if(list.length) hwSubjects++;
+      hwItems += list.length;
 
       let contentHTML;
       if(list.length === 0){
@@ -1164,7 +1477,7 @@
       }
 
       html += `
-        <tr>
+        <tr data-subject="${esc(sub.name)}" style="${subjectStyle(sub)}">
           <td><span class="subject" style="--c:${sub.color}">
             <span class="dot"></span>${esc(sub.name)}
           </span></td>
@@ -1173,6 +1486,12 @@
     });
 
     tbody.innerHTML = html;
+
+    /* 图在不在盘上，探一次（不在就把行标成 .hw-noimg，走兜底样式） */
+    probeSubjectArt();
+
+    /* 彩蛋判定：看今天有多少作业 */
+    maybeEgg(hwSubjects, hwItems);
 
     lastStep = -1;
     updateProgress(false);
@@ -1326,6 +1645,12 @@
   }
 
   /* ============ 启动 ============ */
+  applyBg();                                       /* 按记忆的档位先铺好底纹（含彩蛋层），别等数据 */
+  window.addEventListener('resize', (() => {       /* 视口变了重算「拼几张」 */
+    let t = null;
+    return () => { clearTimeout(t); t = setTimeout(paintPageBg, 180); };
+  })());
+
   loadData().then(({ data, demo }) => {
     isDemoMode = demo;
     render(data);

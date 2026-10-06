@@ -65,6 +65,16 @@
       "icon": "wrench",
       "kind": "tool",
       "order": 80
+    },
+    {
+      "id": "tiermaker",
+      "title": "从夯到拉生成器",
+      "desc": "把图片拖进「夯 / 顶级 / 人上人 / NPC / 拉完了」五个等级，带网格吸附、右键改大小、自定义标签配色，配置存在本机。",
+      "href": "/Skills/tools/tiermaker.html",
+      "icon": "grid",
+      "kind": "canvas",
+      "tags": ["等级", "排行榜", "tier", "图片", "拖拽"],
+      "order": 90
     }
   ]
 }

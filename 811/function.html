@@ -111,7 +111,8 @@
     font-family:"Inter","Segoe UI",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
     overflow:hidden; -webkit-font-smoothing:antialiased;
   }
-  .app{display:flex;height:100dvh}
+  /* 兜底给不认 dvh 的老 Safari */
+  .app{display:flex;height:100vh;height:100dvh}
 
   .panel{
     width:372px;flex:none;display:flex;flex-direction:column;gap:20px;
@@ -119,6 +120,9 @@
     background:linear-gradient(180deg,var(--surface) 0%,var(--surface) 100%);
     border-right:1px solid var(--line);
     overflow-y:auto;overscroll-behavior:contain;
+    /* flex 子项默认 min-height:auto：会被内容顶开、max-height 形同虚设，
+       滚也滚不动（Safari 尤其明显） */
+    min-height:0;
   }
   .panel::-webkit-scrollbar{width:8px}
   .panel::-webkit-scrollbar-thumb{background:var(--line);border-radius:var(--r-xs)}
@@ -849,7 +853,7 @@
   .seg-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
   /* ═══ 外壳：顶栏 / 工具栏 / 工作区 / 表格区（对标 GeoGebra 图形计算器） ═══ */
-  .app{display:flex;flex-direction:column;height:100dvh}
+  .app{display:flex;flex-direction:column;height:100vh;height:100dvh}
 
   .topbar{
     display:flex;align-items:center;gap:6px;flex:none;
@@ -912,11 +916,20 @@
   .tool:disabled{opacity:.34;cursor:not-allowed}
   .tool svg{width:15px;height:15px;flex:none}
 
-  .workspace{display:flex;flex:1;min-height:0}
+  /* overflow:hidden 是关键：不给的话，侧栏内容一高过视口就把这条 flex 行顶开，
+     面板的 overflow-y:auto 随之失效（侧栏滚不动、画布被压成 0） */
+  .workspace{display:flex;flex:1;min-height:0;overflow:hidden}
   .workspace .panel{width:340px}
-  /* 侧栏收起：画布占满（输入栏在侧栏里，用顶栏那个按钮叫回来） */
+  /* 侧栏收起：整条侧栏（表达式 / 常用公式 / 随手试试 / 画笔 / 配色 / 数据 / 输入栏）一起收掉，
+     只剩顶栏，用顶栏那个按钮展开。手机端没选过时默认就是收起的（见 16b 的 initPanel）。 */
   .workspace.panel-collapsed .panel{display:none}
   .tb-btn[aria-pressed="true"]{color:var(--accent);background:rgba(var(--accent-rgb),.10)}
+  /* 收起时顶栏那个按钮要显眼：它是把侧栏叫回来的唯一入口 */
+  #panelToggle[aria-pressed="true"]{
+    border-color:rgba(var(--accent-rgb),.55);
+    background:rgba(var(--accent-rgb),.14);
+  }
+  #panelToggle[aria-expanded="false"] svg{opacity:.72}
 
   /* 表格区 */
   .tableview{
@@ -1126,9 +1139,19 @@
   @media (max-width:880px){
     .app{flex-direction:column}
     .workspace{flex-direction:column}
-    .workspace .panel{width:100%;max-height:40dvh;border-right:none;
-                      border-bottom:1px solid var(--line)}
+    /* 窄屏侧栏是自己一条「横带」：给确定高度 + flex:none，并放掉 flex 的最小高度，
+       否则内容会把它顶开 → 侧栏滚不动、内容还盖到画布上（Safari 尤其明显） */
+    .workspace .panel{width:100%;height:40vh;height:40dvh;overflow-y:auto;flex:0 0 auto;
+                      min-height:0;overscroll-behavior:contain;
+                      border-right:none;border-bottom:1px solid var(--line)}
+    /* 画布那格同理：窄屏要能被压缩，不然整页被顶出视口 */
+    .stage{min-height:0}
+    .tableview{min-height:0}
     .topbar .brand p{display:none}
+    /* 窄屏：顶栏按钮本来就不够排（标题一长，「侧栏」按钮会被挤出屏幕），
+       所以只留图标、收掉标题文字——「侧栏」按钮必须一直在 */
+    .topbar .brand h1{display:none}
+    .topbar .brand{padding:0 1px;gap:5px}
     .topbar{padding:6px 8px;gap:4px}
     .tb-btn .tb-label{display:none}
     .tb-btn{padding:8px 9px}
@@ -1149,8 +1172,13 @@
     .props{bottom:56px}
   }
 
+  /* 手机端：侧栏内边距收一收，另外把横带压矮一点，多留给画布 */
+  @media (max-width:720px){
+    .workspace .panel{padding:16px 12px 14px}
+  }
+
   @media (max-width:560px){
-    .workspace .panel{max-height:36dvh}
+    .workspace .panel{height:36vh;height:36dvh}
     .tableview{max-height:28dvh}
     .readout{font-size:10.5px;gap:8px;padding:5px 8px}
     .pen-badge{padding:5px 8px;font-size:11px;max-width:60%}
@@ -1183,7 +1211,7 @@
     </div>
     <span class="spacer"></span>
     <button class="tb-btn" id="panelToggle" title="收起 / 展开左侧栏"
-            aria-pressed="false" aria-controls="panel">
+            aria-pressed="false" aria-expanded="true" aria-controls="panel">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
            stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/>
@@ -1331,7 +1359,7 @@
   </div>
 
   <div class="workspace">
-  <aside class="panel">
+  <aside class="panel" id="panel">
 
     <section class="reveal" style="--i:1">
       <div class="label">表达式</div>
@@ -5834,8 +5862,14 @@ const TV_KEY = 'plot-table';
   apply(saved ? saved === 'closed' : innerWidth <= 880, false);
 })();
 
-/* ── 左侧栏收起 / 展开 ── */
+/* ── 左侧栏收起 / 展开（整条侧栏一起收，只剩顶栏） ── */
 const PANEL_KEY = 'plot-panel';
+
+/* 手机：窄屏（≤720px）或者手机 UA。
+   Pad 不算 —— 按你说的，平板不默认收起。 */
+const MOBILE_UA = /iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry|IEMobile|Opera Mini|Mobile Safari/i;
+const isPhoneLayout = () =>
+  innerWidth <= 720 || MOBILE_UA.test(navigator.userAgent || '');
 
 function setPanelCollapsed(on, save){
   const ws = document.querySelector('.workspace');
@@ -5844,7 +5878,9 @@ function setPanelCollapsed(on, save){
   ws.classList.toggle('panel-collapsed', !!on);
   if (btn){
     btn.setAttribute('aria-pressed', String(!!on));
-    btn.title = on ? '展开左侧栏' : '收起左侧栏';
+    btn.setAttribute('aria-expanded', String(!on));
+    btn.title = on ? '展开左侧栏（写公式）' : '收起左侧栏（看图像）';
+    btn.setAttribute('aria-label', on ? '展开左侧栏' : '收起左侧栏');
   }
   if (save !== false){ try { localStorage.setItem(PANEL_KEY, on ? 'closed' : 'open'); } catch(e){} }
 }
@@ -5854,7 +5890,8 @@ function setPanelCollapsed(on, save){
   if (!btn) return;
   let saved = null;
   try { saved = localStorage.getItem(PANEL_KEY); } catch(e){}
-  setPanelCollapsed(saved === 'closed', false);
+  /* 手机屏幕窄：没选过就默认收起，把地方全留给画布（用户点顶栏按钮就展开来写） */
+  setPanelCollapsed(saved ? saved === 'closed' : isPhoneLayout(), false);
   btn.addEventListener('click', () => {
     const on = !document.querySelector('.workspace').classList.contains('panel-collapsed');
     setPanelCollapsed(on);

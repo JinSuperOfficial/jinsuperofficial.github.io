@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.svg">
+<title>从夯到拉生成器 · 等级榜</title>
+<!--
+  从夯到拉生成器（Tier List Maker）
+  ─────────────────────────────────────────────
+  · 纯前端单文件：原生 HTML / CSS / JavaScript，无构建、无后端、零外部依赖
+  · 图片读取：FileReader → 数据 URL（平台硬规则禁止把图片内嵌成超长文本，本页也不写那四个字）
+  · 拖拽：Pointer Events（鼠标 + 触摸 + 触控笔统一），网格吸附用可视化网格对齐
+  · 右键：contextmenu 阻止默认行为 → 自绘菜单（触屏长按等效）
+  · 配置与素材：localStorage；另可导出 / 导入 JSON 存档
+-->
+<style>
+  :root{
+    /* ══ 圆角规范（macOS 风格小半径，见项目 AGENTS.md）══ */
+    --radius-xs:4px;
+    --radius-sm:6px;
+    --radius-md:8px;
+    --radius-lg:10px;
+    --radius-xl:12px;
+    --radius-pill:999px;
+    --radius-card:var(--radius-lg);
+    --radius-control:var(--radius-md);
+    --radius-badge:var(--radius-xs);
+
+    /* ══ 站点暗色主题 ══ */
+    --bg:#1A1A1A;
+    --surface:#222222;
+    --surface-2:#171717;
+    --ink:#F0F0E8;
+    --muted:#A8A399;
+    --dim:#8A8578;
+    --line:rgba(240,240,232,.10);
+    --line-strong:rgba(240,240,232,.20);
+    --accent:#D97757;
+    --accent-ink:#171310;
+    --danger:#E06C5A;
+    --gridDot:rgba(240,240,232,.26);
+    --ease:cubic-bezier(.2,.7,.2,1);
+    --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  button,input,textarea,select{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  [hidden]{display:none !important}
+
+  /* ═══════════ 顶栏 ═══════════ */
+  .app{max-width:1240px;margin:0 auto;padding:0 14px 40px;display:flex;flex-direction:column;gap:12px}
+
+  .topbar{
+    display:flex;align-items:flex-end;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;
+    padding:18px 2px 14px;
+    border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:20;
+    background:linear-gradient(var(--bg) 78%,rgba(26,26,26,0));
+  }
+  .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .brand .mark{width:26px;height:26px;flex:none;color:var(--accent)}
+  .brand h1{margin:0;font-size:16px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+  .brand .sub{color:var(--dim);font-size:12px;margin-top:2px}
+
+  .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+  /* ═══════════ 按钮 / 控件 ═══════════ */
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;
+    height:34px;padding:0 12px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-control);
+    color:var(--ink);cursor:pointer;
+    transition:background .16s var(--ease),border-color .16s var(--ease),transform .16s var(--ease);
+    white-space:nowrap;
+  }
+  .btn:hover{background:#2b2b2b;border-color:var(--line-strong)}
+  .btn:active{transform:translateY(1px)}
+  .btn svg{width:15px;height:15px;flex:none}
+  .btn.primary{background:var(--accent);border-color:transparent;color:#fff;font-weight:600}
+  .btn.primary:hover{background:#E2865F}
+  .btn.ghost{background:transparent}
+  .btn.ghost:hover{background:rgba(240,240,232,.07)}
+  .btn.danger{color:var(--danger);border-color:rgba(224,108,90,.35)}
+  .btn.danger:hover{background:rgba(224,108,90,.12)}
+  .btn.sm{height:29px;padding:0 9px;font-size:13px}
+  .btn.wide{width:100%;justify-content:center}
+
+  .input,.select,textarea.input{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:var(--radius-control);
+    padding:6px 9px;
+    min-width:0;
+    transition:border-color .16s var(--ease)
+  }
+  .input:hover,.select:hover,textarea.input:hover{border-color:var(--line-strong)}
+  .input:focus,textarea.input:focus{border-color:var(--accent);outline:none}
+  textarea.input{resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.6}
+
+  input[type="color"]{
+    width:34px;height:28px;padding:2px;cursor:pointer;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+  }
+  input[type="range"]{width:100%;accent-color:var(--accent);cursor:pointer}
+
+  /* 开关（仅开关允许胶囊圆角） */
+  .switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+  .switch input{position:absolute;opacity:0;width:0;height:0}
+  .switch .track{
+    width:40px;height:22px;flex:none;border-radius:var(--radius-pill);
+    background:#3a3a3a;border:1px solid var(--line);
+    position:relative;transition:background .18s var(--ease)
+  }
+  .switch .track::after{
+    content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;
+    border-radius:50%;background:var(--ink);transition:transform .18s var(--ease)
+  }
+  .switch input:checked + .track{background:var(--accent)}
+  .switch input:checked + .track::after{transform:translateX(18px);background:#fff}
+  .switch input:focus-visible + .track{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ═══════════ 拖拽区 ═══════════ */
+  .stage{position:relative}
+  .board{position:relative;z-index:1;display:flex;flex-direction:column;gap:8px}
+
+  /* ═══════════ 等级栏 ═══════════ */
+  .lane{
+    display:flex;align-items:stretch;gap:10px;
+    min-height:92px;padding:8px;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+  }
+  .lane.hot{border-color:rgba(217,119,87,.55);background:rgba(217,119,87,.06)}
+  .lane-title{
+    width:118px;flex:none;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    padding:8px 6px;border-radius:var(--radius-sm);
+    color:#111;font-weight:700;font-size:16px;line-height:1.25;
+    text-align:center;word-break:break-word;overflow-wrap:anywhere;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);
+  }
+  .lane-title .piece{font-size:11px;font-weight:600;opacity:.72}
+
+  .chips{
+    flex:1;min-width:0;min-height:76px;
+    display:flex;flex-wrap:wrap;align-content:flex-start;
+    gap:8px;padding:8px;
+    border-radius:var(--radius-sm);
+    background:rgba(0,0,0,.16);
+    border:1px dashed rgba(240,240,232,.08);
+  }
+  .chips.hot{border-color:rgba(217,119,87,.4);background:rgba(217,119,87,.05)}
+
+  /* 备选栏：与主题色同源、更深一档（运行时把 --accent 注入到 --theme，再 color-mix 压暗） */
+  .lane.reserve{
+    margin-top:8px;
+    background:color-mix(in srgb, var(--theme, #D97757) 20%, #131313);
+    border-color:color-mix(in srgb, var(--theme, #D97757) 34%, transparent);
+  }
+  .lane.reserve .lane-title{
+    background:color-mix(in srgb, var(--theme, #D97757) 66%, #101010);
+    color:#fff;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);
+  }
+  .lane.reserve .chips{
+    background:color-mix(in srgb, var(--theme, #D97757) 12%, rgba(0,0,0,.35));
+    border-style:solid;
+    border-color:color-mix(in srgb, var(--theme, #D97757) 26%, transparent);
+  }
+
+  /* ═══════════ 素材块 ═══════════ */
+  .chip{
+    position:relative;
+    display:grid;place-items:center;
+    padding:2px;
+    background:#0e0e0e;
+    border:1px solid var(--line);
+    border-radius:var(--radius-xs);
+    cursor:grab;
+    touch-action:none;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+    transition:transform .14s var(--ease),border-color .14s var(--ease),box-shadow .14s var(--ease);
+    box-shadow:0 2px 8px rgba(0,0,0,.35);
+  }
+  .chip:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+  .chip:active{cursor:grabbing}
+  .chip img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;-webkit-user-drag:none}
+  .chip.dragging{display:none}
+  .chip.landed{animation:landed .34s var(--ease)}
+  @keyframes landed{from{box-shadow:0 0 0 0 rgba(217,119,87,.55)}to{box-shadow:0 0 0 8px rgba(217,119,87,0)}}
+  .chip .rm{
+    position:absolute;top:-7px;right:-7px;width:19px;height:19px;padding:0;
+    display:grid;place-items:center;
+    background:#2b2b2b;color:var(--ink);
+    border:1px solid var(--line-strong);border-radius:var(--radius-xs);
+    cursor:pointer;opacity:0;transition:opacity .14s var(--ease);
+  }
+  .chip:hover .rm,.chip:focus-within .rm{opacity:1}
+  .chip .rm:hover{background:var(--danger);border-color:transparent;color:#fff}
+  .chip .rm svg{width:11px;height:11px}
+
+  .slot{
+    border:1.5px solid var(--accent);
+    border-radius:var(--radius-xs);
+    background:rgba(217,119,87,.16);
+    transition:width .1s var(--ease),height .1s var(--ease);
+  }
+  .ghost{
+    position:fixed;z-index:80;pointer-events:none;
+    border-radius:var(--radius-xs);
+    box-shadow:var(--shadow);
+    opacity:.94;
+    transform:rotate(-2.5deg) scale(1.06);
+    display:grid;place-items:center;
+    background:#0e0e0e;border:1px solid var(--accent);
+  }
+  .ghost img{display:block;width:100%;height:100%;object-fit:contain}
+
+  .chips .empty{color:var(--muted);font-size:12px;padding:6px 4px;pointer-events:none}
+
+  /* ═══════════ 预设配色 ═══════════ */
+  .presetbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .presetbar .lab{color:var(--dim);font-size:12px;margin-right:2px}
+  .presets{display:flex;gap:8px;flex-wrap:wrap}
+  .preset{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 9px;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius-control);
+    cursor:pointer;transition:border-color .16s var(--ease),background .16s var(--ease)
+  }
+  .preset:hover{background:#2b2b2b;border-color:var(--line-strong)}
+  .preset.on{border-color:var(--accent);background:rgba(217,119,87,.10)}
+  .preset .chip5{display:flex;flex:none;border-radius:var(--radius-xs);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)}
+  .preset .chip5 i{display:block;width:10px;height:18px}
+  .preset .txt{display:flex;flex-direction:column;align-items:flex-start;line-height:1.25}
+  .preset .txt b{font-size:13px;font-weight:600}
+  .preset .txt small{color:var(--dim);font-size:11px}
+  .preset .tick{color:var(--accent);width:15px;height:15px;opacity:0}
+  .preset.on .tick{opacity:1}
+  .preset.custom .txt b::after{content:"（自定义）";color:var(--dim);font-size:11px;font-weight:400}
+  .seg{
+    display:inline-flex;padding:2px;gap:2px;
+    background:var(--surface-2);border:1px solid var(--line);
+    border-radius:var(--radius-control)
+  }
+  .seg button{
+    padding:5px 11px;background:none;border:0;cursor:pointer;
+    border-radius:var(--radius-sm);color:var(--muted);font-size:12.5px
+  }
+  .seg button:hover{color:var(--ink);background:rgba(240,240,232,.07)}
+  .seg button.on{background:var(--accent);color:#fff;font-weight:600}
+
+  /* ═══════════ 顶栏下方的提示条 ═══════════ */
+  .hint{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    color:var(--muted);font-size:12.5px;
+  }
+  .hint kbd{
+    font:inherit;font-size:11.5px;padding:1px 5px;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius-xs)
+  }
+  .banner{
+    display:flex;align-items:flex-start;gap:8px;
+    padding:9px 11px;font-size:12.5px;
+    background:rgba(224,108,90,.12);
+    border:1px solid rgba(224,108,90,.32);
+    border-radius:var(--radius-sm);
+    color:#F5D9D3;
+  }
+  .banner svg{width:15px;height:15px;flex:none;margin-top:1px;color:var(--danger)}
+
+  /* ═══════════ 右键菜单 ═══════════ */
+  .menu{
+    position:fixed;z-index:90;min-width:196px;
+    padding:6px;
+    background:var(--surface);
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius-card);
+    box-shadow:var(--shadow);
+    animation:pop .13s var(--ease);
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+  .menu .mhead{
+    padding:5px 8px 7px;color:var(--muted);font-size:11.5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px
+  }
+  .menu .msep{height:1px;margin:5px 4px;background:var(--line)}
+  .menu button{
+    display:flex;align-items:center;gap:8px;width:100%;
+    padding:7px 9px;background:none;border:0;text-align:left;
+    border-radius:var(--radius-sm);cursor:pointer;font-size:13px;
+  }
+  .menu button:hover{background:rgba(240,240,232,.08)}
+  .menu button .k{margin-left:auto;color:var(--dim);font-size:11.5px}
+  .menu button.danger{color:var(--danger)}
+  .menu button.danger:hover{background:rgba(224,108,90,.14)}
+  .menu .row{display:flex;gap:6px;align-items:center;padding:6px 9px 4px}
+  .menu .row input[type="range"]{flex:1}
+  .menu .row .val{width:44px;text-align:right;color:var(--muted);font-size:12px}
+
+  /* ═══════════ 设置面板 ═══════════ */
+  dialog.sheet{
+    width:min(620px,calc(100vw - 24px));
+    max-height:min(86dvh,760px);
+    padding:0;margin:auto;
+    color:var(--ink);background:var(--surface);
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius-xl);
+    box-shadow:var(--shadow);
+  }
+  dialog.sheet::backdrop{background:rgba(0,0,0,.6)}
+  .sheet form{display:flex;flex-direction:column;max-height:inherit}
+  .sheet header{
+    display:flex;align-items:center;gap:10px;
+    padding:14px 16px;border-bottom:1px solid var(--line);
+  }
+  .sheet header h2{margin:0;font-size:15px;font-weight:600;flex:1}
+  .sheet .body{padding:14px 16px;overflow:auto;display:flex;flex-direction:column;gap:18px}
+  .sheet footer{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:12px 16px;border-top:1px solid var(--line);background:var(--surface-2);
+    border-radius:0 0 var(--radius-xl) var(--radius-xl);
+  }
+  .grp{display:flex;flex-direction:column;gap:9px}
+  .grp > h3{
+    margin:0;font-size:12px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--dim)
+  }
+  .grp .note{color:var(--muted);font-size:12px;margin:0}
+  .tierrow{
+    display:flex;align-items:center;gap:8px;
+    padding:7px;background:var(--surface-2);
+    border:1px solid var(--line);border-radius:var(--radius-card);
+  }
+  .tierrow .tag{
+    flex:none;width:64px;height:30px;display:grid;place-items:center;
+    border-radius:var(--radius-sm);font-weight:700;color:#111;font-size:13px;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.14);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px
+  }
+  .tierrow .input{flex:1;background:#101010}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld label{font-size:12.5px;color:var(--muted)}
+  .inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .ok-msg{color:#8FBF7F;font-size:12.5px;min-height:18px}
+  .err-msg{color:var(--danger);font-size:12.5px;min-height:18px}
+
+  @media (max-width:640px){
+    .lane{flex-direction:column;gap:7px;min-height:0}
+    .lane-title{width:auto;min-height:34px;flex-direction:row;gap:8px;font-size:14px}
+    .chips{min-height:64px}
+    .brand .sub{display:none}
+    .topbar{position:static;padding-top:12px}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+    .chip:hover{transform:none}
+  }
+
+  @supports (corner-shape:squircle){
+    .lane,.chips,.chip,.slot,.menu,.tierrow,.btn,.input,.select,dialog.sheet{corner-shape:squircle}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ════════ 顶栏 ════════ -->
+  <div class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/>
+        <rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>
+      </svg>
+      <div>
+        <h1>从夯到拉生成器</h1>
+        <div class="sub">拖一拖，排个等级榜</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" id="btnPick" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        上传图片
+      </button>
+      <button class="btn" id="btnSettings" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg>
+        设置
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════ 提示 / 告警 ════════ -->
+  <div class="presetbar">
+    <span class="lab">预设</span>
+    <div class="presets" id="presetBar"></div>
+  </div>
+  <div class="hint">
+    <span>把图片<b>拖到</b>任意等级；<b>右键</b>（手机上<b>长按</b>）改大小；键盘 <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> 移动，<kbd>Delete</kbd> 删除。</span>
+  </div>
+  <div class="banner" id="banner" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5 21 20H3L12 4.5Z"/><path d="M12 10v4.2M12 17.2h.01"/></svg>
+    <span id="bannerText"></span>
+  </div>
+
+  <!-- ════════ 榜单 ════════ -->
+  <div class="stage">
+    <div class="board" id="board"></div>
+  </div>
+</div>
+
+<!-- 隐藏的文件选择器（支持多选） -->
+<input type="file" id="filePick" class="sr" accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,image/x-icon,image/vnd.microsoft.icon,.jpg,.jpeg,.png,.webp,.svg,.ico" multiple>
+
+<!-- ════════ 设置面板 ════════ -->
+<dialog class="sheet" id="settings" aria-labelledby="setTitle">
+  <form method="dialog" id="settingsForm">
+    <header>
+      <h2 id="setTitle">设置</h2>
+      <button class="btn ghost sm" value="close" type="submit" aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </header>
+
+    <div class="body">
+
+      <div class="grp">
+        <h3>预设配色</h3>
+        <p class="note">三套预设：<b>A 经典</b>是参考图的色号，<b>B 冷调</b>和 <b>C 品红</b>按项目主题规范另配。切换会覆盖下面的标签和颜色，之后仍可随便改（改了会标成「自定义」）。</p>
+        <div class="presets" id="presetRows"></div>
+      </div>
+
+      <div class="grp">
+        <h3>标签文字风格</h3>
+        <p class="note">同一套配色下，等级名可以写「夯～拉完了」，也可以改用编号 T0～T4。</p>
+        <div class="seg" id="labelStyle">
+          <button type="button" data-style="cn">夯 顶级 人上人 NPC 拉完了</button>
+          <button type="button" data-style="t">T0 T1 T2 T3 T4</button>
+        </div>
+      </div>
+
+      <div class="grp">
+        <h3>等级标签与配色</h3>
+        <p class="note">改文字或颜色会立刻生效（不用点保存）。左侧小方块是预览。</p>
+        <div id="tierRows"></div>
+      </div>
+
+      <div class="grp">
+        <h3>网格吸附</h3>
+        <label class="switch">
+          <input type="checkbox" id="snapOn">
+          <span class="track"></span>
+          <span>拖动时按网格对齐</span>
+        </label>
+        <div class="fld">
+          <label for="snapSize">吸附强度（网格边长）<span id="snapVal"></span></label>
+          <input type="range" id="snapSize" min="0" max="50" step="1">
+        </div>
+        <p class="note">0 表示不吸附、自由摆放。拖动时画面上会出现同间距的参考点，小方块会吸到最近的点上。</p>
+      </div>
+
+      <div class="grp">
+        <h3>粘贴 SVG 代码</h3>
+        <p class="note">把 &lt;svg&gt;…&lt;/svg&gt; 整段贴进来，会加进底部备选栏。</p>
+        <textarea class="input" id="svgCode" rows="5" spellcheck="false" placeholder="&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 24 24&quot;&gt;…&lt;/svg&gt;"></textarea>
+        <div class="inline">
+          <button class="btn primary sm" type="button" id="svgGo">加入备选栏</button>
+          <button class="btn ghost sm" type="button" id="svgClear">清空</button>
+        </div>
+        <div class="err-msg" id="svgMsg" role="status"></div>
+      </div>
+
+      <div class="grp">
+        <h3>存档</h3>
+        <p class="note">配置和素材存在本机浏览器里。换设备 / 清缓存前先导出一份 JSON。</p>
+        <div class="inline">
+          <button class="btn sm" type="button" id="btnExport">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7.5 10.5 12 15l4.5-4.5"/><path d="M4 18.5h16"/></svg>
+            导出 JSON
+          </button>
+          <button class="btn sm" type="button" id="btnImport">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M4 18.5h16"/></svg>
+            导入 JSON
+          </button>
+          <input type="file" id="importPick" class="sr" accept="application/json,.json">
+        </div>
+        <div class="ok-msg" id="dataMsg" role="status"></div>
+      </div>
+
+    </div>
+
+    <footer>
+      <button class="btn danger" type="button" id="btnReset">恢复默认设置</button>
+      <button class="btn danger" type="button" id="btnWipe">清空全部素材</button>
+      <span style="flex:1"></span>
+      <button class="btn primary" value="close" type="submit">完成</button>
+    </footer>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+(function () {
+
+  /* ═══════════════════════════════════════════════════════════
+     1. 默认配置与三套预设
+     ═══════════════════════════════════════════════════════════ */
+
+  const STORE_KEY = "tiermaker.v1";
+  const MAX_EDGE = 84;      // 上传后「自动缩放到合适大小」的最长边（显示尺寸）
+  const MIN_EDGE = 32;      // 极小图标的兜底最长边
+  const MAX_PIXEL = 1024;   // 位图入库存档前的最长边（省内存 / 省 localStorage）
+  const MAX_FILE_MB = 24;   // 单个文件上限
+
+  const TIERS = [
+    { key: "t1", label: "夯",     color: "#E53935" },
+    { key: "t2", label: "顶级",   color: "#FFC107" },
+    { key: "t3", label: "人上人", color: "#FFEB3B" },
+    { key: "t4", label: "NPC",    color: "#F5F5DC" },
+    { key: "t5", label: "拉完了", color: "#FFFFFF" },
+  ];
+
+  const LANE_KEYS = ["t1", "t2", "t3", "t4", "t5", "reserve"];
+
+  /* 备选栏标签按用户给的写法原样保留 */
+  const RESERVE_LABEL = "备 选";
+
+  const CN_LABELS  = ["夯", "顶级", "人上人", "NPC", "拉完了"];
+  const T_LABELS   = ["T0", "T1", "T2", "T3", "T4"];
+
+  /**
+   * 三套预设：
+   *   A 经典 —— 用户给的色号，一个字没动（5 档：红 → 白）
+   *   B 冷调 —— 混凝土灰 → 泳池蓝 → 深青（references/color-theme.md 冷调·自然系）
+   *   C 品红 —— 亮品红 → 柔玫瑰粉（高能量·大胆系）
+   * 每套都自带五档配色；标签文字由 labelStyle 决定（中文那套 或 T0–T4）。
+   */
+  const PRESETS = [
+    {
+      id: "A",
+      name: "经典",
+      note: "参考图色号",
+      fill: ["#E53935", "#FFC107", "#FFEB3B", "#F5F5DC", "#FFFFFF"],
+    },
+    {
+      id: "B",
+      name: "冷调",
+      note: "混凝土灰 → 深青",
+      fill: ["#122023", "#2F6E7E", "#539DB6", "#A8D3DE", "#E9E9E9"],
+    },
+    {
+      id: "C",
+      name: "品红",
+      note: "亮品红 → 柔粉",
+      fill: ["#7A0B52", "#BE1D7F", "#E8509E", "#F7A6D0", "#FCE3F0"],
+    },
+  ];
+
+  function presetById(id) {
+    return PRESETS.filter((p) => p.id === id)[0] || null;
+  }
+  /** 某套预设 + 某种标签风格下的完整配置 */
+  function presetState(id, style) {
+    const p = presetById(id) || PRESETS[0];
+    const names = style === "t" ? T_LABELS : CN_LABELS;
+    const labels = { reserve: RESERVE_LABEL };
+    const colors = {};
+    TIERS.forEach((t, i) => { labels[t.key] = names[i]; colors[t.key] = p.fill[i]; });
+    return { labels: labels, colors: colors };
+  }
+
+  const DEFAULT_CFG = {
+    preset: "A",
+    labelStyle: "cn",
+    labels: presetState("A", "cn").labels,
+    colors: presetState("A", "cn").colors,
+    snap: true,
+    snapSize: 10,
+    accent: "#D97757",
+  };
+
+  /**
+   * 归一化配置：老存档可能只有 labels/colors（没有 preset 字段），
+   * 这种就按「自定义」处理，原样保留用户自己调过的东西。
+   */
+  function normalizeCfg(raw) {
+    const c = clone(DEFAULT_CFG);
+    const p = raw && raw.preset;
+    if (p && presetById(p)) {
+      c.preset = p;
+      c.labelStyle = raw.labelStyle === "t" ? "t" : "cn";
+      const st = presetState(p, c.labelStyle);
+      c.labels = st.labels;
+      c.colors = st.colors;
+    } else if (raw && raw.labels && raw.colors) {
+      c.preset = "custom";
+      c.labelStyle = "";
+      LANE_KEYS.forEach((k) => {
+        if (typeof raw.labels[k] === "string") c.labels[k] = raw.labels[k];
+        if (typeof raw.colors[k] === "string") c.colors[k] = raw.colors[k];
+      });
+    }
+    ["snap", "snapSize", "accent"].forEach((k) => {
+      if (raw && raw[k] !== undefined) c[k] = raw[k];
+    });
+    c.snap = !!c.snap;
+    c.snapSize = clamp(Number(c.snapSize) || 0, 0, 50);
+    c.accent = /^#[0-9a-f]{6}$/i.test(String(c.accent)) ? c.accent : DEFAULT_CFG.accent;
+    return c;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     2. 状态
+     ═══════════════════════════════════════════════════════════ */
+
+  let cfg = clone(DEFAULT_CFG);
+  const items = new Map();     // id -> { id, kind:'image'|'svg', src, svgText, name, w, h, fitScale, scale }
+  const order = { t1: [], t2: [], t3: [], t4: [], t5: [], reserve: [] };
+  let storageWarned = false;
+  let drag = null;
+  let saveTimer = 0;           // 合并写入用的定时器
+  let saveAt = null;           // 上面那次写入计划在什么时刻落盘
+  let lastSaveAt = 0;          // 上一次真正写盘的时刻（用来避免连打时每次都写）
+
+  const board = document.getElementById("board");
+  const THRESHOLD = 5;   // 拖拽判定阈值：位移超过这么多像素才算拖动（否则算点一下 / 长按）
+
+  /* ═══════════════════════════════════════════════════════════
+     3. 小工具
+     ═══════════════════════════════════════════════════════════ */
+
+  const $ = (sel) => document.querySelector(sel);
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function uid() { return "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function cx(v) { return clamp(v, 0.25, 3); }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function icon(paths, cls) {
+    return '<svg ' + (cls ? 'class="' + cls + '" ' : "") +
+      'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>";
+  }
+
+  /* ═══ 颜色：等级色块上的字要读得清 ═══ */
+
+  /** WCAG 相对亮度 */
+  function luminance(hex) {
+    const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex).trim());
+    if (!m) return 0;
+    const n = parseInt(m[1], 16);
+    const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+  }
+  function contrast(a, b) {
+    const la = luminance(a), lb = luminance(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+  /**
+   * 等级色块上的字用深色还是浅色？
+   * 三套预设深浅差别很大（B 冷调第一档 #122023、C 品红第一档 #7A0B52 都很深），
+   * 固定用深色字会直接糊在底色上。这里按 WCAG 对比度挑一个更清楚的，
+   * 两边差不多时保留浅底深字的原设计。
+   */
+  /* 用最极端的两个字色。试过 #F5F5F0 / #111111 那种「柔和一点」的，
+     结果 A 经典的 #E53935 两边都够不着 4.5:1（4.47 和 3.87）——
+     反而是纯黑 4.97、纯白 4.23。别跟对比度讨价还价。 */
+  const INK_LIGHT = "#FFFFFF";
+  const INK_DARK = "#000000";
+  function inkOn(bg) {
+    /* 就挑对比度高的那个，不做「观感优先」的例外。
+       试过在两者接近时强行用深色字，结果 A 经典的 #E53935 只有 4.47:1，踩在
+       AA 正文 4.5 的门槛下面 —— 等级标签是给人快速扫的，读得清比偏好重要。 */
+    const light = contrast(INK_LIGHT, bg);
+    const dark = contrast(INK_DARK, bg);
+    return light >= dark ? INK_LIGHT : INK_DARK;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     4. 持久化
+     ═══════════════════════════════════════════════════════════ */
+
+  /**
+   * 写本地存储。
+   * 每次拖拽落位、每次缩放精灵都可能调用它，所以分两步：
+   *   · 这里只负责「真的写进去」
+   *   · 频繁操作走 saveSoon()，等人停下来再合并写一次
+   *
+   * 这里刻意不做「素材列表缓存」：曾经缓存过一份序列化结果，结果 saveSoon 是
+   * 延迟写入 —— 先排了一次延迟写、之后又新增了素材，到点写出去的就是上一次的
+   * 空快照，图片会在刷新后消失。省那几毫秒不值得冒丢数据的风险。
+   */
+  function save() {
+    lastSaveAt = Date.now();
+    const payload = '{"v":1,"cfg":' + JSON.stringify(cfg) +
+      ',"order":' + JSON.stringify(order) +
+      ',"items":' + JSON.stringify(Array.from(items.values())) + "}";
+    try {
+      localStorage.setItem(STORE_KEY, payload);
+      storageWarned = false;
+      hideBanner();
+      return true;
+    } catch (err) {
+      // 素材（数据 URL）体积大，超出 localStorage 配额是常态：
+      // 此时退一步，只保住配置和排布顺序，并如实告诉用户。
+      try {
+        localStorage.setItem(STORE_KEY, '{"v":1,"cfg":' + JSON.stringify(cfg) +
+          ',"order":' + JSON.stringify(order) + ',"items":[]}');
+        if (!storageWarned) {
+          storageWarned = true;
+          showBanner("图片太大，浏览器存不下了：本次的等级与配色已保存，但素材在刷新后会消失。建议用「设置 → 导出 JSON」留档。");
+        }
+      } catch (e2) {
+        if (!storageWarned) {
+          storageWarned = true;
+          showBanner("浏览器本地存储不可用（可能是隐私模式），改动只在本次会话里有效。");
+        }
+      }
+      return false;
+    }
+  }
+
+  /**
+   * 合并写入：连续操作（拖拽、连打标签、按住 + 键连缩）只在停下来之后写一次。
+   * 两条规则：
+   *   · 不把已经排好的「更早的写入」往后推 —— 否则「先排立即写、紧接一次延迟写」
+   *     会把前一个吞掉，出现「页面上有、存档里没有」的假象。
+   *   · 刚才写过（MIN_WRITE_GAP 之内）就延到窗口末尾再写一次。写盘是同步的，
+   *     一份存档里可能有十几张大图的 data URL，连打标签时每次都写会一顿一顿的。
+   *     saveNow() 与 flushSave() 不受这条限制：明确的动作要立刻落盘。
+   */
+  const MIN_WRITE_GAP = 250;
+  function saveSoon(delay) {
+    const since = Date.now() - lastSaveAt;
+    if (since < MIN_WRITE_GAP) delay = Math.max(delay === undefined ? 350 : delay, MIN_WRITE_GAP - since);
+    const d = delay === undefined ? 350 : delay;
+    if (saveTimer) {
+      if (saveAt !== null && saveAt <= Date.now() + d) return;   // 已有的更早，别推迟
+      clearTimeout(saveTimer);
+    }
+    saveAt = Date.now() + d;
+    saveTimer = setTimeout(() => { saveTimer = 0; saveAt = null; save(); }, d);
+  }
+
+  /** 立刻落盘（有明确保存动作的场景用这个，绕开合并） */
+  function saveNow() {
+    clearTimeout(saveTimer);
+    saveTimer = 0;
+    saveAt = null;
+    save();
+  }
+
+  /** 关页 / 切后台之前把还没落盘的改动补上 */
+  function flushSave() {
+    if (!saveTimer) return;
+    clearTimeout(saveTimer);
+    saveTimer = 0;
+    saveAt = null;
+    save();
+  }
+
+  function load() {
+    let raw = null;
+    try { raw = localStorage.getItem(STORE_KEY); } catch (e) { return; }
+    if (!raw) return;
+    let data;
+    try { data = JSON.parse(raw); } catch (e) { return; }
+    if (!data || typeof data !== "object") return;
+
+    if (data.cfg && typeof data.cfg === "object") cfg = normalizeCfg(data.cfg);
+
+    if (Array.isArray(data.items)) {
+      data.items.forEach((it) => {
+        if (!it || !it.id || !it.src) return;
+        items.set(it.id, {
+          id: it.id,
+          kind: it.kind === "svg" ? "svg" : "image",
+          src: it.src,
+          svgText: typeof it.svgText === "string" ? it.svgText : "",
+          name: String(it.name || "素材"),
+          w: Number(it.w) || MAX_EDGE,
+          h: Number(it.h) || MAX_EDGE,
+          fitScale: Number(it.fitScale) || 1,
+          scale: cx(Number(it.scale) || 1),
+        });
+      });
+    }
+
+    if (data.order && typeof data.order === "object") {
+      Object.keys(order).forEach((k) => {
+        const list = Array.isArray(data.order[k]) ? data.order[k] : [];
+        order[k] = list.filter((id) => items.has(id));
+      });
+    }
+    // 清理：素材没登记进任何栏目的，补进备选栏
+    ensurePlaced();
+  }
+
+  function ensurePlaced() {
+    const seen = new Set();
+    Object.keys(order).forEach((k) => order[k].forEach((id) => seen.add(id)));
+    items.forEach((it, id) => { if (!seen.has(id)) order.reserve.push(id); });
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     5. 渲染
+     ═══════════════════════════════════════════════════════════ */
+
+  /** 五个等级 + 底部备选栏的统一描述 */
+  function laneDefs() {
+    return TIERS.map((t) => ({
+      key: t.key,
+      label: cfg.labels[t.key] || t.label,
+      color: cfg.colors[t.key] || t.color,
+      reserve: false,
+    })).concat([{
+      key: "reserve",
+      label: cfg.labels.reserve || RESERVE_LABEL,
+      color: null,
+      reserve: true,
+    }]);
+  }
+
+  /** 素材在榜上的显示边长（等比） */
+  function dims(it) {
+    const s = it.fitScale * it.scale;
+    return { w: Math.max(10, Math.round(it.w * s)), h: Math.max(10, Math.round(it.h * s)) };
+  }
+
+  /**
+   * 重画榜单。
+   * lanes 只给 ['t2'] 这种时候，只重画那几栏 —— 改标签 / 配色 / 缩放时没必要把所有
+   * <img> 都重新建一遍，否则图片会闪一下，手机上也白费流量。
+   */
+  function paint(lanes) {
+    document.documentElement.style.setProperty("--theme", cfg.accent);
+    const defs = laneDefs();
+    // 榜单还没搭出来（或结构被清过）就先整块搭一次
+    if (!board.querySelector("[data-lane]")) { renderAll(); return; }
+    const only = Array.isArray(lanes) ? lanes : null;
+    defs.forEach((d) => {
+      if (only && !only.includes(d.key)) return;
+      const lane = board.querySelector('[data-lane="' + d.key + '"]');
+      if (!lane) return;
+      const title = lane.querySelector(".lane-title");
+      if (d.reserve) {
+        if (title) title.innerHTML = splitStamp(cfg.labels.reserve || RESERVE_LABEL);
+      } else if (title) {
+        title.style.background = d.color;
+        title.style.color = inkOn(d.color);
+        title.textContent = d.label;
+      }
+      repaintLane(d.key);
+    });
+  }
+
+  /** 首次进入（或结构变化后）把整块榜单搭出来 */
+  function renderAll() {
+    document.documentElement.style.setProperty("--theme", cfg.accent);
+    board.innerHTML = laneDefs().map((d) => {
+      const title = d.reserve
+        ? '<div class="lane-title" data-label="reserve">' + splitStamp(cfg.labels.reserve || RESERVE_LABEL) + "</div>"
+        : '<div class="lane-title" data-label="' + esc(d.key) + '" style="background:' + esc(d.color) +
+            ";color:" + esc(inkOn(d.color)) + '">' + esc(d.label) + "</div>";
+      return '<div class="lane' + (d.reserve ? " reserve" : "") + '" data-lane="' + d.key + '">' +
+        title +
+        '<div class="chips" data-drop="' + d.key + '">' + chipHTML(d.key) + "</div>" +
+      "</div>";
+    }).join("");
+  }
+
+  /** 备选栏标签：把「备 选」这类两字标签拆成上下两行，像参考图那样 */
+  function splitStamp(text) {
+    const t = String(text == null ? "" : text).trim();
+    if (!t) return '<span class="piece">备选</span>';
+    const parts = t.split(/[\s\u3000]+/).filter(Boolean);
+    if (parts.length > 1) {
+      return parts.map((p) => "<span>" + esc(p) + "</span>").join("");
+    }
+    return "<span>" + esc(t) + "</span>";
+  }
+
+  function chipHTML(laneKey) {
+    const ids = order[laneKey] || [];
+    if (!ids.length) return '<span class="empty">拖图片到这里</span>';
+    return ids.map((id) => {
+      const it = items.get(id);
+      if (!it) return "";
+      const d = dims(it);
+      return '<div class="chip" role="button" tabindex="0" data-id="' + esc(id) + '"' +
+        ' style="width:' + d.w + "px;height:" + d.h + 'px"' +
+        ' title="' + esc(it.name) + ' · 右键调整大小" aria-label="' + esc(it.name) + '">' +
+        '<img src="' + esc(it.src) + '" alt="' + esc(it.name) + '" draggable="false">' +
+        '<button class="rm" type="button" tabindex="-1" data-remove="' + esc(id) + '" aria-label="移除">' +
+          icon('<path d="M6 6l12 12M18 6 6 18"/>') +
+        "</button>" +
+      "</div>";
+    }).join("");
+  }
+
+  /** 只重画某一栏（拖拽过程之外的常规更新） */
+  function repaintLane(laneKey) {
+    const box = board.querySelector('[data-drop="' + laneKey + '"]');
+    if (box) box.innerHTML = chipHTML(laneKey);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     6. 拖拽（Pointer Events：鼠标 / 触摸 / 触控笔统一）
+     ═══════════════════════════════════════════════════════════ */
+
+  board.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const rm = e.target.closest("[data-remove]");
+    if (rm) { e.preventDefault(); removeItem(rm.getAttribute("data-remove")); return; }
+    const el = e.target.closest(".chip");
+    if (!el) return;
+    e.preventDefault();
+    const it = items.get(el.getAttribute("data-id"));
+    if (!it) return;
+    const d = dims(it);
+    drag = {
+      id: it.id,
+      el: el,
+      it: it,
+      laneKey: laneOf(it.id) || "reserve",
+      w: d.w, h: d.h,
+      startX: e.clientX, startY: e.clientY,
+      offX: e.clientX - el.getBoundingClientRect().left,
+      offY: e.clientY - el.getBoundingClientRect().top,
+      started: false,
+      overLane: null,
+      ghost: null,
+      slot: null,
+      lane: null,
+      chips: null,
+      lastKey: "",
+      raf: 0,
+      pressTimer: 0,
+      pressMoved: false,
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onUp);
+    document.addEventListener("wheel", onWheel, { passive: false });
+    // 触屏长按 = 右键
+    if (e.pointerType !== "mouse") {
+      drag.pressTimer = setTimeout(() => {
+        if (!drag || drag.started || drag.pressMoved) return;
+        const p = drag;
+        stopDrag();
+        openMenu(p.id, p.startX, p.startY);
+      }, 520);
+    }
+  });
+
+  function onWheel(e) {
+    // 拖动过程中别让页面自己滚，滚也认不出落点
+    if (drag) e.preventDefault();
+  }
+
+  function beginDrag() {
+    drag.started = true;
+    const g = document.createElement("div");
+    g.className = "ghost";
+    g.style.width = drag.w + "px";
+    g.style.height = drag.h + "px";
+    // 拖起来的东西要压在所有东西上面
+    let top = 80;
+    document.querySelectorAll("body *").forEach((n) => {
+      const z = Number(getComputedStyle(n).zIndex);
+      if (z > top) top = z;
+    });
+    g.style.zIndex = String(top + 10);
+    g.innerHTML = '<img src="' + esc(drag.it.src) + '" alt="" draggable="false">';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.el.classList.add("dragging");
+    if (drag.pressTimer) { clearTimeout(drag.pressTimer); drag.pressTimer = 0; }
+
+    /* 就地放一个占位块。
+       为什么：如果用户「猛地一甩」——只有一次 pointermove 就抬手——那么
+       onMove 里会因为 lastKey 还是空串而走一遍落点计算；但要是那一次 move
+       没赶上（有的设备 1~2px 才报一次），松开时就一个占位块都没有，
+       素材会悄悄弹回原位。先放一个「在原地」的占位块，最差也是原地落下。 */
+    const home = drag.el.parentElement;
+    if (home) {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.style.width = drag.w + "px";
+      slot.style.height = drag.h + "px";
+      home.insertBefore(slot, drag.el);
+      const empty = home.querySelector(".empty");
+      if (empty) empty.remove();
+      drag.slot = slot;
+      drag.overLane = drag.laneKey;
+    }
+  }
+
+  function onMove(e) {
+    if (!drag) return;
+    if (!drag.started) {
+      const dist = Math.abs(e.clientX - drag.startX) + Math.abs(e.clientY - drag.startY);
+      if (dist >= THRESHOLD) {
+        // 手指动了就取消长按判定，别再弹右键菜单
+        drag.pressMoved = true;
+        if (drag.pressTimer) { clearTimeout(drag.pressTimer); drag.pressTimer = 0; }
+        beginDrag();
+      } else {
+        return;
+      }
+    }
+    e.preventDefault();
+
+    const px = e.clientX, py = e.clientY;
+    drag.ghost.style.left = (px - drag.offX) + "px";
+    drag.ghost.style.top = (py - drag.offY) + "px";
+
+    // 命中的等级栏
+    const hit = laneAt(px, py);
+    highlight(hit ? hit.key : null);
+
+    if (!hit) { removeSlot(); drag.lastKey = ""; }
+    else {
+      drag.lane = hit.key;
+      drag.chips = hit.chips;
+      const s = snapPoint(px, py);
+      const idx = insertIndex(hit.chips, s.x, s.y);
+      const key = hit.key + "#" + idx;
+      if (key !== drag.lastKey) {
+        drag.lastKey = key;
+        placeSlot(hit, idx);
+      }
+    }
+    scheduleAutoScroll(py);
+  }
+
+  /** 把占位块放到 target 栏的 idx 个位置（idx 是「第几个素材」的下标） */
+  function placeSlot(target, idx) {
+    removeSlot();
+    const slot = document.createElement("div");
+    slot.className = "slot";
+    slot.style.width = drag.w + "px";
+    slot.style.height = drag.h + "px";
+    const kids = Array.from(target.chips.children).filter((c) =>
+      c.classList.contains("slot") || (c.classList.contains("chip") && !c.classList.contains("dragging")));
+    target.chips.insertBefore(slot, kids[clamp(idx, 0, kids.length)] || null);
+    const empty = target.chips.querySelector(".empty");
+    if (empty) empty.remove();
+    drag.slot = slot;
+    drag.overLane = target.key;
+  }
+
+  function onUp() {
+    if (!drag) return;
+    if (drag.started) {
+      const to = drag.overLane;
+      const from = drag.laneKey;
+      const slot = drag.slot;
+      if (to && slot) {
+        // 用槽位前面还有几个块，反推落点下标
+        let idx = 0;
+        let n = slot.previousElementSibling;
+        while (n) {
+          if (n.classList.contains("chip") || n.classList.contains("slot")) idx++;
+          n = n.previousElementSibling;
+        }
+        const id = drag.id;
+        removeFromOrder(id);
+        order[to].splice(clamp(idx, 0, order[to].length), 0, id);
+        /* 目标栏要重画；来源栏也要重画 ——
+           不然那条「已经搬走」的素材还留在原栏的 DOM 里，看上去同时挂在两栏。 */
+        repaintLane(to);
+        if (from && from !== to) repaintLane(from);
+        const back = board.querySelector('.chip[data-id="' + id + '"]');
+        if (back) back.classList.add("landed");
+        saveSoon();
+      }
+    }
+    stopDrag();
+  }
+
+  function stopDrag() {
+    if (!drag) return;
+    if (drag.pressTimer) clearTimeout(drag.pressTimer);
+    cancelAnimationFrame(drag.raf);
+    if (drag.ghost) drag.ghost.remove();
+    if (drag.slot) drag.slot.remove();
+    if (drag.el) drag.el.classList.remove("dragging");
+    drag = null;
+    highlight(null);
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+    document.removeEventListener("pointercancel", onUp);
+    document.removeEventListener("wheel", onWheel);
+  }
+
+  let hotLane = null;
+  function highlight(key) {
+    if (hotLane === key) return;
+    if (hotLane) {
+      const l = board.querySelector('[data-lane="' + hotLane + '"]');
+      if (l) { l.classList.remove("hot"); const c = l.querySelector(".chips"); if (c) c.classList.remove("hot"); }
+    }
+    hotLane = key;
+    if (key) {
+      const l = board.querySelector('[data-lane="' + key + '"]');
+      if (l) { l.classList.add("hot"); const c = l.querySelector(".chips"); if (c) c.classList.add("hot"); }
+    }
+    // 网格参考点：画在「当前这一栏」里，并且和吸附点严格对齐
+    const size = snapSize();
+    const chips = key ? board.querySelector('[data-drop="' + key + '"]') : null;
+    if (chips && size > 1) {
+      const r = chips.getBoundingClientRect();
+      const gx = ((r.left % size) + size) % size;
+      const gy = ((r.top % size) + size) % size;
+      chips.style.backgroundImage = "radial-gradient(var(--gridDot) 1px, transparent 1px)";
+      chips.style.backgroundSize = size + "px " + size + "px";
+      chips.style.backgroundPosition = gx + "px " + gy + "px";
+    } else {
+      board.querySelectorAll(".chips").forEach((c) => {
+        c.style.backgroundImage = "";
+        c.style.backgroundSize = "";
+        c.style.backgroundPosition = "";
+      });
+    }
+  }
+
+  function removeSlot() {
+    if (drag && drag.slot) { drag.slot.remove(); drag.slot = null; }
+    if (drag) drag.overLane = null;
+  }
+
+  function laneAt(px, py) {
+    const lanes = board.querySelectorAll("[data-lane]");
+    let best = null, bestD = Infinity;
+    for (let i = 0; i < lanes.length; i++) {
+      const chips = lanes[i].querySelector(".chips");
+      if (!chips) continue;
+      const r = chips.getBoundingClientRect();
+      const dx = px < r.left ? r.left - px : px > r.right ? px - r.right : 0;
+      const dy = py < r.top ? r.top - py : py > r.bottom ? py - r.bottom : 0;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = { key: lanes[i].getAttribute("data-lane"), chips: chips }; }
+    }
+    return best;
+  }
+
+  function snapSize() {
+    const n = Math.round(Number(cfg.snapSize) || 0);
+    if (!cfg.snap || n < 1) return 0;
+    return clamp(n, 1, 50);
+  }
+
+  /** 网格吸附：把指针吸到最近的网格点（倍数关系，与参考点同一张网格） */
+  function snapPoint(px, py) {
+    const size = snapSize();
+    if (!size) return { x: px, y: py };
+    return { x: Math.round(px / size) * size, y: Math.round(py / size) * size };
+  }
+
+  /** 根据吸附点计算插入下标 */
+  function insertIndex(chips, x, y) {
+    const kids = Array.from(chips.children).filter((c) => {
+      return (c.classList.contains("chip") && !c.classList.contains("dragging")) || c.classList.contains("slot");
+    });
+    const mid = y;
+    let best = null, bestD = Infinity;
+    for (let i = 0; i < kids.length; i++) {
+      const r = kids[i].getBoundingClientRect();
+      const dx = x < r.left ? r.left - x : x > r.right ? x - r.right : 0;
+      const dy = mid < r.top ? r.top - mid : mid > r.bottom ? mid - r.bottom : 0;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    if (best === null) return 0;
+    const r = kids[best].getBoundingClientRect();
+    const after = x > r.left + r.width / 2;
+    return after ? best + 1 : best;
+  }
+
+  /** 拖到屏幕上下边缘时自动滚动 */
+  function scheduleAutoScroll(py) {
+    cancelAnimationFrame(drag.raf);
+    const edge = 72;
+    const max = window.innerHeight;
+    let dy = 0;
+    if (py < edge) dy = -Math.ceil((edge - py) / 6);
+    else if (py > max - edge) dy = Math.ceil((py - (max - edge)) / 6);
+    if (!dy) return;
+    const step = () => {
+      if (!drag) return;
+      window.scrollBy(0, dy);
+      drag.raf = requestAnimationFrame(step);
+    };
+    drag.raf = requestAnimationFrame(step);
+  }
+
+  /* ——— 栏内重排辅助 ——— */
+  function removeFromOrder(id) {
+    Object.keys(order).forEach((k) => {
+      const i = order[k].indexOf(id);
+      if (i >= 0) order[k].splice(i, 1);
+    });
+  }
+  function laneOf(id) {
+    return Object.keys(order).find((k) => order[k].indexOf(id) >= 0) || null;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     7. 右键 / 长按菜单
+     ═══════════════════════════════════════════════════════════ */
+
+  let menu = null;
+
+  board.addEventListener("contextmenu", (e) => {
+    const el = e.target.closest(".chip");
+    if (!el) return;
+    e.preventDefault();
+    openMenu(el.getAttribute("data-id"), e.clientX, e.clientY);
+  });
+
+  function closeMenu() {
+    if (menu) { menu.remove(); menu = null; }
+    document.removeEventListener("pointerdown", onDocDown, true);
+    document.removeEventListener("keydown", onMenuKey, true);
+    window.removeEventListener("resize", closeMenu);
+    window.removeEventListener("scroll", closeMenu, true);
+  }
+  function onDocDown(e) { if (menu && !menu.contains(e.target)) closeMenu(); }
+  function onMenuKey(e) { if (e.key === "Escape") { closeMenu(); e.stopPropagation(); } }
+
+  function openMenu(id, x, y) {
+    closeMenu();
+    const it = items.get(id);
+    if (!it) return;
+    const pct = Math.round(it.fitScale * it.scale * 100);
+
+    menu = document.createElement("div");
+    menu.className = "menu";
+    menu.setAttribute("role", "menu");
+    menu.innerHTML =
+      '<div class="mhead">' + esc(it.name) + " · 当前 " + pct + "%</div>" +
+      '<div class="row">' +
+        '<span aria-hidden="true" style="color:var(--dim)">' + icon('<path d="M4 12h16"/>') + "</span>" +
+        '<input type="range" min="20" max="300" step="5" value="' + clamp(pct, 20, 300) + '" id="mScale" aria-label="大小">' +
+        '<span class="val" id="mVal">' + pct + "%</span>" +
+      "</div>" +
+      '<div class="msep"></div>' +
+      '<button type="button" data-act="fit">重置为合适大小<span class="k">' + Math.round(it.fitScale * 100) + "%</span></button>" +
+      '<button type="button" data-act="min">最小（塞得下就行）</button>' +
+      (it.kind === "svg" ? '<button type="button" data-act="copy">复制 SVG 代码</button>' : "") +
+      '<button type="button" data-act="front">放到本栏最前</button>' +
+      '<div class="msep"></div>' +
+      '<button type="button" class="danger" data-act="del">移除这个素材</button>';
+
+    document.body.appendChild(menu);
+
+    // 贴边修正
+    const r = menu.getBoundingClientRect();
+    const left = clamp(x, 8, Math.max(8, window.innerWidth - r.width - 8));
+    const top = clamp(y, 8, Math.max(8, window.innerHeight - r.height - 8));
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+
+    const range = menu.querySelector("#mScale");
+    const val = menu.querySelector("#mVal");
+    let raf = 0;
+    range.addEventListener("input", () => {
+      const v = Number(range.value);
+      val.textContent = v + "%";
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => { setScale(id, v / 100 / it.fitScale); });
+    });
+    range.addEventListener("change", () => saveSoon());
+    range.addEventListener("keydown", (e) => e.stopPropagation());
+
+    menu.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-act]");
+      if (!b) return;
+      const act = b.getAttribute("data-act");
+      const at = laneOf(id);
+      if (act === "fit") { setScale(id, 1); saveSoon(); if (at) paint([at]); }
+      if (act === "min") { setScale(id, 0.55); saveSoon(); if (at) paint([at]); }
+      if (act === "front") {
+        const lane = at || "reserve";
+        removeFromOrder(id);
+        order[lane].unshift(id);
+        saveSoon(); paint([lane]);
+      }
+      if (act === "del") { closeMenu(); removeItem(id); return; }
+      if (act === "copy") { copySvg(it); }
+      closeMenu();
+    });
+
+    document.addEventListener("pointerdown", onDocDown, true);
+    document.addEventListener("keydown", onMenuKey, true);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+  }
+
+  function setScale(id, factor) {
+    const it = items.get(id);
+    if (!it) return;
+    it.scale = cx(factor);
+    const el = board.querySelector('.chip[data-id="' + id + '"]');
+    if (el) {
+      const d = dims(it);
+      el.style.width = d.w + "px";
+      el.style.height = d.h + "px";
+    }
+    const val = menu && menu.querySelector("#mVal");
+    if (val) val.textContent = Math.round(it.fitScale * it.scale * 100) + "%";
+  }
+
+  function copySvg(it) {
+    const text = it.svgText || "";
+    if (!text) return;
+    const done = () => flashMsg("dataMsg", "已复制 SVG 代码到剪贴板", false);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+    } else fallbackCopy(text, done);
+  }
+  function fallbackCopy(text, done) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      done();
+    } catch (e) { /* 复制失败就算了，不打扰用户 */ }
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     8. 键盘操作（可访问性）
+     ═══════════════════════════════════════════════════════════ */
+
+  board.addEventListener("keydown", (e) => {
+    const el = e.target.closest(".chip");
+    if (!el) return;
+    const id = el.getAttribute("data-id");
+    const lane = laneOf(id);
+    if (!lane) return;
+    const ids = order[lane];
+
+    if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault(); removeItem(id); return;
+    }
+    if (e.key === "+" || e.key === "=") { e.preventDefault(); setScale(id, cx(items.get(id).scale * 1.15)); saveSoon(); return; }
+    if (e.key === "-" || e.key === "_") { e.preventDefault(); setScale(id, cx(items.get(id).scale / 1.15)); saveSoon(); return; }
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      // 左右：在本栏里换位置
+      const i = ids.indexOf(id);
+      const j = clamp(i + (e.key === "ArrowRight" ? 1 : -1), 0, ids.length - 1);
+      if (i === j) return;
+      e.preventDefault();
+      ids.splice(i, 1); ids.splice(j, 0, id);
+      saveSoon(); paint([lane]); focusChip(id);
+      return;
+    }
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      // 上下：换到相邻的等级栏（排在那一栏的最后）
+      e.preventDefault();
+      const keys = Object.keys(order);
+      const i = keys.indexOf(lane);
+      const j = clamp(i + (e.key === "ArrowDown" ? 1 : -1), 0, keys.length - 1);
+      if (i === j) return;
+      removeFromOrder(id);
+      order[keys[j]].push(id);
+      saveSoon(); paint([lane, keys[j]]); focusChip(id);
+      return;
+    }
+  });
+
+  function focusChip(id) {
+    const el = board.querySelector('.chip[data-id="' + id + '"]');
+    if (el) el.focus();
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     9. 素材增删
+     ═══════════════════════════════════════════════════════════ */
+
+  function fitSize(w, h) {
+    const longest = Math.max(w, h);
+    if (!longest) return 1;
+    const target = clamp(MAX_EDGE, MIN_EDGE, MAX_EDGE);
+    if (longest <= target && longest >= MIN_EDGE) return 1;
+    return target / longest;
+  }
+
+  /** 记一个素材：w/h 是原始像素尺寸，缺省按 MAX_EDGE 处理 */
+  function addImage(src, name, w, h, svgText) {
+    const ow = Number(w) > 0 ? Number(w) : MAX_EDGE;
+    const oh = Number(h) > 0 ? Number(h) : MAX_EDGE;
+    const it = {
+      id: uid(),
+      kind: svgText ? "svg" : "image",
+      src: src,
+      svgText: svgText || "",
+      name: name || "素材",
+      w: ow,
+      h: oh,
+      fitScale: 1,
+      scale: 1,
+    };
+    // 自动等比缩放到合适大小
+    it.scale = cx(fitSize(ow, oh));
+    items.set(it.id, it);
+    order.reserve.push(it.id);
+    repaintLane("reserve");
+    return it;
+  }
+
+  function removeItem(id) {
+    const lane = laneOf(id);
+    removeFromOrder(id);
+    items.delete(id);
+    saveNow();
+    if (lane) paint([lane]);
+    else renderAll();
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     10. 上传：文件 + 粘贴 SVG
+     ═══════════════════════════════════════════════════════════ */
+
+  const filePick = $("#filePick");
+  $("#btnPick").addEventListener("click", () => filePick.click());
+  filePick.addEventListener("change", () => {
+    handleFiles(filePick.files, () => { filePick.value = ""; });
+  });
+
+  const OK_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"];
+  const OK_EXT = /\.(jpe?g|png|webp|svg|ico)$/i;
+
+  function handleFiles(files, done) {
+    const list = Array.from(files || []);
+    if (!list.length) { if (done) done(); return; }
+    const bad = list.filter((f) => !OK_TYPES.includes(f.type) && !OK_EXT.test(f.name || ""));
+    if (bad.length) flashMsg("dataMsg", "跳过不支持的文件：" + bad.map((f) => f.name).join("、"), true);
+    const good = list.filter((f) => OK_TYPES.includes(f.type) || OK_EXT.test(f.name || ""));
+    const tooBig = good.filter((f) => f.size > MAX_FILE_MB * 1024 * 1024);
+    if (tooBig.length) flashMsg("dataMsg", "超过 " + MAX_FILE_MB + "MB 的先跳过了：" + tooBig.map((f) => f.name).join("、"), true);
+    const todo = good.filter((f) => f.size <= MAX_FILE_MB * 1024 * 1024);
+
+    let left = todo.length;
+    if (!left) { if (done) done(); return; }
+    todo.forEach((f) => {
+      readFile(f, () => { if (--left === 0) { saveNow(); if (done) done(); } });
+    });
+  }
+
+  function readFile(file, cb) {
+    // SVG 当文本读：既能顺手做一次轻量清理，也能把源码留着（右键可复制）
+    if (/svg/i.test(file.type) || /\.svg$/i.test(file.name)) {
+      const t = new FileReader();
+      t.onerror = () => cb();
+      t.onload = () => { addSvgText(String(t.result || ""), file.name, cb); };
+      t.readAsText(file);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => cb();
+    reader.onload = () => {
+      const url = reader.result;
+      if (typeof url !== "string") { cb(); return; }
+      const probe = new Image();
+      probe.onload = () => {
+        const w = probe.naturalWidth || MAX_EDGE;
+        const h = probe.naturalHeight || MAX_EDGE;
+        /* 原图先按「看得见的最长边」缩一遍再存。
+           手机随手一张就是 4000×3000，那个 data URL 有好几 MB：
+           十几张就能把 localStorage 撑爆、把主线程卡住（拖动会一顿一顿的）。
+           榜单里一张素材最长也就 84px，留到 1024px 已经远远够看。 */
+        const shrunk = shrinkImage(probe, w, h, (file.type || "").indexOf("png") === 0);
+        addImage(shrunk || url, file.name, w, h, "");
+        cb();
+      };
+      probe.onerror = () => { flashMsg("dataMsg", "读不出这张图：" + file.name, true); cb(); };
+      probe.src = url;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * 把过大的位图缩到 MAX_PIXEL 以内，返回新的 data URL。
+   * 缩不了（画布被污染、浏览器不支持）就返回 null，调用方用原图。
+   */
+  function shrinkImage(img, w, h, keepAlpha) {
+    const longest = Math.max(w, h);
+    if (longest <= MAX_PIXEL) return null;
+    try {
+      const c = document.createElement("canvas");
+      const s = MAX_PIXEL / longest;
+      c.width = Math.max(1, Math.round(w * s));
+      c.height = Math.max(1, Math.round(h * s));
+      const g = c.getContext("2d");
+      if (!g) return null;
+      g.drawImage(img, 0, 0, c.width, c.height);
+      /* PNG 留 PNG（可能有透明），其余压成 JPEG 省地方 */
+      return keepAlpha ? c.toDataURL("image/png") : c.toDataURL("image/jpeg", 0.88);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** 把 SVG 源码变成可直接放进 <img> 的数据 URL（顺手去掉脚本和事件属性） */
+  function svgDataUrl(text) {
+    const cleaned = String(text)
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "")
+      .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "");
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(cleaned);
+  }
+
+  /** 加入一段 SVG 源码；返回是否被接受 */
+  function addSvgText(text, name, cb) {
+    const t = String(text || "").trim();
+    if (!t || !/<svg[\s>]/i.test(t)) {
+      flashMsg("svgMsg", "这看着不像一整段 SVG（得包含 <svg …>）", true);
+      if (cb) cb();
+      return false;
+    }
+    const url = svgDataUrl(t);
+    const probe = new Image();
+    probe.onload = () => {
+      addImage(url, name || "SVG 素材", probe.naturalWidth, probe.naturalHeight, t);
+      if (cb) cb();
+    };
+    probe.onerror = () => {
+      // 量不出尺寸就用默认边长，图本身还能显示
+      addImage(url, name || "SVG 素材", MAX_EDGE, MAX_EDGE, t);
+      if (cb) cb();
+    };
+    probe.src = url;
+    return true;
+  }
+
+  // 直接往页面上拖文件
+  ["dragenter", "dragover"].forEach((ev) => {
+    document.addEventListener(ev, (e) => {
+      if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes("Files")) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    });
+  });
+  document.addEventListener("drop", (e) => {
+    if (!e.dataTransfer) return;
+    const files = Array.from(e.dataTransfer.files || []);
+    if (!files.length) return;
+    e.preventDefault();
+    const json = files.find((f) => /\.json$/i.test(f.name) || f.type === "application/json");
+    if (json && files.length === 1) {
+      const r = new FileReader();
+      r.onload = () => importData(String(r.result || ""));
+      r.readAsText(json);
+      return;
+    }
+    handleFiles(files, null);
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     11. 设置面板
+     ═══════════════════════════════════════════════════════════ */
+
+  const dlg = $("#settings");
+  const tierRows = $("#tierRows");
+  const presetRows = $("#presetRows");
+  const presetBar = $("#presetBar");
+
+  /** 一套预设的按钮（顶栏与设置面板共用同一份标记） */
+  function presetButton(p, compact) {
+    const on = cfg.preset === p.id;
+    return '<button type="button" class="preset' + (on ? " on" : "") + '" data-preset="' + p.id + '"' +
+      ' aria-pressed="' + (on ? "true" : "false") + '" title="' + esc(p.name + " · " + p.note) + '">' +
+      '<span class="chip5" aria-hidden="true">' + p.fill.map((c) => '<i style="background:' + c + '"></i>').join("") + "</span>" +
+      '<span class="txt"><b>' + esc(p.id + " " + p.name) + "</b>" + (compact ? "" : "<small>" + esc(p.note) + "</small>") + "</span>" +
+      icon('<path d="M4.5 12.5 9.5 17.5 19.5 7"/>', "tick") +
+    "</button>";
+  }
+
+  function buildPresetUI() {
+    presetBar.innerHTML = PRESETS.map((p) => presetButton(p, true)).join("");
+    presetRows.innerHTML = PRESETS.map((p) => presetButton(p, false)).join("");
+  }
+
+  /** 切换预设：覆盖标签与配色（标签文字沿用当前的风格选择） */
+  function applyPreset(id) {
+    const p = presetById(id);
+    if (!p) return;
+    const style = cfg.labelStyle === "t" ? "t" : "cn";
+    const st = presetState(id, style);
+    cfg.preset = id;
+    cfg.labelStyle = style;
+    cfg.labels = st.labels;
+    cfg.colors = st.colors;
+    buildPresetUI();
+    buildTierRows();
+    paint();
+    save();
+  }
+
+  /** 切中文标签 / T0–T4 编号：只换文字，配色不动，切完就算自定义了 */
+  function applyLabelStyle(style) {
+    const names = style === "t" ? T_LABELS : CN_LABELS;
+    cfg.labelStyle = style;
+    cfg.preset = "custom";
+    TIERS.forEach((t, i) => { cfg.labels[t.key] = names[i]; });
+    buildPresetUI();
+    buildTierRows();
+    paint();
+    save();
+  }
+
+  function buildTierRows() {
+    const defs = TIERS.map((t) => ({ key: t.key, label: cfg.labels[t.key] || t.label, color: cfg.colors[t.key] || t.color }))
+      .concat([{ key: "reserve", label: cfg.labels.reserve || RESERVE_LABEL, color: cfg.accent }]);
+    tierRows.innerHTML = defs.map((d) => {
+      const isReserve = d.key === "reserve";
+      return '<div class="tierrow" data-key="' + d.key + '">' +
+        '<div class="tag" data-tag="' + d.key + '" style="background:' + esc(d.color) +
+          ";color:" + esc(inkOn(d.color)) + '">' + esc(d.label) + "</div>" +
+        (isReserve ? "" : '<input type="color" value="' + esc(d.color) + '" data-color="' + d.key + '" aria-label="' + esc(d.label) + '的背景色">') +
+        '<input class="input" type="text" maxlength="14" value="' + esc(d.label) + '" data-label-input="' + d.key + '" aria-label="' + esc(d.label) + '的标签文字" placeholder="标签文字">' +
+        "</div>";
+    }).join("");
+    syncTierTint();
+    syncLabelStyle();
+  }
+
+  function syncLabelStyle() {
+    const box = $("#labelStyle");
+    if (!box) return;
+    Array.prototype.forEach.call(box.querySelectorAll("button"), (b) => {
+      b.classList.toggle("on", b.getAttribute("data-style") === cfg.labelStyle);
+    });
+  }
+
+  function syncTierTint() {
+    cfg.labels.reserve = cfg.labels.reserve || RESERVE_LABEL;
+    cfg.colors.reserve = cfg.accent;
+    const rt = tierRows.querySelector('[data-tag="reserve"]');
+    if (rt) { rt.style.background = cfg.accent; rt.textContent = cfg.labels.reserve; }
+  }
+
+  // 顶栏 / 设置面板里的预设按钮
+  [presetBar, presetRows].forEach((box) => {
+    box.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-preset]");
+      if (b) applyPreset(b.getAttribute("data-preset"));
+    });
+  });
+
+  // 标签文字风格
+  $("#labelStyle").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-style]");
+    if (b) applyLabelStyle(b.getAttribute("data-style"));
+  });
+
+  $("#btnSettings").addEventListener("click", () => {
+    $("#snapOn").checked = !!cfg.snap;
+    $("#snapSize").value = String(cfg.snapSize);
+    $("#snapVal").textContent = "（" + (cfg.snapSize > 0 ? cfg.snapSize + "px" : "关") + "）";
+    buildPresetUI();
+    if (!tierRows.children.length) buildTierRows();
+    else { syncLabelStyle(); syncTierTint(); }
+    if (typeof dlg.showModal === "function") dlg.showModal();
+    else dlg.setAttribute("open", "");
+  });
+
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+
+  /** 手动改了标签或颜色 —— 就不再算某一套预设了，标成「自定义」 */
+  function markCustom() {
+    if (cfg.preset === "custom") return;
+    cfg.preset = "custom";
+    buildPresetUI();
+  }
+
+  // 标签文字 / 配色：边打边生效（只重画受影响的那一栏，图片不会闪）
+  tierRows.addEventListener("input", (e) => {
+    const t = e.target;
+    const lk = t.getAttribute("data-label-input");
+    if (lk) {
+      cfg.labels[lk] = t.value;
+      const tag = tierRows.querySelector('[data-tag="' + lk + '"]');
+      if (tag) tag.textContent = t.value;
+      markCustom();
+      paint([lk]); saveSoon();
+      return;
+    }
+    const ck = t.getAttribute("data-color");
+    if (ck) {
+      cfg.colors[ck] = t.value;
+      const tag = tierRows.querySelector('[data-tag="' + ck + '"]');
+      if (tag) { tag.style.background = t.value; tag.style.color = inkOn(t.value); }
+      markCustom();
+      paint([ck]); saveSoon();
+    }
+  });
+
+  $("#snapOn").addEventListener("change", (e) => { cfg.snap = e.target.checked; saveSoon(); });
+  $("#snapSize").addEventListener("input", (e) => {
+    cfg.snapSize = clamp(Number(e.target.value) || 0, 0, 50);
+    $("#snapVal").textContent = "（" + (cfg.snapSize > 0 ? cfg.snapSize + "px" : "关") + "）";
+    if (cfg.snapSize > 0 && !$("#snapOn").checked) { $("#snapOn").checked = true; cfg.snap = true; }
+    save();
+  });
+
+  // 粘贴 SVG
+  $("#svgGo").addEventListener("click", () => {
+    const text = $("#svgCode").value;
+    if (!text.trim()) { flashMsg("svgMsg", "先贴一段 SVG 代码进来", true); return; }
+    const it = addSvgText(text, "SVG 素材", () => { saveNow(); });
+    if (it) {
+      flashMsg("svgMsg", "已加入备选栏", false);
+      $("#svgCode").value = "";
+    }
+  });
+  $("#svgClear").addEventListener("click", () => { $("#svgCode").value = ""; flashMsg("svgMsg", "", false); });
+  $("#svgCode").addEventListener("keydown", (e) => e.stopPropagation());
+
+  // 存档
+  $("#btnExport").addEventListener("click", () => {
+    const payload = { v: 1, app: "tiermaker", cfg: cfg, order: order, items: Array.from(items.values()) };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const d = new Date();
+    const stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") +
+      "-" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0");
+    a.href = url;
+    a.download = "从夯到拉-" + stamp + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    flashMsg("dataMsg", "已导出 JSON 存档", false);
+  });
+
+  $("#btnImport").addEventListener("click", () => $("#importPick").click());
+  $("#importPick").addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { importData(String(r.result || "")); e.target.value = ""; };
+    r.readAsText(f);
+  });
+
+  function importData(text) {
+    let data;
+    try { data = JSON.parse(text); } catch (e) { flashMsg("dataMsg", "这不是有效的 JSON 文件", true); return; }
+    if (!data || typeof data !== "object") { flashMsg("dataMsg", "JSON 结构不对", true); return; }
+
+    items.clear();
+    Object.keys(order).forEach((k) => { order[k] = []; });
+
+    if (data.cfg && typeof data.cfg === "object") cfg = normalizeCfg(data.cfg);
+
+    (Array.isArray(data.items) ? data.items : []).forEach((it) => {
+      if (!it || !it.id || !it.src) return;
+      items.set(it.id, {
+        id: it.id,
+        kind: it.kind === "svg" ? "svg" : "image",
+        src: it.src,
+        svgText: typeof it.svgText === "string" ? it.svgText : "",
+        name: String(it.name || "素材"),
+        w: Number(it.w) || MAX_EDGE,
+        h: Number(it.h) || MAX_EDGE,
+        fitScale: Number(it.fitScale) || 1,
+        scale: cx(Number(it.scale) || 1),
+      });
+    });
+
+    if (data.order && typeof data.order === "object") {
+      Object.keys(order).forEach((k) => {
+        order[k] = (Array.isArray(data.order[k]) ? data.order[k] : []).filter((id) => items.has(id));
+      });
+    }
+    ensurePlaced();
+    buildPresetUI();
+    buildTierRows();
+    renderAll();
+    save();
+    flashMsg("dataMsg", "已导入 " + items.size + " 个素材", false);
+  }
+
+  $("#btnReset").addEventListener("click", () => {
+    if (!confirm("恢复预设 A（经典）的标签、配色和默认网格设置？（素材和排布会留着）")) return;
+    cfg = clone(DEFAULT_CFG);
+    buildPresetUI();
+    buildTierRows();
+    $("#snapOn").checked = cfg.snap;
+    $("#snapSize").value = String(cfg.snapSize);
+    $("#snapVal").textContent = "（" + cfg.snapSize + "px）";
+    document.documentElement.style.setProperty("--theme", cfg.accent);
+    paint();
+    save();
+  });
+
+  $("#btnWipe").addEventListener("click", () => {
+    if (!items.size) { flashMsg("dataMsg", "本来就是空的", false); return; }
+    if (!confirm("清空全部 " + items.size + " 个素材？这个动作没法撤销。")) return;
+    items.clear();
+    Object.keys(order).forEach((k) => { order[k] = []; });
+    save();
+    paint();
+    flashMsg("dataMsg", "已清空", false);
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     12. 提示条
+     ═══════════════════════════════════════════════════════════ */
+
+  const banner = $("#banner");
+  function showBanner(text) { $("#bannerText").textContent = text; banner.hidden = false; }
+  function hideBanner() { banner.hidden = true; }
+
+  let msgTimer = 0;
+  function flashMsg(elId, text, isError) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    clearTimeout(msgTimer);
+    el.textContent = text || "";
+    el.className = isError ? "err-msg" : "ok-msg";
+    if (text) {
+      msgTimer = setTimeout(() => {
+        if (el.textContent === text) el.textContent = "";
+      }, 4200);
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     13. 启动
+     ═══════════════════════════════════════════════════════════ */
+
+  load();
+  buildPresetUI();
+  buildTierRows();
+  renderAll();
+
+  // 首次访问：塞一个示例，免得一片空白不知道能干什么
+  let seen = null;
+  try { seen = localStorage.getItem(STORE_KEY + ".seen"); } catch (e) { seen = "1"; }
+  if (!items.size && !seen) {
+    try { localStorage.setItem(STORE_KEY + ".seen", "1"); } catch (e) { /* 无所谓 */ }
+    addSvgText(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
+      '<rect width="32" height="32" rx="7" fill="#D97757"/>' +
+      '<path d="M8 20.5 13 14l4 4.5L18.5 16l5.5 4.5z" fill="#fff" opacity=".92"/>' +
+      '<circle cx="11" cy="11" r="2.6" fill="#fff" opacity=".92"/></svg>',
+      "示例素材", () => saveNow());
+  }
+
+  /* 还没落盘的改动，在页面被藏起来 / 关掉之前补写一次 */
+  window.addEventListener("pagehide", flushSave);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushSave();
+  });
+})();
+</script>
+</body>
+</html>

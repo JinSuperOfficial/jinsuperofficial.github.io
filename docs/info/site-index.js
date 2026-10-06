@@ -145,6 +145,42 @@ window.SITE_INDEX = {
       "dir": true,
       "children": [
         {
+          "name": "homework/",
+          "dir": true,
+          "children": [
+            {
+              "name": "bg_botanical.jpg"
+            },
+            {
+              "name": "bg_grid.jpg"
+            },
+            {
+              "name": "bg_ink.jpg"
+            },
+            {
+              "name": "bg_map.jpg"
+            },
+            {
+              "name": "chinese.jpg"
+            },
+            {
+              "name": "egg_background.jpg"
+            },
+            {
+              "name": "english.jpg"
+            },
+            {
+              "name": "math.jpg"
+            },
+            {
+              "name": "science.jpg"
+            },
+            {
+              "name": "social.jpg"
+            }
+          ]
+        },
+        {
           "name": "icon/",
           "dir": true,
           "children": [],
@@ -468,6 +504,9 @@ window.SITE_INDEX = {
             },
             {
               "name": "test_html_20260919_d04d4f.html"
+            },
+            {
+              "name": "tiermaker.html"
             }
           ]
         },
