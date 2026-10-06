@@ -1,7 +1,7 @@
 {
 	"启程": {
-		"启程篇": "para/1SetUp.md",
-		"测试文档（归档）": "archive/TEST.html"
+		"测试文档（归档）": "archive/TEST.html",
+		"1SetUp": "para/1SetUp.md"
 	},
 	"811Studio": {
 		"科技节活动方案": "science.md",
@@ -9,7 +9,7 @@
 	},
 	"奇思妙想": {
 		"索引": "idea/index.md",
-		"1.归途，且慢.": "idea/1.归途且慢.md",
-		"2.Screen Off,To the Real World": "archive/2.ScreenOff.html"
+		"2.Screen Off,To the Real World": "archive/2.ScreenOff.html",
+		"1.归途，且慢.（归档）": "archive/idea/1.归途且慢.html"
 	}
 }

@@ -919,8 +919,16 @@ function imgRenderAdapter(md) {
 
 /**
  * 创建一个配置好的 markdown-it 实例。
- * @param {{ externalLinkTarget?: boolean }} [opts]
+ * @param {{
+ *   externalLinkTarget?: boolean,
+ *   highlight?: boolean,
+ *   setup?: Array<(md) => void>,
+ * }} [opts]
  *   externalLinkTarget：外链是否加 target="_blank"（预渲染时我们交给客户端处理，默认 false）
+ *   setup：可选的**外挂装配函数**，在全部内置规则装好之后依次调用。
+ *     发布控制台用它挂「只在预览里生效」的增强（图表 / 外部 markdown-it 插件），
+ *     文档站构建不传这个参数，所以站点产物一个字节都不受影响。
+ *     单个 setup 抛错只记进 md.__setupErrors，不会让整篇渲染挂掉。
  */
 function createRenderer(opts) {
   opts = opts || {};
@@ -1028,6 +1036,20 @@ function createRenderer(opts) {
   /* 把 slugger 挂出来，给 renderMarkdown 的单例复用做重置用 */
   md.__slugify = slugify;
 
+  /* 外挂装配：控制台预览的图表 / 外部插件走这里（见 render.mjs、md-extras.mjs）。
+     放最后是因为它们要包住已经装好的 fence 渲染器（代码块兜底）。 */
+  md.__setupErrors = [];
+  if (Array.isArray(opts.setup)) {
+    opts.setup.forEach((fn, i) => {
+      if (typeof fn !== 'function') return;
+      try {
+        fn(md);
+      } catch (e) {
+        md.__setupErrors.push('setup[' + i + ']: ' + (e && e.message ? e.message : e));
+      }
+    });
+  }
+
   return md;
 }
 
@@ -1053,15 +1075,24 @@ function ensureEngines() {
   }
 }
 
+/**
+ * 用**指定实例**渲染一段 Markdown。
+ * 单例 renderMarkdown 之外的实例都要走这里：它会先把标题计数清掉，
+ * 否则同一实例连着渲染多篇时，第二篇的标题会莫名带上 -2、-3 后缀。
+ */
+function renderWith(md, src) {
+  if (!md || typeof md.render !== 'function') {
+    throw new TypeError('renderWith：第一个参数得是 createRenderer() 出来的实例');
+  }
+  if (md.__slugify && typeof md.__slugify.reset === 'function') md.__slugify.reset();
+  return md.render(String(src == null ? '' : src), {});
+}
+
 /** Markdown 源码 → HTML 片段 */
 function renderMarkdown(src) {
   ensureEngines();
   if (!shared) shared = createRenderer();
-  /* 单例复用：每次渲染前把标题计数清掉，否则标题会累积成 xxx-2、xxx-3 */
-  if (shared.__slugify && typeof shared.__slugify.reset === 'function') {
-    shared.__slugify.reset();
-  }
-  return shared.render(String(src == null ? '' : src), {});
+  return renderWith(shared, src);
 }
 
 
@@ -1072,8 +1103,10 @@ function renderMarkdown(src) {
 module.exports = {
   KATEX_OPTIONS: KATEX_OPTIONS,
   setEngines: setEngines,
+  ensureEngines: ensureEngines,
   createSlugger: createSlugger,
   createRenderer: createRenderer,
+  renderWith: renderWith,
   renderMarkdown: renderMarkdown,
 };
 };

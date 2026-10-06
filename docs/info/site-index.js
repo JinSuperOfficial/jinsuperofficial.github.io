@@ -272,6 +272,15 @@ window.SITE_INDEX = {
               ]
             },
             {
+              "name": "idea/",
+              "dir": true,
+              "children": [
+                {
+                  "name": "1.归途且慢.html"
+                }
+              ]
+            },
+            {
               "name": "2.ScreenOff.html"
             },
             {
@@ -362,7 +371,7 @@ window.SITE_INDEX = {
           "dir": true,
           "children": [
             {
-              "name": "1.归途且慢.md"
+              "name": "枣香童年.md"
             },
             {
               "name": "index.md"
@@ -422,9 +431,6 @@ window.SITE_INDEX = {
         },
         {
           "name": "SKILL.md"
-        },
-        {
-          "name": "temp-homework.md"
         },
         {
           "name": "viewer.html"
