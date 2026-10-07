@@ -1,12 +1,10 @@
-name: 每日作业推送
+name: 作业修改自动推送
 
 on:
-  # 允许你手动点击按钮触发（用于测试）
-  workflow_dispatch:
-  # 定时触发（注意：默认是 UTC 时间，比北京时间晚 8 小时）
-  schedule:
-    # 以下代表 UTC 时间 09:00，对应北京时间下午 17:00
-    - cron: '0 9 * * *'
+  push:
+    paths:
+      - 'data/homework.json' # 只在 homework.json 被修改时触发
+  workflow_dispatch: # 保留手动测试按钮
 
 jobs:
   push:
@@ -14,6 +12,8 @@ jobs:
     steps:
       - name: 检查代码
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # 拉取最近2次提交，用于对比差异（可选）
 
       - name: 设置 Python 环境
         uses: actions/setup-python@v5
@@ -25,8 +25,16 @@ jobs:
 
       - name: 执行推送脚本
         env:
-          # 敏感信息依然通过 GitHub Secrets 传入
           WX_APPID: ${{ secrets.WX_APPID }}
           WX_SECRET: ${{ secrets.WX_SECRET }}
           WX_TEMPLATE_ID: ${{ secrets.WX_TEMPLATE_ID }}
         run: python push_homework.py
+
+      # 自动提交哈希文件，防止下次重复推送
+      - name: 提交哈希记录
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add last_push_hash.txt
+          git diff --quiet && git diff --staged --quiet || git commit -m "更新推送哈希记录 [skip ci]"
+          git push
