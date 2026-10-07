@@ -51,8 +51,10 @@ window.DocsMd = {
   full: function(){ return true; },
   missing: function(){ return []; },
 
-  /* Markdown 源码 → HTML 字符串 */
-  render: function(src){ return md.render(String(src == null ? '' : src), {}); },
+  /* Markdown 源码 → HTML 字符串（顶部 frontmatter 自动变成元数据卡片）。
+     必须走 M.renderWith：markdown-it 本身不认识 frontmatter，
+     直接 md.render 会把那段 YAML 当正文画出来，构建期和浏览器端就对不上了。 */
+  render: function(src){ return M.renderWith(md, src); },
 
   /* 渲染进指定元素 */
   renderInto: function(el, src){
@@ -61,6 +63,14 @@ window.DocsMd = {
     el.innerHTML = html;
     return html;
   },
+
+  /* 拆 frontmatter：页面要拿 title / date / tags 这些元数据时用它。
+     和渲染器内部是同一份实现，不会两边解析出不同结果。 */
+  frontmatter: function(src){ return M.parseFrontmatter(src); },
+
+  /* frontmatter 的元数据卡片（渲染器已内联在 render() 里，这里是给
+     静态文章页之类需要自己摆放位置的场景用的） */
+  renderFrontmatter: function(data, opts){ return M.renderFrontmatter(data, opts); },
 
   version: 'local',
 };
@@ -914,6 +924,452 @@ function imgRenderAdapter(md) {
 }
 
 /* ═══════════════════════════════════════════════════
+   Frontmatter（文章头信息）
+   ---------------------------------------------------
+   文件开头写一段：
+
+     ---
+     title: 枣香童年
+     date: 2026-10-06
+     tags: [随笔, 童年]
+     ---
+
+   解析出来的是「元数据」，正文照常渲染。这一段在
+   构建期（预渲染）与浏览器端（现场渲染）走的是同一份代码，
+   所以两边排版一模一样 —— 这也是当初把渲染核心抽出来的理由。
+
+   只实现 Markdown 文档真用得上的 YAML 子集：
+     · key: value（引号、true/false/null、数字、裸字符串）
+     · 行内数组 [a, b, "c"]、行内映射 {k: v}
+     · 块数组（- 项，可缩进）
+     · 一层嵌套映射
+     · 块标量 >（折叠）与 |（原样）
+     · 行尾 # 注释（引号里的 # 不算）
+   不支持的写法不会抛错，原样当成字符串，宁可难看也别把整篇弄挂。
+   ═══════════════════════════════════════════════════ */
+
+/** frontmatter 分隔线：文件第一行 + 一行 `---` 收尾 */
+var FM_RE = /^(-{3,})[ \t]*\r?\n([\s\S]*?)\r?\n(-{3,})[ \t]*(?=\r?\n|$)/;
+
+/** 分隔线里最多允许多少行 / 多少字符，超过就不当 frontmatter（防误判长文档） */
+var FM_MAX_LINES = 200;
+var FM_MAX_CHARS = 8000;
+
+/** 这些键是「控制字段」，只影响构建，不进元数据展示 */
+var FM_CONTROL_KEYS = {
+  draft: 1, hidden: 1, nopage: 1, slug: 1, permalink: 1, permalinkid: 1,
+  layout: 1, template: 1, type: 1, feed: 1, sort: 1, order: 1,
+  /* canonical：归档稿用来把重复内容指回真正的地址（见 console/lib/render.mjs） */
+  canonical: 1, redirect: 1, alias: 1, aliases: 1, weight: 1, publish: 1,
+  /* toc: false 能关掉正文开头自动生成的目录 */
+  toc: 1,
+};
+
+/** 去掉值后面不属于引号内容的 `# 注释` */
+function stripYamlComment(v) {
+  var quote = '';
+  for (var i = 0; i < v.length; i++) {
+    var c = v.charAt(i);
+    if (quote) {
+      if (c === '\\' && quote === '"') i++;
+      else if (c === quote) quote = '';
+      continue;
+    }
+    if (c === '"' || c === "'") { quote = c; continue; }
+    if (c === '#' && (i === 0 || /\s/.test(v.charAt(i - 1)))) return v.slice(0, i);
+  }
+  return v;
+}
+
+/** `"…"` / `'…'` / 裸值 → 字符串 */
+function unquoteYaml(v) {
+  var s = String(v).trim();
+  if (s.length > 1) {
+    var q = s.charAt(0);
+    if ((q === '"' || q === "'") && s.charAt(s.length - 1) === q) {
+      var inner = s.slice(1, -1);
+      if (q === '"') {
+        inner = inner.replace(/\\(["\\/nrt])/g, function (m, c) {
+          return c === 'n' ? '\n' : c === 'r' ? '\r' : c === 't' ? '\t' : c;
+        });
+      } else {
+        inner = inner.replace(/''/g, "'");
+      }
+      return inner;
+    }
+  }
+  return s;
+}
+
+/** 按顶层逗号切开 `a, b, [c, d], "e,f"` */
+function splitTopLevel(s) {
+  var out = [], buf = '', depth = 0, quote = '';
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charAt(i);
+    if (quote) {
+      buf += c;
+      if (c === '\\' && quote === '"') { buf += s.charAt(++i); continue; }
+      if (c === quote) quote = '';
+      continue;
+    }
+    if (c === '"' || c === "'") { quote = c; buf += c; continue; }
+    if (c === '[' || c === '{') depth++;
+    if (c === ']' || c === '}') depth--;
+    if (c === ',' && depth <= 0) { out.push(buf); buf = ''; continue; }
+    buf += c;
+  }
+  if (buf.trim() !== '' || out.length) out.push(buf);
+  return out.map(function (x) { return x.trim(); }).filter(function (x) { return x !== ''; });
+}
+
+/** 标量：引号 / 布尔 / null / 数字 / 字符串 */
+function parseYamlScalar(raw) {
+  var v = stripYamlComment(String(raw == null ? '' : raw)).trim();
+  if (v === '') return '';
+  if (v.charAt(0) === '[' && v.charAt(v.length - 1) === ']') {
+    return splitTopLevel(v.slice(1, -1)).map(parseYamlScalar);
+  }
+  if (v.charAt(0) === '{' && v.charAt(v.length - 1) === '}') {
+    var map = {};
+    splitTopLevel(v.slice(1, -1)).forEach(function (pair) {
+      var i = pair.indexOf(':');
+      if (i < 0) return;
+      map[unquoteYaml(pair.slice(0, i))] = parseYamlScalar(pair.slice(i + 1));
+    });
+    return map;
+  }
+  if (v.charAt(0) === '"' || v.charAt(0) === "'") return unquoteYaml(v);
+  if (/^(true|yes|on)$/i.test(v)) return true;
+  if (/^(false|no|off)$/i.test(v)) return false;
+  if (/^(null|~)$/i.test(v)) return null;
+  /* 日期（2026-10-06）、版本号（1.0.0）这类一律留字符串，别被数字吃掉 */
+  if (/^-?\d+(\.\d+)?$/.test(v)) return Number(v);
+  return v;
+}
+
+/** 值里的 `key: value` 位置（不在引号 / 括号里）；找不到返回 -1 */
+function findKeyColon(line) {
+  var quote = '', depth = 0;
+  for (var i = 0; i < line.length; i++) {
+    var c = line.charAt(i);
+    if (quote) {
+      if (c === '\\' && quote === '"') i++;
+      else if (c === quote) quote = '';
+      continue;
+    }
+    if (c === '"' || c === "'") { quote = c; continue; }
+    if (c === '[' || c === '{') depth++;
+    else if (c === ']' || c === '}') depth--;
+    /* 顶层第一个冒号就是键值分隔符；`title: 12:30` 里的第二个冒号不参与 */
+    else if (c === ':' && depth <= 0) return i;
+  }
+  return -1;
+}
+
+/** 缩进宽度（tab 当两个空格） */
+function yamlIndent(s) {
+  var m = /^[ \t]*/.exec(s);
+  return m ? m[0].replace(/\t/g, '  ').length : 0;
+}
+
+/** 空行或整行注释 */
+function yamlBlank(s) {
+  return s.trim() === '' || /^\s*#/.test(s);
+}
+
+/**
+ * 极简 YAML 块解析（游标式）。
+ * 只认一层到两层的常见写法，认不出来的行跳过 —— 解析器不能把整篇文档弄挂。
+ * @param {string} text
+ * @returns {object}
+ */
+function parseYamlBlock(text) {
+  var lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
+  var pos = 0;
+
+  /** 跳过空行与注释 */
+  function skipBlank() {
+    while (pos < lines.length && yamlBlank(lines[pos])) pos++;
+  }
+
+  /**
+   * 解析一段「缩进 >= min」的块。
+   * @param {number} min
+   * @param {boolean} intoArray  - 项开头就是数组
+   */
+  function parseBlock(min, intoArray) {
+    var out = intoArray ? [] : {};
+    for (;;) {
+      var save = pos;
+      skipBlank();
+      if (pos >= lines.length) break;
+      var line = lines[pos];
+      var ind = yamlIndent(line);
+      if (ind < min) { pos = save; break; }
+      var body = line.slice(ind);
+
+      if (intoArray) {
+        if (body.charAt(0) !== '-') break;
+        var item = body.slice(1).trim();
+        var itemColon = findKeyColon(item);
+        if (itemColon > 0) {
+          /* `- key: value` + 后续同项缩进行：先按对象解析本项 */
+          pos++;
+          var first = {};
+          var rest0 = item.slice(itemColon + 1).trim();
+          first[unquoteYaml(item.slice(0, itemColon))] = rest0 === ''
+            ? parseNestedValue(ind + 2)
+            : parseYamlScalar(rest0);
+          var more = parseBlock(ind + 2, false);
+          Object.keys(more).forEach(function (k) { first[k] = more[k]; });
+          out.push(first);
+          continue;
+        }
+        out.push(parseYamlScalar(item));
+        pos++;
+        continue;
+      }
+
+      var ci = findKeyColon(body);
+      if (ci < 0) { pos++; continue; }          /* 认不出来的行不拦路 */
+      var key = unquoteYaml(body.slice(0, ci));
+      var rest = body.slice(ci + 1).trim();
+
+      /* 块标量：`>` 折叠 / `|` 原样 */
+      if (/^[|>][+-]?\d*$/.test(rest)) {
+        var folded = rest.charAt(0) === '>';
+        var buf = [];
+        var blockIndent = -1;
+        pos++;
+        while (pos < lines.length) {
+          if (lines[pos].trim() === '') { buf.push(''); pos++; continue; }
+          var bi = yamlIndent(lines[pos]);
+          if (bi <= ind) break;
+          if (blockIndent < 0) blockIndent = bi;
+          buf.push(lines[pos].slice(blockIndent));
+          pos++;
+        }
+        while (buf.length && buf[buf.length - 1] === '') buf.pop();
+        out[key] = folded
+          ? buf.join('\n').replace(/([^\n])\n(?!\n)/g, '$1 ').replace(/\n{2,}/g, '\n\n').trim()
+          : buf.join('\n').replace(/\s+$/, '');
+        continue;
+      }
+
+      if (rest === '' || stripYamlComment(rest).trim() === '') {
+        pos++;
+        out[key] = parseNestedValue(ind + 1);
+        continue;
+      }
+
+      pos++;
+      out[key] = parseYamlScalar(rest);
+    }
+    return out;
+  }
+
+  /** 空值后面缩进的内容：`- ` 开头是数组，`k: v` 开头是映射，否则留空串 */
+  function parseNestedValue(min) {
+    var save = pos;
+    skipBlank();
+    if (pos >= lines.length) { pos = save; return ''; }
+    var line = lines[pos];
+    var ind = yamlIndent(line);
+    if (ind < min) { pos = save; return ''; }
+    var body = line.slice(ind);
+    if (body.charAt(0) === '-') return parseBlock(ind, true);
+    if (findKeyColon(body) > 0) return parseBlock(ind, false);
+    pos = save;
+    return '';
+  }
+
+  return parseBlock(0, false);
+}
+
+/**
+ * 拆出 Markdown 顶部的 frontmatter。
+ * @param {string} src
+ * @returns {{ok:boolean, data:object, body:string, raw:string}}
+ *   ok=false 时 body 就是原文，data 是空对象。
+ */
+function parseFrontmatter(src) {
+  var text = String(src == null ? '' : src).replace(/^\uFEFF/, '');
+  var none = { ok: false, data: {}, body: text, raw: '' };
+  var m = FM_RE.exec(text);
+  if (!m) return none;
+
+  var raw = m[2];
+  if (raw.length > FM_MAX_CHARS || raw.split('\n').length > FM_MAX_LINES) return none;
+  /* 一段真正的 frontmatter 至少得有一个 `key:` ——
+     否则那就是正文开头的一条水平线（`---`），别乱吃内容 */
+  if (!/^[ \t]*[^#\s][^:\n]*:/m.test(raw)) return none;
+
+  var data;
+  try {
+    data = parseYamlBlock(raw);
+  } catch (e) {
+    return none;
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data) || !Object.keys(data).length) return none;
+
+  return { ok: true, data: data, body: text.slice(m[0].length), raw: raw };
+}
+
+/**
+ * 元数据块的字段顺序与中文标签。
+ * `date` / `updated` 这类先按这里排，没提到的键排在后面（原样列出）。
+ */
+var FM_FIELD_ORDER = ['title', 'subtitle', 'date', 'updated', 'author', 'category', 'tags', 'summary'];
+var FM_FIELD_LABEL = {
+  title: '标题', subtitle: '副标题', date: '日期', updated: '更新',
+  author: '作者', category: '分类', tags: '标签', summary: '摘要',
+};
+/** 摘要字段的几种常见写法，取第一个有值的 */
+var FM_SUMMARY_KEYS = ['summary', 'description', 'excerpt', 'abstract', 'intro'];
+/** 作者字段的几种写法：单个字符串、数组、或 `authors:` */
+var FM_AUTHOR_KEYS = ['author', 'authors'];
+/** 作者缺省值（frontmatter 里一个都没写时用它） */
+var FM_DEFAULT_AUTHOR = 'JinSuper';
+/** 只有这几个字段进「顶部一行」；其余进下面的明细表 */
+var FM_INLINE_KEYS = { date: 1, updated: 1, author: 1, authors: 1, category: 1 };
+
+function fmToArray(v) {
+  if (v == null || v === '') return [];
+  if (Array.isArray(v)) return v.filter(function (x) { return x !== '' && x != null; });
+  return String(v).split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean);
+}
+
+function fmDisplay(v) {
+  if (v == null) return '';
+  if (Array.isArray(v)) return v.join('、');
+  if (typeof v === 'object') {
+    return Object.keys(v).map(function (k) { return k + '：' + fmDisplay(v[k]); }).join('；');
+  }
+  return String(v);
+}
+
+/**
+ * 标签 → 博客首页的筛选锚点。
+ * 唯一的定义在这里：正文卡片、文章页、博客首页的标签链接都走它，
+ * 免得三处各拼一套、哪天改了前缀就对不上。
+ */
+function fmTagAnchor(tag) {
+  return '/p/#tag-' + encodeURIComponent(String(tag == null ? '' : tag));
+}
+
+/** 粗算阅读时间：中文按 350 字/分，西文按 200 词/分 */function fmReadingTime(body) {
+  var s = String(body == null ? '' : body);
+  var cjk = (s.match(/[\u3400-\u9fff\uf900-\ufaff]/g) || []).length;
+  var words = (s.replace(/[\u3400-\u9fff\uf900-\ufaff]/g, ' ').match(/[A-Za-z0-9_'-]+/g) || []).length;
+  var minutes = Math.max(1, Math.round(cjk / 350 + words / 200));
+  return minutes;
+}
+
+var FM_CLOCK_SVG = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.3 1.5"/></svg>';
+var FM_USER_SVG = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="5.6" r="2.6"/><path d="M3.2 13.2c.6-2.3 2.5-3.6 4.8-3.6s4.2 1.3 4.8 3.6"/></svg>';
+var FM_TAG_SVG = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 7.4 7.6 2.4h5.4v5.4l-5 5z"/><circle cx="10.2" cy="5.4" r="1"/></svg>';
+
+/**
+ * frontmatter → 元数据卡片 HTML。
+ *
+ * 已知字段排成标题 / 摘要 / 一行小字 / 标签，其余键原样列在下面的明细里 ——
+ * 「写了什么就能看见什么」，不用为了展示再去改渲染器。
+ *
+ * @param {object} data   parseFrontmatter().data
+ * @param {{title?:string, body?:string, heading?:boolean, exclude?:object}} [opts]
+ *   title：frontmatter 没有 title 时用的兜底标题（一般取清单里的名字）
+ *   body ：正文，用来算阅读时间
+ *   heading：是否把标题渲染成 h1（列表页之类可以关掉）
+ */
+function renderFrontmatter(data, opts) {
+  opts = opts || {};
+  var fm = data && typeof data === 'object' ? data : {};
+  var out = [];
+  var used = {};
+
+  function take(k) { used[k] = 1; return fm[k]; }
+
+  var title = fmDisplay(take('title'));
+  if (!title) title = fmDisplay(take('name'));       /* SKILL.md 那种 name: 写法 */
+  if (!title) title = opts.title ? String(opts.title) : '';
+
+  var subtitle = fmDisplay(take('subtitle'));
+  var summary = '';
+  for (var i = 0; i < FM_SUMMARY_KEYS.length; i++) {
+    var v = take(FM_SUMMARY_KEYS[i]);
+    if (v != null && v !== '') { summary = fmDisplay(v); break; }
+  }
+  var tags = fmToArray(take('tags'));
+  if (!tags.length) tags = fmToArray(take('tag'));
+
+  /* 作者：`author: JinSuper` 与 `author: [JinSuper, ABC]` 都收，
+     一个都没写就回落默认作者（站点身份里的那个，见 build/lib/posts.mjs）。 */
+  var authors = [];
+  for (var ai = 0; ai < FM_AUTHOR_KEYS.length && !authors.length; ai++) {
+    authors = fmToArray(take(FM_AUTHOR_KEYS[ai]));
+  }
+  if (!authors.length) authors = fmToArray(opts.defaultAuthor || FM_DEFAULT_AUTHOR);
+
+  /* 剩下没用过的键：控制字段藏起来，其余原样展示 */
+  var rest = [];
+  Object.keys(fm).forEach(function (k) {
+    if (used[k] || FM_CONTROL_KEYS[String(k).toLowerCase()]) return;
+    if (FM_INLINE_KEYS[k]) return;                  /* 这一档在上面那行小字里 */
+    if (fm[k] == null || fm[k] === '') return;
+    rest.push([FM_FIELD_LABEL[k] || k, fmDisplay(fm[k]), k]);
+  });
+  /* 预设字段排前面，其余保持书写顺序 */
+  var rank = function (k) { var i = FM_FIELD_ORDER.indexOf(k); return i < 0 ? 99 : i; };
+  rest.sort(function (a, b) { return rank(a[2]) - rank(b[2]); });
+
+  var head = '';
+  if (title && opts.heading !== false) {
+    head += '<h1 class="md-fm-title">' + esc(title) + '</h1>\n';
+  } else if (title) {
+    head += '<p class="md-fm-title md-fm-title-plain">' + esc(title) + '</p>\n';
+  }
+  if (subtitle) head += '<p class="md-fm-sub">' + esc(subtitle) + '</p>\n';
+  if (summary) head += '<p class="md-fm-summary">' + esc(summary) + '</p>\n';
+
+  var bar = [];
+  function chip(key, svg, text, cls) {
+    if (!text) return;
+    bar.push('<span class="md-fm-chip' + (cls ? ' ' + cls : '') + '" data-fm="' + esc(key) + '">' +
+      svg + '<span class="md-fm-chip-t">' + esc(text) + '</span></span>');
+  }
+  chip('date', FM_CLOCK_SVG, fmDisplay(fm.date));
+  if (fm.updated && fmDisplay(fm.updated) && fmDisplay(fm.updated) !== fmDisplay(fm.date)) {
+    chip('updated', FM_CLOCK_SVG, '更新于 ' + fmDisplay(fm.updated));
+  }
+  /* 多作者就画多枚（`author: [JinSuper, ABC]`），不硬拼成一行 */
+  authors.forEach(function (a) { chip('author', FM_USER_SVG, fmDisplay(a)); });
+  chip('category', FM_TAG_SVG, fmDisplay(fm.category));
+  if (opts.body != null) chip('reading', FM_CLOCK_SVG, '约 ' + fmReadingTime(opts.body) + ' 分钟', 'md-fm-reading');
+
+  var tagsHtml = '';
+  if (tags.length) {
+    tagsHtml = '<span class="md-fm-tags" data-fm="tags">' + FM_TAG_SVG +
+      tags.map(function (t) {
+        /* 标签点得动：跳到博客首页的标签筛选（/p/#tag-xxx） */
+        return '<a class="md-fm-tag" href="' + esc(fmTagAnchor(t)) + '">' + esc(fmDisplay(t)) + '</a>';
+      }).join('') +
+      '</span>';
+  }
+
+  if (bar.length || tagsHtml) {
+    out.push('<div class="md-fm-chips">' + bar.join('') + tagsHtml + '</div>');
+  }
+  if (rest.length) {
+    out.push('<dl class="md-fm-extra">' + rest.map(function (p) {
+      return '<dt>' + esc(p[0]) + '</dt><dd>' + esc(p[1]) + '</dd>';
+    }).join('') + '</dl>');
+  }
+
+  if (!head && !out.length) return '';
+  return '<header class="md-fm">\n' + head + out.join('\n') + '\n</header>\n';
+}
+
+/* ═══════════════════════════════════════════════════
    组装实例
    ═══════════════════════════════════════════════════ */
 
@@ -1076,23 +1532,146 @@ function ensureEngines() {
 }
 
 /**
+ * 从**渲染好的 HTML** 里抽标题，生成正文开头的目录。
+ * ---------------------------------------------------
+ * 标记与 `[[toc]]` 完全一致（`.md-toc` / `.md-toc-lv{n}`），所以样式只有一份。
+ * 为什么按 HTML 抓而不是按 token：文章页 / 归档稿 / 阅读器现场渲染
+ * 拿到的都是成品 HTML，这样一处实现三处都能用。
+ *
+ * 少于两个标题就不生成 —— 只有一节的目录没意义。
+ */
+function tocEntries(html) {
+  var out = [];
+  var re = /<h([123])\b([^>]*)>([\s\S]*?)<\/h\1>/g;
+  var m;
+  while ((m = re.exec(String(html))) !== null) {
+    var idm = /\bid="([^"]*)"/.exec(m[2]);
+    if (!idm) continue;
+    /* 去掉标题尾部的锚点链接，再剥标签、解实体 */
+    var inner = m[3].replace(/<a\b[^>]*class="anchor"[\s\S]*?<\/a>/gi, '');
+    var text = decodeEntities(inner.replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim();
+    if (!text) continue;
+    out.push({ level: Number(m[1]), id: idm[1], text: text });
+  }
+  return out;
+}
+
+/**
+ * 把标题层级换成**相对层级**：文档里最浅的那一级算 1。
+ * ---------------------------------------------------
+ * 有的文档从 h1 起，有的直接从 h2 起（标题写在 frontmatter 里就是这样）。
+ * 按绝对级别缩进的话，后者整份目录都会平白缩进一格 —— 看起来就是「没有层次」。
+ * 这里统一成「谁在谁下面」，缩进才和文章结构对得上。侧栏目录与正文目录共用。
+ */
+function normalizeTocLevels(list) {
+  var arr = Array.isArray(list) ? list : [];
+  if (!arr.length) return [];
+  var min = arr.reduce(function (m, e) {
+    var lv = Number(e && e.level) || 1;
+    return lv < m ? lv : m;
+  }, 9);
+  return arr.map(function (e) {
+    var lv = (Number(e && e.level) || 1) - min + 1;
+    return { level: lv < 1 ? 1 : (lv > 6 ? 6 : lv), id: e.id, text: e.text };
+  });
+}
+
+/** 正文开头的目录（标记与 [[toc]] 一致；只有一个标题时返回空串） */
+function buildTocFromHtml(html) {
+  var list = normalizeTocLevels(tocEntries(html));
+  if (list.length < 2) return '';
+  return '<nav class="md-toc" aria-label="本页目录"><p class="md-toc-title">目录</p>' +
+    list.map(function (e) {
+      return '<a class="md-toc-lv' + e.level + '" href="#' + esc(e.id) + '">' + esc(e.text) + '</a>';
+    }).join('') + '</nav>\n';
+}
+
+/** 解 HTML 实体（标题里可能有 &amp; &#39; 这类） */
+function decodeEntities(s) {
+  return String(s == null ? '' : s)
+    .replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(Number(n)); })
+    .replace(/&#x([0-9a-f]+);/gi, function (_, n) { return String.fromCharCode(parseInt(n, 16)); })
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+}
+
+/** 正文开头就是 `# 标题` 吗（有的话就不再另画一个标题） */
+function hasLeadingH1(src) {
+  return /^\s*#[ \t]+\S/.test(String(src == null ? '' : src));
+}
+
+/**
+ * 正文开头那行 H1 和 frontmatter 的 title 一模一样时，把它去掉。
+ * ---------------------------------------------------
+ * 「标题写在 frontmatter 里」之后，正文里那行 `# 同样的标题` 就成了重复的 h1，
+ * 页面上会出现两个标题。只在**文字完全相同**且**就在开头**时才动手，
+ * 别的情况一个字都不碰。
+ */
+function stripDuplicateTitle(body, title) {
+  var s = String(body == null ? '' : body);
+  var t = String(title == null ? '' : title).trim();
+  if (!t) return s;
+  var m = /^\s*#[ \t]+(.+?)[ \t]*#*[ \t]*(?=\r?\n|$)/.exec(s);
+  if (!m || m[1].trim() !== t) return s;
+  return s.slice(m[0].length).replace(/^[ \t]*\r?\n/, '');
+}
+
+/**
  * 用**指定实例**渲染一段 Markdown。
  * 单例 renderMarkdown 之外的实例都要走这里：它会先把标题计数清掉，
  * 否则同一实例连着渲染多篇时，第二篇的标题会莫名带上 -2、-3 后缀。
+ *
+ * 顶部有 frontmatter 时：这一段不会被当成正文画出来，而是渲染成
+ * 开头的元数据卡片（`.md-fm`）；要自己接管这部分就传 `meta:false`，
+ * 那时只剥掉 frontmatter，正文照常返回。
+ *
+ * @param {object} md
+ * @param {string} src
+ * @param {{meta?:boolean, heading?:boolean, title?:string}} [opts]
+ *   title：frontmatter 没写 title 时拿来当标题的名字（一般是清单里的名字），
+ *          正文自己已经有 H1 的话就不用它，免得一页两个标题
  */
-function renderWith(md, src) {
+function renderWith(md, src, opts) {
   if (!md || typeof md.render !== 'function') {
     throw new TypeError('renderWith：第一个参数得是 createRenderer() 出来的实例');
   }
+  opts = opts || {};
+  var fm = parseFrontmatter(src);
+  var data = fm.ok ? fm.data : {};
+  var fmTitle = data && (data.title || data.name) ? String(data.title || data.name) : '';
+  var body = fm.ok ? fm.body : String(src == null ? '' : src);
+  /* 标题写在头上、正文又写一遍的，去掉正文那一行 */
+  if (fmTitle) body = stripDuplicateTitle(body, fmTitle);
+
   if (md.__slugify && typeof md.__slugify.reset === 'function') md.__slugify.reset();
-  return md.render(String(src == null ? '' : src), {});
+  var html = md.render(body, {});
+
+  /* ── 正文开头的目录（默认关，`toc: true` 才插）──
+     阅读器和文章页都另有一份**侧栏目录**，正文里再塞一份通常是重复的，
+     所以这里只在作者明确要的时候才画；正文里自己写了 [[toc]] 当然也照画。 */
+  var tocOn = data && (data.toc === true || /^(true|yes|on|1)$/i.test(String(data.toc).trim()));
+  var tocHtml = (tocOn && opts.toc !== false && !/\[\[toc\]\]/i.test(body))
+    ? buildTocFromHtml(html)
+    : '';
+
+  if (fm.ok && opts.meta !== false) {
+    html = renderFrontmatter(data, {
+      body: body,
+      heading: opts.heading,
+      title: hasLeadingH1(body) ? '' : opts.title,
+      defaultAuthor: opts.defaultAuthor,
+    }) + tocHtml + html;
+  } else if (tocHtml) {
+    html = tocHtml + html;
+  }
+  return html;
 }
 
 /** Markdown 源码 → HTML 片段 */
-function renderMarkdown(src) {
+function renderMarkdown(src, opts) {
   ensureEngines();
   if (!shared) shared = createRenderer();
-  return renderWith(shared, src);
+  return renderWith(shared, src, opts);
 }
 
 
@@ -1108,6 +1687,16 @@ module.exports = {
   createRenderer: createRenderer,
   renderWith: renderWith,
   renderMarkdown: renderMarkdown,
+  parseFrontmatter: parseFrontmatter,
+  renderFrontmatter: renderFrontmatter,
+  readingTime: fmReadingTime,
+  tagAnchor: fmTagAnchor,
+  buildTocFromHtml: buildTocFromHtml,
+  tocEntries: tocEntries,
+  normalizeTocLevels: normalizeTocLevels,
+  decodeEntities: decodeEntities,
+  DEFAULT_AUTHOR: FM_DEFAULT_AUTHOR,
+  CONTROL_KEYS: FM_CONTROL_KEYS,
 };
 };
 __defs[2] = function(module, exports, require){

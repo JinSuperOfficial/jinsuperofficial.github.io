@@ -451,7 +451,10 @@ const M = window.JSManifest;
 /** 列表里显示用的路径：Skills 自己的文件去掉前缀，站里其它位置显示完整路径 */
 function shownPath(href){
   const p = M.sitePath(href);
-  return p.indexOf('Skills/') === 0 ? p.slice('Skills/'.length) : p;
+  /* 集合根下的照旧省略 Skills/ 前缀；不在集合根下的（博客首页 /p/ 这种）
+     要显示成站点绝对路径，别缩成一个光秃秃的 "p"。目录地址补回末尾的斜杠。 */
+  if (p.indexOf('Skills/') === 0) return p.slice('Skills/'.length);
+  return '/' + p + (/\/$/.test(String(href)) ? '/' : '');
 }
 
 /* ── 面包屑 ── */

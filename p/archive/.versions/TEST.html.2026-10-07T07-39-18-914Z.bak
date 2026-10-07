@@ -1,27 +1,608 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="obsidian">
+<html lang="zh-CN" data-theme="obsidian" data-glass="mica">
 <head>
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="apple-touch-icon" href="../../apple-touch-icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="测试文档 · 归档预渲染稿">
-<title>测试文档 · JinSuper</title>
+<script>document.documentElement.classList.add('has-js');</script>
+<meta name="description" content="TEST · 归档预渲染稿">
+<title>TEST · JinSuper 奇思妙想</title>
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://jinsuper.rth1.xyz/p/archive/TEST.html">
+<link rel="alternate" type="application/rss+xml" title="JinSuper 奇思妙想 · RSS" href="../feed.xml">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="JinSuper 奇思妙想">
+<meta property="og:title" content="TEST">
+<meta property="og:description" content="TEST · 归档预渲染稿">
+<meta property="og:url" content="https://jinsuper.rth1.xyz/p/archive/TEST.html">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TEST">
+<meta name="twitter:description" content="TEST · 归档预渲染稿">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"TEST","description":"TEST · 归档预渲染稿","url":"https://jinsuper.rth1.xyz/p/archive/TEST.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jinsuper.rth1.xyz/p/archive/TEST.html"},"author":{"@type":"Person","name":"JinSuper"},"publisher":{"@type":"Organization","name":"JinSuper 奇思妙想"},"inLanguage":"zh-CN","isPartOf":{"@type":"Blog","name":"JinSuper 奇思妙想","url":"https://jinsuper.rth1.xyz/p/docs.html"}}</script>
 <!-- 由发布控制台预渲染：源 Markdown 在项目根 para\ 留底，这里是成品 -->
-<link rel="stylesheet" href="../../docs-md.css">
+<link rel="stylesheet" href="../docs-md.css">
 <style>
-  /* 独立打开时的最小外壳：阅读器内联这份片段时用不到这些规则 */
-  html,body{margin:0;background:#0E1214;color:#DCE0DE}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
-  .doc-wrap{max-width:820px;margin:0 auto;padding:40px 24px 96px}
-  .doc-foot{margin-top:56px;padding-top:16px;border-top:1px solid #232C31;
-    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:#869298}
-  .doc-foot a{color:#D97757}
+/* 主题 token：构建时从 build/template/docs.html 抠出来（build/lib/theme.mjs），别抄第二遍 */
+/* 下面这一段是从 build/template/docs.html 里抠出来的（build/lib/theme.mjs），
+   改配色请改模板，改完重新构建。 */
+:root{
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.2,.7,.2,1);
+
+  /* ── 圆角：macOS 风格层级 token ──
+     一个页面里只有这几档，别的写法一律不出现。
+     档位与用法见 .Skills/theme-plus/references/circle_angle.md：
+       4px 标签 / 徽章 · 6px 小控件 · 8px 按钮输入框 · 10px 卡片 · 12px 窗口弹窗
+     胶囊只留给开关、状态点、独立浮起的小按钮。
+     --radius-*   按组件取用（语义）
+     --radius-<层级>-px   …-px 是给嵌套元素做同心计算的数字版本
+     --curve       连续曲率开关：squircle 由 @supports 渐进增强，不支持就退回普通圆角 */
+  --radius-xs:4px;
+  --radius-sm:6px;
+  --radius-md:8px;
+  --radius-lg:10px;
+  --radius-xl:12px;
+  --radius-pill:999px;
+
+  --radius-window:var(--radius-xl);
+  --radius-card:var(--radius-lg);
+  --radius-control:var(--radius-md);
+  --radius-badge:var(--radius-xs);
+  --radius-pill-ctl:var(--radius-pill);
+  --radius-inner:var(--radius-sm);
+
+  /* 连续曲率：只在 @supports (corner-shape:squircle) 的浏览器里生效，
+     不支持就当它不存在，圆角退回上面这几档 */
+  --curve:squircle;
+
+  --sidebar-w:300px;
+  --bar-h:52px;
+  /* 站点顶栏高度：main-bar 的 sticky 偏移、目录跳转的落点都按它算 */
+  --nav-h:40px;
+  --fs-md:15px;
+
+  /* 顶栏半透明：不透明度 + 光学参数，各效果在 html[data-glass] 里覆盖 */
+  --bar-alpha:78%;
+  --glass-blur:14px;
+  --glass-sat:160%;
+  --glass-bright:100%;
+  --glass-sheen:none;
+  --glass-size:auto;
+  --glass-blend:normal;
+}
+
+[data-theme="obsidian"]{
+  --bg:#0E1214; --panel:#13181B; --raised:#191F23;
+  --line:#232C31; --line-soft:#1A2226;
+  --ink:#E7E9E6; --dim:#929EA4; --faint:#869298;
+  --accent:#D97757;
+  --accent-soft:rgba(215,119,87,.12);
+  --accent-line:rgba(215,119,87,.36);
+  --md-ink:#DCE0DE; --md-dim:#9AA5AB;
+  --md-code-bg:#0A0D0F; --md-code-inline:#1C2429;
+  --bar-bg:rgba(19,24,27,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.72), 0 2px 10px -6px rgba(0,0,0,.5);
+}
+[data-theme="cloud"]{
+  --bg:#F2F0EB; --panel:#FBFAF7; --raised:#F6F4EF;
+  --line:#DCD7CD; --line-soft:#E9E5DD;
+  --ink:#1F1D1A; --dim:#6B6862; --faint:#6e6b62;
+  --accent:#A8482A;
+  --accent-soft:rgba(168,72,42,.09);
+  --accent-line:rgba(168,72,42,.30);
+  --md-ink:#2A2622; --md-dim:#6f6b61;
+  --md-code-bg:#EAE6DE; --md-code-inline:#E0DACF;
+  --bar-bg:rgba(251,250,247,.78);
+  --shadow:0 20px 50px -30px rgba(60,50,40,.36), 0 2px 10px -6px rgba(60,50,40,.16);
+}
+[data-theme="linen"]{
+  --bg:#F8F3EC; --panel:#FFFDF9; --raised:#FBF6EE;
+  --line:#E3DACB; --line-soft:#EEE7DB;
+  --ink:#2A241D; --dim:#776b5e; --faint:#7a6c5c;
+  --accent:#5F6B3A;
+  --accent-soft:rgba(95,107,58,.11);
+  --accent-line:rgba(95,107,58,.34);
+  --md-ink:#33302B; --md-dim:#766d5e;
+  --md-code-bg:#F0E8DA; --md-code-inline:#E8E0D0;
+  --bar-bg:rgba(255,253,249,.80);
+  --shadow:0 20px 50px -30px rgba(70,60,40,.34), 0 2px 10px -6px rgba(70,60,40,.15);
+}
+[data-theme="ink"]{
+  --bg:#1A1A1A; --panel:#212121; --raised:#2A2A2A;
+  --line:#2E2E2E; --line-soft:#242424;
+  --ink:#F0F0E8; --dim:#9A9A90; --faint:#94948c;
+  --accent:#E05A42;
+  --accent-soft:rgba(224,90,66,.12);
+  --accent-line:rgba(224,90,66,.34);
+  --md-ink:#E0E0D8; --md-dim:#94948b;
+  --md-code-bg:#141414; --md-code-inline:#242424;
+  --bar-bg:rgba(33,33,33,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.8), 0 2px 10px -6px rgba(0,0,0,.55);
+}
+[data-theme="forest"]{
+  --bg:#0F1611; --panel:#141C16; --raised:#1A231C;
+  --line:#24301F; --line-soft:#1B251A;
+  --ink:#E3EAE0; --dim:#7F9080; --faint:#7c917e;
+  --accent:#7DA05C;
+  --accent-soft:rgba(125,160,92,.14);
+  --accent-line:rgba(125,160,92,.38);
+  --md-ink:#D5DED0; --md-dim:#8A9988;
+  --md-code-bg:#0B110D; --md-code-inline:#1D2820;
+  --bar-bg:rgba(20,28,22,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.75), 0 2px 10px -6px rgba(0,0,0,.5);
+}
+[data-theme="ocean"]{
+  --bg:#0B1418; --panel:#101A1F; --raised:#152228;
+  --line:#1E2E35; --line-soft:#16232A;
+  --ink:#E0E8EC; --dim:#7C8C94; --faint:#768d97;
+  --accent:#4A9DB5;
+  --accent-soft:rgba(74,157,181,.14);
+  --accent-line:rgba(74,157,181,.38);
+  --md-ink:#D4DFE4; --md-dim:#8695A0;
+  --md-code-bg:#081013; --md-code-inline:#18262D;
+  --bar-bg:rgba(16,26,31,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.78), 0 2px 10px -6px rgba(0,0,0,.52);
+}
+[data-theme="rose"]{
+  --bg:#F7EDEF; --panel:#FDF8F9; --raised:#FAF0F2;
+  --line:#EBD9DD; --line-soft:#F0E2E5;
+  --ink:#2B1F23; --dim:#77656b; --faint:#7c666d;
+  --accent:#B04A6A;
+  --accent-soft:rgba(176,74,106,.09);
+  --accent-line:rgba(176,74,106,.30);
+  --md-ink:#35262B; --md-dim:#77656e;
+  --md-code-bg:#F0E2E6; --md-code-inline:#EAD8DD;
+  --bar-bg:rgba(253,248,249,.80);
+  --shadow:0 20px 50px -30px rgba(80,50,60,.30), 0 2px 10px -6px rgba(80,50,60,.14);
+}
+[data-theme="sepia"]{
+  --bg:#F2EAD8; --panel:#FAF3E2; --raised:#F5EDDC;
+  --line:#DDD0B4; --line-soft:#E5DAC2;
+  --ink:#2C251A; --dim:#716754; --faint:#716651;
+  --accent:#8A6B3A;
+  --accent-soft:rgba(138,107,58,.11);
+  --accent-line:rgba(138,107,58,.32);
+  --md-ink:#332A1E; --md-dim:#73664f;
+  --md-code-bg:#E8DEC5; --md-code-inline:#E0D4B6;
+  --bar-bg:rgba(250,243,226,.82);
+  --shadow:0 20px 50px -30px rgba(70,55,35,.32), 0 2px 10px -6px rgba(70,55,35,.14);
+}
+[data-theme="midnight"]{
+  --bg:#0A0E17; --panel:#101623; --raised:#151C2B;
+  --line:#1E273A; --line-soft:#161E2F;
+  --ink:#E0E6EF; --dim:#7C8AA0; --faint:#7a88a2;
+  --accent:#5B8FB9;
+  --accent-soft:rgba(91,143,185,.14);
+  --accent-line:rgba(91,143,185,.38);
+  --md-ink:#D4DCE6; --md-dim:#8694AA;
+  --md-code-bg:#070A11; --md-code-inline:#182132;
+  --bar-bg:rgba(16,22,35,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.80), 0 2px 10px -6px rgba(0,0,0,.55);
+}
+[data-theme="paper"]{
+  --bg:#FAFAF7; --panel:#FFFFFF; --raised:#F5F5F0;
+  --line:#E0E0D8; --line-soft:#EDEDE5;
+  --ink:#1A1A1A; --dim:#6B6B65; --faint:#6f6f67;
+  --accent:#333333;
+  --accent-soft:rgba(51,51,51,.08);
+  --accent-line:rgba(51,51,51,.28);
+  --md-ink:#2A2A2A; --md-dim:#6d6d69;
+  --md-code-bg:#F0F0EA; --md-code-inline:#E8E8E0;
+  --bar-bg:rgba(255,255,255,.82);
+  --shadow:0 20px 50px -32px rgba(0,0,0,.20), 0 2px 10px -6px rgba(0,0,0,.08);
+}
+[data-theme="amber"]{
+  --bg:#18140E; --panel:#1F1A12; --raised:#262016;
+  --line:#332A1C; --line-soft:#272015;
+  --ink:#EDE5D5; --dim:#A09080; --faint:#968772;
+  --accent:#D9A44A;
+  --accent-soft:rgba(217,164,74,.14);
+  --accent-line:rgba(217,164,74,.38);
+  --md-ink:#E0D8C8; --md-dim:#968A78;
+  --md-code-bg:#120F0A; --md-code-inline:#262018;
+  --bar-bg:rgba(31,26,18,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.78), 0 2px 10px -6px rgba(0,0,0,.52);
+}
+[data-theme="moss"]{
+  --bg:#EEF1E6; --panel:#F7F9F0; --raised:#F2F5E9;
+  --line:#D8DFC8; --line-soft:#E3E9D6;
+  --ink:#232A1A; --dim:#666e5b; --faint:#656d59;
+  --accent:#5A6B3A;
+  --accent-soft:rgba(90,107,58,.11);
+  --accent-line:rgba(90,107,58,.32);
+  --md-ink:#2D3521; --md-dim:#666e5a;
+  --md-code-bg:#E4EAD8; --md-code-inline:#DCE3CC;
+  --bar-bg:rgba(247,249,240,.82);
+  --shadow:0 20px 50px -32px rgba(50,60,35,.28), 0 2px 10px -6px rgba(50,60,35,.12);
+}
+
+html[data-glass="mica"]{
+  --glass-blur:6px; --glass-sat:130%; --glass-bright:100%;
+  --glass-sheen:linear-gradient(180deg,
+    rgba(255,255,255,.05) 0%,
+    rgba(255,255,255,0) 58%,
+    rgba(0,0,0,.06) 100%);
+  --glass-blend:normal;
+}
+html[data-glass="aero"]{
+  --glass-blur:22px; --glass-sat:190%; --glass-bright:106%;
+  --glass-sheen:linear-gradient(180deg,
+    rgba(255,255,255,.22) 0%,
+    rgba(255,255,255,.07) 42%,
+    rgba(255,255,255,0) 64%,
+    rgba(0,0,0,.06) 100%);
+  --glass-blend:screen;
+}
+html[data-glass="acrylic"]{
+  --glass-blur:28px; --glass-sat:150%; --glass-bright:100%;
+  --glass-sheen:
+    radial-gradient(circle at 0 0,rgba(255,255,255,.13) 0 1px,rgba(255,255,255,0) 1.6px),
+    linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(0,0,0,.05) 100%);
+  --glass-size:4px 4px,auto;
+  --glass-blend:normal;
+}
+/* 文章外壳：和 /p/post/*.html 是同一份（build/template/post-chrome.css） */
+/* ═══════════════════════════════════════════════════
+   文章外壳的样式（顶栏 + 两列布局 + 侧栏目录 + 上下篇 + 页脚）
+   ---------------------------------------------------
+   这一份被两处共用，**不要再抄第二遍**：
+     · 构建期的静态文章页 `/p/post/*.html`（build/build.mjs 注入）
+     · 控制台烘的归档稿 `/p/archive/*.html`（console/lib/render.mjs）
+   正文排版在 docs-md.css（阅读器与这两处共用），这里只管外壳。
+   配色 token 不在这儿：从 build/template/docs.html 抠（build/lib/theme.mjs）。
+   ═══════════════════════════════════════════════════ */
+
+/* 这一页的顶栏本身就是站点的栏（--bar-h），没有额外的 --nav-h */
+:root{ --nav-h:0px }
+
+*,*::before,*::after{box-sizing:border-box}
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0;
+  min-height:100dvh;
+  background:var(--bg);
+  color:var(--md-ink);
+  font-family:var(--sans);
+  font-size:var(--fs-md);
+  line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+a{ color:var(--accent); }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:var(--radius-xs); }
+
+/* ---------- 顶栏 ---------- */
+.top{
+  position:sticky; top:0; z-index:10;
+  display:flex; align-items:center; gap:14px;
+  min-height:var(--bar-h);
+  padding:0 20px;
+  border-bottom:1px solid var(--line);
+  background:var(--bar-bg);
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright));
+  background-blend-mode:var(--glass-blend);
+}
+.brand{
+  display:flex; align-items:center; gap:9px;
+  min-width:0;
+  color:var(--ink);
+  text-decoration:none;
+  font-weight:640;
+  letter-spacing:-.01em;
+  white-space:nowrap;
+}
+.brand svg{ width:20px; height:20px; flex:none; color:var(--accent); }
+.brand-sub{
+  color:var(--faint);
+  font-family:var(--mono);
+  font-size:11.5px;
+  font-weight:400;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.top-nav{
+  margin-left:auto;
+  display:flex; align-items:center; gap:4px;
+  font-size:13px;
+}
+.top-nav a{
+  padding:6px 10px;
+  border-radius:var(--radius-control);
+  color:var(--dim);
+  text-decoration:none;
+  transition:color .14s var(--ease), background .14s var(--ease);
+}
+.top-nav a:hover{ color:var(--ink); background:color-mix(in srgb,var(--ink) 6%,transparent); }
+
+/* ---------- 正文区 ---------- */
+/* 有目录时是「左一列侧栏目录 + 右边文章」，没有目录就整幅给文章。
+   ---------------------------------------------------
+   单列是**默认**，两列才是有目录的例外：没有目录时如果还摆着两列网格，
+   文章会掉进 212px 的第一列里被挤成一条（`.has-toc` 由生成方决定）。 */
+.wrap{
+  --toc-w:212px;
+  max-width:1120px;
+  margin:0 auto;
+  padding:0 20px 80px;
+  display:block;
+}
+.wrap.has-toc{
+  display:grid;
+  grid-template-columns:var(--toc-w) minmax(0,1fr);
+  gap:8px 34px;
+  align-items:start;
+}
+
+/* ---------- 侧栏目录 ---------- */
+.ptoc{
+  position:sticky;
+  top:calc(var(--bar-h) + 20px);
+  max-height:calc(100dvh - var(--bar-h) - 44px);
+  overflow-y:auto;
+  padding:44px 0 24px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--line) transparent;
+}
+.ptoc-title{
+  margin:0 0 10px;
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint);
+}
+.ptoc ul{ list-style:none;margin:0;padding:0 }
+.ptoc li{ margin:0 }
+.ptoc a{
+  display:block;
+  padding:4px 8px;
+  font-size:12.5px;line-height:1.5;
+  color:var(--dim);
+  text-decoration:none;
+  border-left:2px solid transparent;
+  border-radius:0 var(--radius-xs) var(--radius-xs) 0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  transition:color .13s var(--ease),border-color .13s var(--ease),background .13s var(--ease);
+}
+/* 层级：按标题级别缩进 + 字号递减（层级由 normalizeTocLevels 归一，
+   最浅的一级就是 lv-1，所以「从 h2 起」的文章也不会平白缩进一整格） */
+.ptoc .lv-1 a{ font-weight:620; color:var(--ink) }
+.ptoc .lv-2 a{ padding-left:16px }
+.ptoc .lv-3 a{ padding-left:30px; font-size:12px; color:var(--faint) }
+.ptoc a:hover{ color:var(--ink); background:color-mix(in srgb,var(--ink) 5%,transparent) }
+.ptoc a.active{ color:var(--accent); border-left-color:var(--accent); background:var(--accent-soft) }
+.ptoc .lv-3 a:hover,
+.ptoc .lv-3 a.active{ color:var(--accent) }
+
+/* ---------- 正文 ---------- */
+.md{
+  max-width:820px;
+  margin:0 auto;
+  padding:44px 0 40px;
+  font-size:var(--fs-md);
+  line-height:1.78;
+  color:var(--md-ink);
+  word-wrap:break-word;
+}
+/* 阅读器里的 .md 自带 40px 左右内边距（那是它嵌在面板里的缘故）；
+   这里页面本身就是留白，所以收窄一点，窄屏不再二次缩进。 */
+@media (max-width:640px){
+  .md{ padding:28px 0 32px; font-size:14.5px }
+  .top{ padding:0 14px }
+  .wrap{ padding:0 16px 60px }
+}
+
+/* ---------- 文章头（frontmatter 元数据）用的间距微调 ---------- */
+.md .md-fm{ margin-top:0 }
+
+/* 目录里「没有小节」时的兜底条目指向正文容器本身，跳回来别被吸顶栏盖住 */
+#post{ scroll-margin-top:calc(var(--bar-h) + 14px) }
+
+/* ---------- 上下篇 ---------- */
+.pn{
+  grid-column:2;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:8px auto 0;
+  padding:20px 0 0;
+  border-top:1px solid var(--line-soft);
+  max-width:820px;
+}
+.pn a{
+  display:block;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:var(--radius-card);
+  background:var(--panel);
+  text-decoration:none;
+  color:var(--ink);
+  transition:border-color .14s var(--ease), transform .14s var(--ease);
+}
+.pn a:hover{ border-color:var(--accent-line); transform:translateY(-2px) }
+.pn .pn-k{
+  display:block;
+  margin-bottom:4px;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--faint);
+}
+.pn .pn-t{ font-size:14px; font-weight:600; line-height:1.45 }
+.pn .pn-next{ text-align:right }
+.pn .pn-empty{
+  padding:12px 14px;
+  border:1px dashed var(--line);
+  border-radius:var(--radius-card);
+  color:var(--faint);
+  font-family:var(--mono);
+  font-size:12px;
+}
+
+/* ---------- 页脚 ---------- */
+.foot{
+  grid-column:2;
+  max-width:820px;
+  margin:0 auto;
+  padding:26px 0 0;
+  border-top:1px solid var(--line-soft);
+  color:var(--faint);
+  font-size:12.5px;
+  line-height:1.9;
+}
+.foot a{ color:var(--dim); text-decoration:none; border-bottom:1px solid var(--line) }
+.foot a:hover{ color:var(--ink); border-bottom-color:var(--accent) }
+.foot-row{ display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center }
+
+/* ---------- 代码复制按钮（脚本注入；没有脚本也不影响阅读） ---------- */
+.md pre{ position:relative }
+.md .md-copy{
+  position:absolute; top:8px; right:8px;
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 8px;
+  border:1px solid var(--line);
+  border-radius:var(--radius-badge);
+  background:color-mix(in srgb,var(--panel) 88%,transparent);
+  color:var(--dim);
+  font-family:var(--mono); font-size:11px;
+  cursor:pointer;
+  opacity:0;
+  transition:opacity .14s var(--ease), color .14s var(--ease), border-color .14s var(--ease);
+}
+.md pre:hover .md-copy,
+.md .md-copy:focus-visible{ opacity:1 }
+.md .md-copy:hover{ color:var(--accent); border-color:var(--accent-line) }
+
+/* 代码组 / 选项卡的按钮由脚本生成，标签样式已在 docs-md.css 里 */
+.md .cg-tabs:empty{ display:none }
+
+/* ── 没有脚本时（爬虫、或读者关了 JS）──
+   折叠类的内容全部摊开：剧透、选项卡的其它面板、代码组的其它代码块。
+   宁可全露，也不能因为缺 JS 就凭空消失 —— 搜索引擎吃到的就是这一份。
+   用 .has-js 而不是 <noscript><style>：后者在部分浏览器里照样生效，
+   脚本开着的时候会把折叠面板全都撑开（实测踩过）。 */
+html:not(.has-js) .md .md-spoiler-body,
+html:not(.has-js) .md .tabs-tab-content,
+html:not(.has-js) .md .cg-panel{ display:block }
+
+@media (max-width:900px){
+  /* 单列：目录放到文章前面，变成一块普通的开头内容 */
+  .wrap,
+  .wrap.has-toc{ display:block }
+  .ptoc{
+    position:static;
+    max-height:none;
+    overflow:visible;
+    padding:28px 0 0;
+  }
+  .ptoc-title{ margin-bottom:8px }
+}
+@media (max-width:640px){
+  .top-nav a.wide{ display:none }
+  .pn{ grid-template-columns:1fr }
+  .pn .pn-next{ text-align:left }
+  .top-nav a{ padding:6px 8px }
+}
+@media (prefers-reduced-motion:reduce){
+  *{ animation-duration:.01ms !important; transition-duration:.01ms !important }
+  .pn a:hover{ transform:none }
+}
+
 </style>
 </head>
 <body>
-<div class="doc-wrap">
-<div class="md">
+
+<header class="top">
+  <a class="brand" href="../">
+    <svg class="logo-mark" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill="currentColor" d="M512 629.04c-64.536 0-117.04-52.504-117.04-117.04S447.464 394.96 512 394.96 629.04 447.464 629.04 512 576.536 629.04 512 629.04z m0-160.08c-23.732 0-43.04 19.308-43.04 43.04s19.308 43.04 43.04 43.04 43.04-19.308 43.04-43.04-19.308-43.04-43.04-43.04zM799.529 836.529c-9.469 0-18.938-3.612-26.163-10.837-14.45-14.449-14.45-37.877 0-52.326C843.18 703.553 881.628 610.731 881.628 512S843.18 320.447 773.366 250.634c-14.449-14.449-14.449-37.877 0-52.326 14.45-14.449 37.876-14.449 52.326 0 40.73 40.73 72.712 88.17 95.058 141.001 23.143 54.717 34.878 112.818 34.878 172.691s-11.734 117.975-34.878 172.691c-22.346 52.831-54.328 100.271-95.058 141.001-7.224 7.225-16.694 10.837-26.163 10.837zM224.471 836.529c-9.469 0-18.938-3.612-26.163-10.837-40.73-40.73-72.712-88.17-95.058-141.001C80.107 629.974 68.372 571.873 68.372 512s11.734-117.975 34.878-172.691c22.346-52.831 54.328-100.271 95.058-141.001 14.45-14.449 37.877-14.448 52.326 0 14.45 14.449 14.45 37.877 0 52.326C180.82 320.447 142.372 413.268 142.372 512s38.448 191.553 108.261 261.366c14.449 14.449 14.449 37.877 0 52.326-7.224 7.225-16.693 10.837-26.162 10.837z"/><path fill="currentColor" d="M339.681 721.319c-9.47 0-18.938-3.611-26.163-10.837-53.016-53.016-82.214-123.506-82.214-198.482 0-74.978 29.198-145.466 82.214-198.481 14.45-14.448 37.877-14.448 52.326 0 14.449 14.45 14.449 37.877 0 52.326-39.04 39.039-60.54 90.944-60.54 146.155s21.5 107.116 60.54 146.156c14.449 14.449 14.449 37.877 0 52.326-7.224 7.224-16.695 10.837-26.163 10.837zM684.319 721.319c-9.469 0-18.938-3.612-26.163-10.837-14.449-14.449-14.449-37.877 0-52.326 39.04-39.04 60.54-90.945 60.54-146.156s-21.5-107.116-60.54-146.155c-14.449-14.449-14.45-37.876 0-52.326 14.449-14.449 37.876-14.449 52.326 0 53.016 53.016 82.214 123.504 82.214 198.481 0 74.977-29.198 145.466-82.214 198.482-7.225 7.225-16.694 10.837-26.163 10.837z"/></svg>
+    <span>JinSuper 奇思妙想</span>
+    <span class="brand-sub" id="brandSub"></span>
+  </a>
+  <nav class="top-nav" aria-label="站点导航">
+    <a href="/p/">博客</a><a href="/p/#timeline">时间线</a><a href="/p/#tags">标签</a><a href="/p/docs.html">阅读器</a><a href="/p/feed.xml">RSS</a><a href="/" class="wide">百宝箱</a>
+  </nav>
+</header>
+
+<main class="wrap has-toc">
+
+  <!-- 侧栏目录：目录项由正文章节生成（不足两条整块不出现） -->
+  <aside class="ptoc" id="ptoc" aria-label="本页目录">
+    <p class="ptoc-title">本页目录</p>
+    <ul id="ptocList">
+      <li class="lv-1"><a href="#全功能-markdown-测试文档" data-target="全功能-markdown-测试文档" title="全功能 Markdown 测试文档">全功能 Markdown 测试文档</a></li>
+      <li class="lv-2"><a href="#目录" data-target="目录" title="目录">目录</a></li>
+      <li class="lv-2"><a href="#1-核心语法-commonmark" data-target="1-核心语法-commonmark" title="1. 核心语法 (CommonMark)">1. 核心语法 (CommonMark)</a></li>
+      <li class="lv-3"><a href="#11-标题" data-target="11-标题" title="1.1 标题">1.1 标题</a></li>
+      <li class="lv-1"><a href="#h1-标题" data-target="h1-标题" title="H1 标题">H1 标题</a></li>
+      <li class="lv-2"><a href="#h2-标题" data-target="h2-标题" title="H2 标题">H2 标题</a></li>
+      <li class="lv-3"><a href="#h3-标题" data-target="h3-标题" title="H3 标题">H3 标题</a></li>
+      <li class="lv-1"><a href="#一级标题" data-target="一级标题" title="一级标题">一级标题</a></li>
+      <li class="lv-2"><a href="#二级标题" data-target="二级标题" title="二级标题">二级标题</a></li>
+      <li class="lv-3"><a href="#12-段落与换行" data-target="12-段落与换行" title="1.2 段落与换行">1.2 段落与换行</a></li>
+      <li class="lv-3"><a href="#13-强调" data-target="13-强调" title="1.3 强调">1.3 强调</a></li>
+      <li class="lv-3"><a href="#14-列表" data-target="14-列表" title="1.4 列表">1.4 列表</a></li>
+      <li class="lv-3"><a href="#15-代码" data-target="15-代码" title="1.5 代码">1.5 代码</a></li>
+      <li class="lv-3"><a href="#16-链接与图片" data-target="16-链接与图片" title="1.6 链接与图片">1.6 链接与图片</a></li>
+      <li class="lv-3"><a href="#17-引用" data-target="17-引用" title="1.7 引用">1.7 引用</a></li>
+      <li class="lv-3"><a href="#18-分隔线" data-target="18-分隔线" title="1.8 分隔线">1.8 分隔线</a></li>
+      <li class="lv-2"><a href="#2-gfm-扩展" data-target="2-gfm-扩展" title="2. GFM 扩展">2. GFM 扩展</a></li>
+      <li class="lv-3"><a href="#21-表格" data-target="21-表格" title="2.1 表格">2.1 表格</a></li>
+      <li class="lv-3"><a href="#22-任务列表" data-target="22-任务列表" title="2.2 任务列表">2.2 任务列表</a></li>
+      <li class="lv-3"><a href="#23-删除线" data-target="23-删除线" title="2.3 删除线">2.3 删除线</a></li>
+      <li class="lv-3"><a href="#24-自动链接" data-target="24-自动链接" title="2.4 自动链接">2.4 自动链接</a></li>
+      <li class="lv-3"><a href="#25-脚注" data-target="25-脚注" title="2.5 脚注">2.5 脚注</a></li>
+      <li class="lv-3"><a href="#26-告示github-alerts" data-target="26-告示github-alerts" title="2.6 告示（GitHub Alerts）">2.6 告示（GitHub Alerts）</a></li>
+      <li class="lv-3"><a href="#27-提示框容器语法" data-target="27-提示框容器语法" title="2.7 提示框（容器语法）">2.7 提示框（容器语法）</a></li>
+      <li class="lv-2"><a href="#3-内容增强" data-target="3-内容增强" title="3. 内容增强">3. 内容增强</a></li>
+      <li class="lv-3"><a href="#31-emoji" data-target="31-emoji" title="3.1 Emoji">3.1 Emoji</a></li>
+      <li class="lv-3"><a href="#32-上下标" data-target="32-上下标" title="3.2 上下标">3.2 上下标</a></li>
+      <li class="lv-3"><a href="#33-高亮标记" data-target="33-高亮标记" title="3.3 高亮/标记">3.3 高亮/标记</a></li>
+      <li class="lv-3"><a href="#34-缩写词" data-target="34-缩写词" title="3.4 缩写词">3.4 缩写词</a></li>
+      <li class="lv-3"><a href="#35-定义列表" data-target="35-定义列表" title="3.5 定义列表">3.5 定义列表</a></li>
+      <li class="lv-3"><a href="#36-插入与删除" data-target="36-插入与删除" title="3.6 插入与删除">3.6 插入与删除</a></li>
+      <li class="lv-3"><a href="#37-ruby-注音" data-target="37-ruby-注音" title="3.7 Ruby 注音">3.7 Ruby 注音</a></li>
+      <li class="lv-3"><a href="#38-剧透" data-target="38-剧透" title="3.8 剧透">3.8 剧透</a></li>
+      <li class="lv-3"><a href="#39-图标行内-svg" data-target="39-图标行内-svg" title="3.9 图标（行内 SVG）">3.9 图标（行内 SVG）</a></li>
+      <li class="lv-2"><a href="#4-学术与技术" data-target="4-学术与技术" title="4. 学术与技术">4. 学术与技术</a></li>
+      <li class="lv-3"><a href="#41-数学公式-katex" data-target="41-数学公式-katex" title="4.1 数学公式 (KaTeX)">4.1 数学公式 (KaTeX)</a></li>
+      <li class="lv-3"><a href="#42-mathjax" data-target="42-mathjax" title="4.2 MathJax">4.2 MathJax</a></li>
+      <li class="lv-3"><a href="#43-代码高亮" data-target="43-代码高亮" title="4.3 代码高亮">4.3 代码高亮</a></li>
+      <li class="lv-3"><a href="#44-高亮指定行" data-target="44-高亮指定行" title="4.4 高亮指定行">4.4 高亮指定行</a></li>
+      <li class="lv-3"><a href="#45-显示行号" data-target="45-显示行号" title="4.5 显示行号">4.5 显示行号</a></li>
+      <li class="lv-2"><a href="#5-图表与可视化未启用" data-target="5-图表与可视化未启用" title="5. 图表与可视化（未启用）">5. 图表与可视化（未启用）</a></li>
+      <li class="lv-3"><a href="#51-mermaid" data-target="51-mermaid" title="5.1 Mermaid">5.1 Mermaid</a></li>
+      <li class="lv-3"><a href="#52-plantuml" data-target="52-plantuml" title="5.2 PlantUML">5.2 PlantUML</a></li>
+      <li class="lv-3"><a href="#53-echarts" data-target="53-echarts" title="5.3 ECharts">5.3 ECharts</a></li>
+      <li class="lv-3"><a href="#54-flowchart" data-target="54-flowchart" title="5.4 Flowchart">5.4 Flowchart</a></li>
+      <li class="lv-2"><a href="#6-文档导航与结构" data-target="6-文档导航与结构" title="6. 文档导航与结构">6. 文档导航与结构</a></li>
+      <li class="lv-3"><a href="#61-标题锚点" data-target="61-标题锚点" title="6.1 标题锚点">6.1 标题锚点</a></li>
+      <li class="lv-2"><a href="#custom-heading" data-target="custom-heading" title="带自定义 ID 的标题">带自定义 ID 的标题</a></li>
+      <li class="lv-3"><a href="#62-目录" data-target="62-目录" title="6.2 目录">6.2 目录</a></li>
+      <li class="lv-3"><a href="#63-属性" data-target="63-属性" title="6.3 属性">6.3 属性</a></li>
+      <li class="lv-1"><a href="#id" data-target="id" title="标题">标题</a></li>
+      <li class="lv-3"><a href="#64-自定义容器" data-target="64-自定义容器" title="6.4 自定义容器">6.4 自定义容器</a></li>
+      <li class="lv-3"><a href="#65-选项卡-tabs" data-target="65-选项卡-tabs" title="6.5 选项卡 tabs">6.5 选项卡 tabs</a></li>
+      <li class="lv-3"><a href="#66-布局未启用" data-target="66-布局未启用" title="6.6 布局（未启用）">6.6 布局（未启用）</a></li>
+      <li class="lv-2"><a href="#7-其他实用功能" data-target="7-其他实用功能" title="7. 其他实用功能">7. 其他实用功能</a></li>
+      <li class="lv-3"><a href="#71-图片尺寸" data-target="71-图片尺寸" title="7.1 图片尺寸">7.1 图片尺寸</a></li>
+      <li class="lv-3"><a href="#72-图片懒加载" data-target="72-图片懒加载" title="7.2 图片懒加载">7.2 图片懒加载</a></li>
+      <li class="lv-3"><a href="#73-图片预览" data-target="73-图片预览" title="7.3 图片预览">7.3 图片预览</a></li>
+      <li class="lv-3"><a href="#74-主题标记" data-target="74-主题标记" title="7.4 主题标记">7.4 主题标记</a></li>
+      <li class="lv-3"><a href="#75-包含文件未启用" data-target="75-包含文件未启用" title="7.5 包含文件（未启用）">7.5 包含文件（未启用）</a></li>
+      <li class="lv-3"><a href="#76-导入代码片段未启用" data-target="76-导入代码片段未启用" title="7.6 导入代码片段（未启用）">7.6 导入代码片段（未启用）</a></li>
+      <li class="lv-3"><a href="#77-自定义嵌入未启用" data-target="77-自定义嵌入未启用" title="7.7 自定义嵌入（未启用）">7.7 自定义嵌入（未启用）</a></li>
+      <li class="lv-3"><a href="#78-内容对齐未启用" data-target="78-内容对齐未启用" title="7.8 内容对齐（未启用）">7.8 内容对齐（未启用）</a></li>
+      <li class="lv-3"><a href="#79-行内剧透" data-target="79-行内剧透" title="7.9 行内剧透">7.9 行内剧透</a></li>
+      <li class="lv-2"><a href="#8-站点扩展语法" data-target="8-站点扩展语法" title="8. 站点扩展语法">8. 站点扩展语法</a></li>
+      <li class="lv-3"><a href="#81-卡片-card" data-target="81-卡片-card" title="8.1 卡片 card">8.1 卡片 card</a></li>
+      <li class="lv-3"><a href="#82-代码组-code-group" data-target="82-代码组-code-group" title="8.2 代码组 code-group">8.2 代码组 code-group</a></li>
+      <li class="lv-2"><a href="#9-速查支持-不支持" data-target="9-速查支持-不支持" title="9. 速查：支持 / 不支持">9. 速查：支持 / 不支持</a></li>
+    </ul>
+  </aside>
+
+  <article class="md" id="post">
+
+
+
 <h1 id="全功能-markdown-测试文档">全功能 Markdown 测试文档<a class="anchor" href="#全功能-markdown-测试文档" aria-label="锚点链接">#</a></h1>
 <blockquote>
 <p>本文档用于测试 Markdown 解析器对 CommonMark、GFM 及常见社区扩展的支持。<br>
@@ -617,10 +1198,168 @@ cond(no)-&gt;op
 </ol>
 </section>
 
-</div>
-<div class="doc-foot">这是归档预渲染稿 · 原文留底在项目工作空间 · <a href="../../p/docs.html">回到文档站</a></div>
-</div>
+
+  
+  
+  </article>
+
+  <footer class="foot">
+    <div class="foot-row">
+      © JinSuper · 想到什么写什么
+      <a href="../">博客首页</a>
+      <a href="../feed.xml">订阅 RSS</a>
+      <a href="../../">回百宝箱</a>
+    </div>
+  </footer>
+</main>
+
 <script src="../../p/docs-card.js"></script>
 <script src="../../p/docs-md.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════
+   文章页的小增强（选项卡 / 代码组 / 复制按钮 / 剧透 / 目录高亮）
+   ---------------------------------------------------
+   这一份被两处共用，**不要再抄第二遍**：
+     · 构建期的静态文章页 `/p/post/*.html`（build/build.mjs 注入）
+     · 控制台烘的归档稿 `/p/archive/*.html`（console/lib/render.mjs）
+
+   只做「让静态页面用起来像阅读器」这几件事，不引入任何库。
+   脚本挂了页面照样能读：没有它时代码组全都摊开、剧透直接打开
+   （见 post-chrome.css 里 html:not(.has-js) 那几条）。
+   ═══════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  var root = document.getElementById('post');
+  if (!root) return;
+
+  /* ── 选项卡 ::: tabs ── */
+  root.querySelectorAll('.tabs-tabs-wrapper').forEach(function(box){
+    var btns = box.querySelectorAll('.tabs-tab-button');
+    var panes = box.querySelectorAll('.tabs-tab-content');
+    function activate(i){
+      btns.forEach(function(b, j){
+        var on = j === i;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        b.tabIndex = on ? 0 : -1;
+      });
+      panes.forEach(function(p, j){ p.classList.toggle('active', j === i); });
+    }
+    btns.forEach(function(b, i){
+      b.addEventListener('click', function(){ activate(i); });
+      b.addEventListener('keydown', function(e){
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        var next = (i + (e.key === 'ArrowRight' ? 1 : btns.length - 1)) % btns.length;
+        activate(next);
+        if (btns[next]) btns[next].focus();
+      });
+    });
+  });
+
+  /* ── 代码组 ::: code-group：标签按钮按真实面板数生成 ── */
+  root.querySelectorAll('.code-group').forEach(function(group){
+    var tabs = group.querySelector('.cg-tabs');
+    var panels = group.querySelectorAll('.cg-panel');
+    if (!tabs || panels.length < 2) return;
+    function activate(i){
+      panels.forEach(function(p, j){ p.hidden = j !== i; });
+      tabs.querySelectorAll('.cg-tab').forEach(function(b, j){
+        b.classList.toggle('is-active', j === i);
+        b.setAttribute('aria-selected', j === i ? 'true' : 'false');
+      });
+    }
+    panels.forEach(function(panel, i){
+      var label = panel.getAttribute('data-label') || panel.getAttribute('data-lang') || ('代码 ' + (i + 1));
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cg-tab' + (i === 0 ? ' is-active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+      btn.textContent = label;
+      btn.addEventListener('click', function(){ activate(i); });
+      tabs.appendChild(btn);
+    });
+    activate(0);
+  });
+
+  /* ── 复制代码：每个代码块（含代码组里的面板）各给一个按钮 ── */
+  root.querySelectorAll('pre > code').forEach(function(code){
+    var pre = code.parentNode;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'md-copy';
+    btn.textContent = '复制';
+    btn.addEventListener('click', function(){
+      var text = code.innerText;
+      var done = function(ok){
+        btn.textContent = ok ? '已复制' : '复制失败';
+        setTimeout(function(){ btn.textContent = '复制'; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(false); });
+        return;
+      }
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        done(ok);
+      } catch (e) { done(false); }
+    });
+    pre.appendChild(btn);
+  });
+
+  /* ── 剧透块 >! ── */
+  root.querySelectorAll('.md-spoiler').forEach(function(box){
+    var head = box.querySelector('.md-spoiler-head');
+    if (!head) return;
+    function set(open){
+      box.setAttribute('data-open', open ? 'true' : 'false');
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    set(box.getAttribute('data-open') === 'true');
+    head.addEventListener('click', function(){ set(box.getAttribute('data-open') !== 'true'); });
+  });
+
+  /* ── 侧栏目录：滚动时高亮当前小节（目录是生成期写好的，
+        没有目录时这一整块就不存在，脚本什么都不用做） ── */
+  var toc = document.getElementById('ptoc');
+  var tocList = document.getElementById('ptocList');
+  if (toc && tocList && tocList.children.length){
+    var links = Array.prototype.slice.call(tocList.querySelectorAll('a'));
+    var barH = document.querySelector('.top');
+    barH = barH ? barH.offsetHeight : 52;
+    function onScroll(){
+      var line = barH + 24;
+      var current = null;
+      for (var i = 0; i < links.length; i++){
+        var target = document.getElementById(links[i].dataset.target);
+        if (!target) continue;
+        if (target.getBoundingClientRect().top <= line) current = links[i];
+        else break;
+      }
+      links.forEach(function(a){ a.classList.toggle('active', a === current); });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    onScroll();
+  }
+
+  /* ── 顶栏副标题：把「第几篇 / 共几篇」这类位置感补上（纯装饰） ── */
+  var meta = document.querySelector('meta[name="x-post-index"]');
+  if (meta){
+    var sub = document.getElementById('brandSub');
+    if (sub) sub.textContent = meta.getAttribute('content');
+  }
+})();
+
+</script>
 </body>
 </html>

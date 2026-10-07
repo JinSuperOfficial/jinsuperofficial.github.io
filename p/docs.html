@@ -1,16 +1,29 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="obsidian" data-glass="mica" data-outline="docked">
+<html lang="zh-CN" data-theme="obsidian" data-glass="mica" data-outline="on">
 <head>
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="JinSuper 网站文档栏目，读取 sk.json 清单，集中阅读 Markdown、HTML 与文本资料。">
-<title>文档 · JinSuper</title>
+<title>JinSuper 奇思妙想</title>
+<meta name="description" content="JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。">
+<meta name="author" content="JinSuper">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<link rel="canonical" href="https://jinsuper.rth1.xyz/p/docs.html">
+<link rel="alternate" type="application/rss+xml" title="JinSuper 奇思妙想 · RSS" href="./feed.xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="JinSuper 奇思妙想">
+<meta property="og:title" content="JinSuper 奇思妙想">
+<meta property="og:description" content="JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。">
+<meta property="og:url" content="https://jinsuper.rth1.xyz/p/docs.html">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JinSuper 奇思妙想">
+<meta name="twitter:description" content="JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Blog","name":"JinSuper 奇思妙想","description":"JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。","url":"https://jinsuper.rth1.xyz/p/docs.html","inLanguage":"zh-CN","author":{"@type":"Person","name":"JinSuper"},"blogPost":[{"@type":"BlogPosting","headline":"奇思妙想 · 索引","url":"https://jinsuper.rth1.xyz/p/post/idea/index.html","datePublished":"2026-10-07","dateModified":"2026-10-07","author":{"@type":"Person","name":"JinSuper"},"keywords":"索引"},{"@type":"BlogPosting","headline":"写一篇：博客与 Frontmatter","url":"https://jinsuper.rth1.xyz/p/post/blog.html","datePublished":"2026-10-07","dateModified":"2026-10-07","author":{"@type":"Person","name":"JinSuper"},"keywords":"说明,博客,写作"},{"@type":"BlogPosting","headline":"枣香童年","url":"https://jinsuper.rth1.xyz/p/post/idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html","datePublished":"2026-10-06","dateModified":"2026-10-06","author":{"@type":"Person","name":"JinSuper"},"keywords":"随笔,童年,爷爷"},{"@type":"BlogPosting","headline":"本周作业","url":"https://jinsuper.rth1.xyz/p/post/para/homework.html","author":{"@type":"Person","name":"JinSuper"},"keywords":"作业"},{"@type":"BlogPosting","headline":"启程","url":"https://jinsuper.rth1.xyz/p/post/para/1SetUp.html","author":{"@type":"Person","name":"JinSuper"},"keywords":"站点,说明"}]}</script>
+<!-- 正文渲染：markdown-it + 插件 + KaTeX，构建时全部本地化（下面几行外链会被换掉） -->
 
-<!-- Markdown 渲染：markdown-it + 插件 + KaTeX，均为外部文件 -->
-
-<link rel="stylesheet" href="./docs-md.css?v=3">
+<link rel="stylesheet" href="./docs-md.css?v=4">
 
 <script>
 (function(){
@@ -21,7 +34,8 @@
     var g = localStorage.getItem('docs.glass');
     if (g) d.setAttribute('data-glass', g);
     var o = localStorage.getItem('docs.outline');
-    if (o) d.setAttribute('data-outline', o);
+    /* 老版本存的是 'docked' / 'float'（目录跟着滚动走），现在只有显示/隐藏 */
+    if (o) d.setAttribute('data-outline', o === 'off' ? 'off' : 'on');
     var a = parseInt(localStorage.getItem('docs.barOpacity'), 10);
     if (a) d.style.setProperty('--bar-alpha', a + '%');
     if (localStorage.getItem('docs.sideCollapsed') === 'true') d.classList.add('side-collapsed');
@@ -64,8 +78,10 @@
      不支持就当它不存在，圆角退回上面这几档 */
   --curve:squircle;
 
-  --sidebar-w:280px;
+  --sidebar-w:300px;
   --bar-h:52px;
+  /* 站点顶栏高度：main-bar 的 sticky 偏移、目录跳转的落点都按它算 */
+  --nav-h:40px;
   --fs-md:15px;
 
   /* 顶栏半透明：不透明度 + 光学参数，各效果在 html[data-glass] 里覆盖 */
@@ -251,7 +267,7 @@
   --shadow:0 20px 50px -32px rgba(50,60,35,.28), 0 2px 10px -6px rgba(50,60,35,.12);
 }
 
-html,body{margin:0;height:100%}
+html,body{margin:0}
 
 body{
   background:var(--bg);
@@ -260,31 +276,72 @@ body{
   font-size:14px;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  overflow:hidden;
-  height:100dvh;
+  overflow-x:hidden;
   transition:background-color .22s var(--ease),color .22s var(--ease);
 }
 
-.app{display:flex;height:100dvh}
+/* ═══════════ 站点顶栏 ═══════════
+   常驻导航：侧栏不再跟随滚动，翻到文章中间就得靠它。 */
+.topnav{
+  position:sticky; top:0; z-index:120;
+  display:flex; align-items:center; gap:14px;
+  min-height:var(--nav-h);
+  padding:0 20px;
+  border-bottom:1px solid var(--line);
+  background:var(--bar-bg);
+  background-color:color-mix(in srgb,var(--panel) var(--bar-alpha),transparent);
+  background-image:var(--glass-sheen);
+  background-blend-mode:var(--glass-blend);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright));
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright));
+}
+.topnav .brand{
+  display:flex; align-items:center; gap:8px;
+  min-width:0; white-space:nowrap;
+  color:var(--ink); text-decoration:none; font-weight:640;
+  font-size:13.5px; letter-spacing:-.01em;
+}
+.topnav .brand .mark{
+  width:22px;height:22px;flex:none;
+  display:grid;place-items:center;
+  border-radius:var(--radius-control);
+  background:var(--accent-soft);
+  border:1px solid var(--accent-line);
+  color:var(--accent);
+}
+.topnav .brand .mark svg{width:12px;height:12px}
+.topnav .brand-name{overflow:hidden;text-overflow:ellipsis}
+.topnav .nav{
+  margin-left:auto;
+  display:flex; align-items:center; gap:2px;
+  font-size:12.5px;
+}
+.topnav .nav a{
+  padding:5px 9px;
+  border-radius:var(--radius-control);
+  color:var(--dim); text-decoration:none;
+  transition:color .14s var(--ease), background .14s var(--ease);
+}
+.topnav .nav a:hover{ color:var(--ink); background:color-mix(in srgb,var(--ink) 6%,transparent) }
+.topnav .nav a.on{ color:var(--accent); background:var(--accent-soft) }
+
+.app{display:flex;align-items:flex-start;min-height:calc(100dvh - var(--nav-h))}
 
 /* ═══════════ 侧栏 ═══════════ */
 .sidebar{
   width:var(--sidebar-w); flex:none;
-  overflow:hidden;
+  /* 嵌入式：不占独立滚动条、不描边、不铺底色 ——
+     它就是正文左边的一栏内容，跟着页面一起滚上去。 */
+  overflow:visible;
   display:flex; flex-direction:column;
-  background:linear-gradient(180deg,
-    color-mix(in srgb,var(--panel) 92%,var(--ink) 3%) 0%,
-    var(--panel) 100%);
-  border-right:1px solid var(--line);
-  min-height:0;
-  transition:width .24s var(--ease),opacity .18s var(--ease),
-             background-color .22s var(--ease),border-color .22s var(--ease);
+  background:transparent;
+  padding:18px 0 60px;
+  transition:width .24s var(--ease),opacity .18s var(--ease);
 }
 
 .side-head{
   flex:none;
-  padding:16px 16px 12px;
-  border-bottom:1px solid var(--line);
+  padding:0 16px 10px;
 }
 .side-title{display:flex;align-items:center;gap:9px}
 .side-title .mark{
@@ -296,9 +353,12 @@ body{
   color:var(--accent);
 }
 .side-title .mark svg{width:14px;height:14px}
-.side-title h1{
-  margin:0;font-size:14px;font-weight:640;
-  letter-spacing:-.005em;
+.side-label{
+  font-family:var(--mono);
+  font-size:10.5px;font-weight:600;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--faint);
 }
 .side-collapse{
   flex:none;
@@ -319,7 +379,7 @@ body{
 .side-collapse svg{width:11px;height:11px}
 
 /* ── 侧栏收起 ── */
-html.side-collapsed .sidebar{width:0;opacity:0;border-right-width:0;pointer-events:none}
+html.side-collapsed .sidebar{width:0;opacity:0;pointer-events:none;overflow:hidden}
 
 .searchbox{padding:10px 12px 8px;flex:none;position:relative}
 .searchbox input{
@@ -376,11 +436,8 @@ x
 .search-clear:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 
 .filelist{
-  flex:1;min-height:0;
-  overflow-y:auto;
+  overflow:visible;
   padding:4px 8px 8px;
-  scrollbar-width:thin;
-  scrollbar-color:var(--line) transparent;
 }
 .filelist::-webkit-scrollbar{width:8px}
 .filelist::-webkit-scrollbar-thumb{background:var(--line);border-radius:var(--radius-badge)}
@@ -452,6 +509,16 @@ x
   padding:0 1px;
   border-radius:var(--radius-badge);
 }
+/* 文章日期：来自正文顶部的 frontmatter（date / updated）。
+   没写日期的条目没有这一段，列表不会参差不齐。 */
+.file-date{
+  flex:none;
+  font-family:var(--mono);
+  font-size:10.5px;
+  color:var(--faint);
+  opacity:.85;
+  letter-spacing:-.02em;
+}
 
 .empty-side{
   padding:40px 20px;
@@ -471,11 +538,11 @@ x
 .main{
   flex:1;min-width:0;
   display:flex;flex-direction:column;
-  background:var(--bg);
+  background:transparent;
 }
 
 .main-bar{
-  position:absolute;top:0;left:0;right:0;
+  position:sticky;top:var(--nav-h);
   display:flex;align-items:center;gap:10px;
   padding:11px 16px 11px 20px;
   background:var(--bar-bg);
@@ -572,14 +639,10 @@ html[data-glass="acrylic"]{
 /* 窄屏上按钮只留图标的规则，统一放在文件末尾的响应式区 */
 
 .content{
-  flex:1;min-height:0;
-  overflow:auto;
+  flex:1;min-width:0;
+  overflow:visible;
   position:relative;
-  scrollbar-width:thin;
-  scrollbar-color:var(--line) transparent;
 }
-/* 顶栏悬浮在正文之上，正文从这里开始往下排，滚动时从顶栏后面穿过 */
-.content{padding-top:var(--bar-h)}
 .content::-webkit-scrollbar{width:11px;height:11px}
 .content::-webkit-scrollbar-thumb{
   background:var(--line);border-radius:var(--radius-control);
@@ -602,97 +665,9 @@ html[data-glass="acrylic"]{
   .md{padding:28px 20px 80px;font-size:14.5px}
 }
 
-.md h1,.md h2,.md h3,.md h4,.md h5,.md h6{
-  color:var(--ink);
-  font-weight:640;
-  line-height:1.3;
-  letter-spacing:-.012em;
-  margin:1.8em 0 .7em;
-}
-.md h1{font-size:1.85em;margin-top:0;padding-bottom:.35em;border-bottom:1px solid var(--line)}
-.md h2{font-size:1.4em;padding-bottom:.3em;border-bottom:1px solid var(--line-soft)}
-.md h3{font-size:1.15em}
-.md h4{font-size:1em}
-.md h5,.md h6{font-size:.92em;color:var(--md-dim)}
-
-.md p{margin:1em 0}
-.md a{
-  color:var(--accent);
-  text-decoration:none;
-  border-bottom:1px solid var(--accent-line);
-  transition:border-color .13s var(--ease);
-}
-.md a:hover{border-bottom-color:var(--accent)}
-.md strong{color:var(--ink);font-weight:640}
-.md em{color:var(--md-ink);font-style:italic}
-.md del{color:var(--md-dim)}
-
-.md code{
-  font-family:var(--mono);
-  font-size:.86em;
-  background:var(--md-code-inline);
-  color:var(--accent);
-  padding:.15em .4em;
-  border-radius:var(--radius-badge);
-  word-break:break-word;
-}
-.md pre{
-  background:var(--md-code-bg);
-  border:1px solid var(--line);
-  border-radius:var(--radius-card);
-  padding:14px 18px;
-  overflow-x:auto;
-  margin:1.2em 0;
-  font-size:13px;
-  line-height:1.65;
-}
-.md pre code{
-  background:transparent;
-  color:var(--md-ink);
-  padding:0;
-  font-size:inherit;
-  white-space:pre;
-  /* 内容自带底色时按同心公式收敛一圈；外层 pre 已经兜住圆角，这里只做兜底 */
-  border-radius:var(--radius-inner);
-}
-.md blockquote{
-  margin:1.2em 0;
-  padding:.2em 0 .2em 1.2em;
-  border-left:3px solid var(--accent-line);
-  color:var(--md-dim);
-  font-style:italic;
-}
-.md blockquote p{margin:.5em 0}
-.md ul,.md ol{padding-left:1.6em;margin:1em 0}
-.md li{margin:.35em 0}
-.md li > p{margin:.4em 0}
-.md hr{
-  border:none;height:1px;
-  background:var(--line);
-  margin:2.4em 0;
-}
-.md table{
-  border-collapse:collapse;
-  width:100%;
-  margin:1.2em 0;
-  font-size:13.5px;
-  display:block;
-  overflow-x:auto;
-}
-.md table thead{background:color-mix(in srgb,var(--ink) 3%,transparent)}
-.md table th,.md table td{
-  padding:9px 14px;
-  border:1px solid var(--line);
-  text-align:left;
-  vertical-align:top;
-}
-.md table th{font-weight:640;color:var(--ink)}
-.md img{
-  max-width:100%;
-  border-radius:var(--radius-control);
-  border:1px solid var(--line);
-  margin:1em 0;
-}
+/* 正文排版（标题 / 段落 / 列表 / 表格 / 代码块 / 图片）不在这里 ——
+   它在 docs-md.css，阅读器与 /p/post/ 的静态文章页共用同一份。
+   唯一的源文件是 build/template/docs-content.css，改那里。 */
 
 /* ═══════════ 源码视图 ═══════════ */
 .code-view{
@@ -1016,25 +991,30 @@ input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4
 /* ═══════════ 主区域：内容 + 本页目录 ═══════════ */
 .main{position:relative}
 
-.main-body{flex:1;min-height:0;display:flex;min-width:0}
+.main-body{display:block;min-width:0}
 
 .outline{
-  width:226px;flex:none;
+  flex:none;
   display:none;
-  overflow-y:auto;
-  padding:30px 14px 64px 10px;
-  border-left:1px solid var(--line-soft);
-  scrollbar-width:thin;
-  scrollbar-color:var(--line) transparent;
+  overflow:visible;
+  padding:18px 8px 8px;
 }
 .outline.on{display:block}
 
-/* ── 本页目录：停靠 / 悬浮 / 关闭 ── */
-.outline-head{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+/* ── 本页目录：嵌在侧栏里，只有「显示 / 隐藏」两态 ── */
+.outline-head{display:flex;align-items:center;gap:8px;margin:0 0 10px}
 .outline-head .outline-title{margin:0;flex:1;min-width:0}
+.outline-badge{
+  flex:none;
+  font-family:var(--mono);font-size:10.5px;
+  color:var(--faint);
+  padding:1px 6px;
+  border-radius:var(--radius-badge);
+  background:color-mix(in srgb,var(--ink) 5%,transparent);
+}
 .outline-x{
-  flex:none;width:20px;height:20px;margin-right:8px;
-  display:none;place-items:center;
+  flex:none;width:20px;height:20px;
+  display:grid;place-items:center;
   border:0;background:transparent;padding:0;
   color:var(--faint);cursor:pointer;border-radius:var(--radius-sm);
   transition:color .13s var(--ease),background .13s var(--ease);
@@ -1045,55 +1025,8 @@ input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4
 
 html[data-outline="off"] .outline{display:none}
 
-html[data-outline="float"] .outline{
-  position:fixed;
-  top:calc(var(--bar-h) + 14px);
-  right:16px;
-  width:min(268px,calc(100vw - 32px));
-  max-height:min(62vh,520px);
-  z-index:105;
-  padding:12px 6px 14px;
-  border:1px solid var(--line);
-  border-radius:var(--radius-window);
-  background:color-mix(in srgb,var(--panel) var(--bar-alpha),transparent);
-  -webkit-backdrop-filter:blur(20px) saturate(150%);
-  backdrop-filter:blur(20px) saturate(150%);
-  box-shadow:var(--shadow);
-}
-html[data-outline="float"] .outline.on{display:block}
-html[data-outline="float"] .outline.on.hide{display:none}
-html[data-outline="float"] .outline-x{display:grid}
-html[data-outline="float"] .outline-head{margin-bottom:8px}
-
-.outline-pill{
-  position:fixed;
-  top:calc(var(--bar-h) + 14px);
-  right:16px;
-  z-index:104;
-  display:none;align-items:center;gap:5px;
-  padding:5px 10px;
-  border:1px solid var(--line);
-  border-radius:var(--radius-pill-ctl);
-  background:color-mix(in srgb,var(--panel) 88%,transparent);
-  -webkit-backdrop-filter:blur(12px) saturate(140%);
-  backdrop-filter:blur(12px) saturate(140%);
-  color:var(--dim);
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;
-  cursor:pointer;
-  box-shadow:var(--shadow);
-  transition:color .14s var(--ease),border-color .14s var(--ease);
-}
-.outline-pill.shown{display:inline-flex}
-.outline-pill:hover{color:var(--ink);border-color:var(--dim)}
-.outline-pill:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.outline-pill svg{width:12px;height:12px}
-.outline{padding-top:calc(var(--bar-h) + 14px)}
-.outline::-webkit-scrollbar{width:9px}
-.outline::-webkit-scrollbar-thumb{
-  background:var(--line);border-radius:var(--radius-control);border:2px solid var(--bg);
-}
 .outline-title{
-  margin:0 0 12px;padding-left:10px;
+  margin:0;
   font-family:var(--mono);font-size:10.5px;font-weight:600;
   letter-spacing:.13em;text-transform:uppercase;
   color:var(--faint);
@@ -1121,18 +1054,7 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
 .outline .lv-3 a{padding-left:34px;font-size:12px}
 .outline .lv-4 a{padding-left:46px;font-size:12px}
 
-/* ═══════════ 标题锚点 ═══════════ */
-.md h1,.md h2,.md h3,.md h4{scroll-margin-top:calc(var(--bar-h) + 14px)}
-.md .anchor{
-  margin-left:8px;
-  color:var(--faint);text-decoration:none;border:0;
-  font-weight:400;opacity:0;
-  transition:opacity .13s var(--ease),color .13s var(--ease);
-}
-.md h1:hover .anchor,.md h2:hover .anchor,
-.md h3:hover .anchor,.md h4:hover .anchor{opacity:1}
-.md .anchor:hover{color:var(--accent);border:0}
-.md .anchor:focus-visible{opacity:1;outline:2px solid var(--accent);outline-offset:1px}
+/* 标题锚点的样式同上：在 docs-md.css（build/template/docs-content.css） */
 
 /* ═══════════ 上一篇 / 下一篇 ═══════════ */
 .doc-nav{
@@ -1312,8 +1234,7 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
   .main-title .name{font-size:14px}
   .mbtn{padding:6px 9px}
 
-  /* 右上角那颗「目录」胶囊是浮层，标题别钻到它底下去 */
-  .md{padding-top:44px}
+  .md{padding-top:24px}
 }
 
 /* 顶栏开始吃紧的宽度：按钮只留图标。
@@ -1340,14 +1261,15 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
   /* 状态点也让位给文档名：加载态在正文里本来就有提示，
      「已归档」在正文区上方的 meta 里也有（这里空间实在不够） */
   .load-badge, .load-badge.on{display:none}
-  .md{padding:44px 16px 72px}
+  .md{padding:24px 16px 72px}
   .md pre{padding:12px 14px;font-size:12.5px}
-  .outline{padding:calc(var(--bar-h) + 14px) 12px 48px}
+  .topnav{padding:0 14px;gap:8px}
+  .topnav .nav a{padding:5px 7px}
 }
 
 /* 超窄屏：进一步压 */
 @media (max-width:400px){
-  .md{font-size:14px;padding:44px 14px 64px}
+  .md{font-size:14px;padding:20px 14px 64px}
   .main-title .meta{display:none}
 }
 
@@ -1374,8 +1296,23 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
 <body>
 
 <noscript>
-<div class="noscript-wrap"><h1>文档 · JinSuper</h1><p>这个页面用 JavaScript 在现场排版 Markdown。下面先把预渲染好的正文列出来，其余资料给出原文件链接。</p><section><h2>启程</h2><ul><li><a href="../archive/TEST.html">测试文档（归档）</a></li><li><a href="../para/1SetUp.md">1SetUp</a></li><li><a href="../archive/idea/枣香童年.html">枣香童年（归档）</a></li></ul></section><section><h2>811Studio</h2><ul><li><a href="../science.md">科技节活动方案</a></li><li><a href="../para/homework.md">作业</a></li></ul></section><section><h2>奇思妙想</h2><ul><li><a href="../idea/index.md">索引</a></li><li><a href="../archive/2.ScreenOff.html">2.Screen Off,To the Real World</a></li><li><a href="../archive/idea/1.归途且慢.html">1.归途，且慢.（归档）</a></li></ul></section></div>
+<div class="noscript-wrap"><h1>JinSuper 奇思妙想</h1><p>JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。</p><p>本页用 JavaScript 现场排版；下面是不依赖脚本的完整目录，每篇的正文也有各自的独立地址。</p><section><h2>启程</h2><ul><li><a href="../archive/TEST.html">测试文档（归档）</a></li><li><a href="../p/post/para/1SetUp.html">启程</a></li><li><a href="../p/post/blog.html">写一篇：博客与 Frontmatter</a></li></ul></section><section><h2>811Studio</h2><ul><li><a href="../p/post/para/homework.html">本周作业</a></li></ul></section><section><h2>奇思妙想</h2><ul><li><a href="../p/post/idea/index.html">奇思妙想 · 索引</a></li><li><a href="../p/post/idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html">枣香童年</a></li><li><a href="../archive/2.ScreenOff.html">2.Screen Off,To the Real World</a></li><li><a href="../archive/idea/1.归途且慢.html">1.归途，且慢.（归档）</a></li><li><a href="../archive/idea/3.枣香童年.html">枣香童年（归档）</a></li></ul></section></div>
 </noscript>
+
+<!-- ══ 站点顶栏 ══
+     侧栏改成随页面滚动的嵌入式之后，翻到文章中间就看不到列表了，
+     所以导航常驻在这一条上；导航项由构建期注入（siteNavHtml）。 -->
+<header class="topnav">
+  <a class="brand" href="./">
+    <span class="mark">
+      <svg class="logo-mark" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill="currentColor" d="M512 629.04c-64.536 0-117.04-52.504-117.04-117.04S447.464 394.96 512 394.96 629.04 447.464 629.04 512 576.536 629.04 512 629.04z m0-160.08c-23.732 0-43.04 19.308-43.04 43.04s19.308 43.04 43.04 43.04 43.04-19.308 43.04-43.04-19.308-43.04-43.04-43.04zM799.529 836.529c-9.469 0-18.938-3.612-26.163-10.837-14.45-14.449-14.45-37.877 0-52.326C843.18 703.553 881.628 610.731 881.628 512S843.18 320.447 773.366 250.634c-14.449-14.449-14.449-37.877 0-52.326 14.45-14.449 37.876-14.449 52.326 0 40.73 40.73 72.712 88.17 95.058 141.001 23.143 54.717 34.878 112.818 34.878 172.691s-11.734 117.975-34.878 172.691c-22.346 52.831-54.328 100.271-95.058 141.001-7.224 7.225-16.694 10.837-26.163 10.837zM224.471 836.529c-9.469 0-18.938-3.612-26.163-10.837-40.73-40.73-72.712-88.17-95.058-141.001C80.107 629.974 68.372 571.873 68.372 512s11.734-117.975 34.878-172.691c22.346-52.831 54.328-100.271 95.058-141.001 14.45-14.449 37.877-14.448 52.326 0 14.45 14.449 14.45 37.877 0 52.326C180.82 320.447 142.372 413.268 142.372 512s38.448 191.553 108.261 261.366c14.449 14.449 14.449 37.877 0 52.326-7.224 7.225-16.693 10.837-26.162 10.837z"/><path fill="currentColor" d="M339.681 721.319c-9.47 0-18.938-3.611-26.163-10.837-53.016-53.016-82.214-123.506-82.214-198.482 0-74.978 29.198-145.466 82.214-198.481 14.45-14.448 37.877-14.448 52.326 0 14.449 14.45 14.449 37.877 0 52.326-39.04 39.039-60.54 90.944-60.54 146.155s21.5 107.116 60.54 146.156c14.449 14.449 14.449 37.877 0 52.326-7.224 7.224-16.695 10.837-26.163 10.837zM684.319 721.319c-9.469 0-18.938-3.612-26.163-10.837-14.449-14.449-14.449-37.877 0-52.326 39.04-39.04 60.54-90.945 60.54-146.156s-21.5-107.116-60.54-146.155c-14.449-14.449-14.45-37.876 0-52.326 14.449-14.449 37.876-14.449 52.326 0 53.016 53.016 82.214 123.504 82.214 198.481 0 74.977-29.198 145.466-82.214 198.482-7.225 7.225-16.694 10.837-26.163 10.837z"/></svg>
+    </span>
+    <span class="brand-name">JinSuper 奇思妙想</span>
+  </a>
+  <nav class="nav" aria-label="站点导航">
+    <a href="/p/">博客</a><a href="/p/#timeline">时间线</a><a href="/p/#tags">标签</a><a href="/p/docs.html" class="on" aria-current="page">阅读器</a><a href="/p/feed.xml">RSS</a><a href="/" class="wide">百宝箱</a>
+  </nav>
+</header>
 
 <div class="app">
 
@@ -1383,12 +1320,9 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
   <aside class="sidebar">
     <div class="side-head">
       <div class="side-title">
-        <div class="mark">
-          <svg class="logo-mark" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill="currentColor" d="M512 629.04c-64.536 0-117.04-52.504-117.04-117.04S447.464 394.96 512 394.96 629.04 447.464 629.04 512 576.536 629.04 512 629.04z m0-160.08c-23.732 0-43.04 19.308-43.04 43.04s19.308 43.04 43.04 43.04 43.04-19.308 43.04-43.04-19.308-43.04-43.04-43.04zM799.529 836.529c-9.469 0-18.938-3.612-26.163-10.837-14.45-14.449-14.45-37.877 0-52.326C843.18 703.553 881.628 610.731 881.628 512S843.18 320.447 773.366 250.634c-14.449-14.449-14.449-37.877 0-52.326 14.45-14.449 37.876-14.449 52.326 0 40.73 40.73 72.712 88.17 95.058 141.001 23.143 54.717 34.878 112.818 34.878 172.691s-11.734 117.975-34.878 172.691c-22.346 52.831-54.328 100.271-95.058 141.001-7.224 7.225-16.694 10.837-26.163 10.837zM224.471 836.529c-9.469 0-18.938-3.612-26.163-10.837-40.73-40.73-72.712-88.17-95.058-141.001C80.107 629.974 68.372 571.873 68.372 512s11.734-117.975 34.878-172.691c22.346-52.831 54.328-100.271 95.058-141.001 14.45-14.449 37.877-14.448 52.326 0 14.45 14.449 14.45 37.877 0 52.326C180.82 320.447 142.372 413.268 142.372 512s38.448 191.553 108.261 261.366c14.449 14.449 14.449 37.877 0 52.326-7.224 7.225-16.693 10.837-26.162 10.837z"/><path fill="currentColor" d="M339.681 721.319c-9.47 0-18.938-3.611-26.163-10.837-53.016-53.016-82.214-123.506-82.214-198.482 0-74.978 29.198-145.466 82.214-198.481 14.45-14.448 37.877-14.448 52.326 0 14.449 14.45 14.449 37.877 0 52.326-39.04 39.039-60.54 90.944-60.54 146.155s21.5 107.116 60.54 146.156c14.449 14.449 14.449 37.877 0 52.326-7.224 7.224-16.695 10.837-26.163 10.837zM684.319 721.319c-9.469 0-18.938-3.612-26.163-10.837-14.449-14.449-14.449-37.877 0-52.326 39.04-39.04 60.54-90.945 60.54-146.156s-21.5-107.116-60.54-146.155c-14.449-14.449-14.45-37.876 0-52.326 14.449-14.449 37.876-14.449 52.326 0 53.016 53.016 82.214 123.504 82.214 198.481 0 74.977-29.198 145.466-82.214 198.482-7.225 7.225-16.694 10.837-26.163 10.837z"/></svg>
-        </div>
-        <h1>文档</h1>
-        <button class="side-collapse" id="btnSideCollapse" title="收起文档列表"
-                aria-label="收起文档列表">
+        <span class="side-label">文章</span>
+        <button class="side-collapse" id="btnSideCollapse" title="收起文章列表"
+                aria-label="收起文章列表">
           <span>收起</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>
@@ -1398,7 +1332,7 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
 
     <div class="searchbox">
       <input id="searchInput" type="text" placeholder="搜索… (Ctrl+F)" spellcheck="false"
-             aria-label="搜索文档">
+             aria-label="搜索文章">
       <button class="search-clear" id="searchClear" aria-label="清除搜索" tabindex="-1">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
              stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -1406,6 +1340,19 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
     </div>
 
     <div class="filelist" id="fileList"></div>
+
+    <!-- 本页目录：嵌在侧栏里、跟着页面一起滚动（不再常驻跟随） -->
+    <aside class="outline" id="outline" aria-label="本页目录">
+      <div class="outline-head">
+        <p class="outline-title">本页目录</p>
+        <span class="outline-badge" id="outlineBadge"></span>
+        <button class="outline-x" id="outlineX" title="隐藏目录" aria-label="隐藏目录">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+      </div>
+      <ul id="outlineList"></ul>
+    </aside>
   </aside>
 
   <!-- 手机端：侧栏弹出时压暗背景，点它就收起 -->
@@ -1414,8 +1361,8 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
   <!-- 主区域 -->
   <main class="main">
     <div class="main-bar">
-      <button class="mbtn icon-only" id="btnSideToggle" title="显示 / 收起文档列表"
-              aria-label="显示或收起文档列表" aria-expanded="true">
+      <button class="mbtn icon-only" id="btnSideToggle" title="显示 / 收起文章列表"
+              aria-label="显示或收起文章列表" aria-expanded="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="16" rx="2"/>
@@ -1475,16 +1422,6 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
 
     <div class="main-body">
       <div class="content" id="content"></div>
-      <aside class="outline" id="outline" aria-label="本页目录">
-        <div class="outline-head">
-          <p class="outline-title">本页目录</p>
-          <button class="outline-x" id="outlineX" title="隐藏目录" aria-label="隐藏目录">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                 stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
-          </button>
-        </div>
-        <ul id="outlineList"></ul>
-      </aside>
     </div>
   </main>
 
@@ -1531,9 +1468,8 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
     <section class="group">
       <h3>本页目录</h3>
       <div class="opt-grid" id="outlineGrid">
-        <button class="opt-btn" data-outline="docked" aria-pressed="true"><span>停靠</span></button>
-        <button class="opt-btn" data-outline="float" aria-pressed="false"><span>悬浮</span></button>
-        <button class="opt-btn" data-outline="off" aria-pressed="false"><span>关闭</span></button>
+        <button class="opt-btn" data-outline="on" aria-pressed="true"><span>显示</span></button>
+        <button class="opt-btn" data-outline="off" aria-pressed="false"><span>隐藏</span></button>
       </div>
     </section>
     <section class="group">
@@ -1585,13 +1521,6 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
   </div>
 </aside>
 
-<button class="outline-pill" id="outlinePill" title="显示本页目录" aria-label="显示本页目录">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-       stroke-linecap="round" stroke-linejoin="round">
-    <path d="M4 6h16"/><path d="M4 12h11"/><path d="M4 18h13"/>
-  </svg>
-  <span>目录</span>
-</button>
 
 <div class="toast" id="toast"></div>
 
@@ -1605,11 +1534,14 @@ html[data-outline="float"] .outline-head{margin-bottom:8px}
 </button>
 
 <script>
-window.__SK__ = {"启程":{"测试文档（归档）":"archive/TEST.html","1SetUp":"para/1SetUp.md","枣香童年（归档）":"archive/idea/枣香童年.html"},"811Studio":{"科技节活动方案":"science.md","作业":"para/homework.md"},"奇思妙想":{"索引":"idea/index.md","2.Screen Off,To the Real World":"archive/2.ScreenOff.html","1.归途，且慢.（归档）":"archive/idea/1.归途且慢.html"}};
+window.__SK__ = {"启程":{"测试文档（归档）":"archive/TEST.html","启程":"para/1SetUp.md","写作指南：博客与 Frontmatter":"blog.md"},"811Studio":{"本周作业":"para/homework.md"},"奇思妙想":{"奇思妙想 · 索引":"idea/index.md","枣香童年":"idea/3.枣香童年.md","2.Screen Off,To the Real World":"archive/2.ScreenOff.html","1.归途，且慢.（归档）":"archive/idea/1.归途且慢.html","枣香童年（归档）":"archive/idea/3.枣香童年.html"}};
 window.__PRERENDERED__ = {};
+window.__FM__ = {"para/1SetUp.md":{"title":"启程","author":"JinSuper","category":"启程","tags":["站点","说明"],"summary":"这个站点的起点：关于金旭的个人文档，学校事务、项目文档与随笔日记都放在这里。"},"blog.md":{"title":"写一篇：博客与 Frontmatter","date":"2026-10-07","author":"JinSuper","category":"启程","tags":["说明","博客","写作"],"summary":"这个站点的文章怎么来的：把 .md 丢进 /p、在 sk.json 加一行，然后正文顶上写一段 frontmatter。标题、日期、标签、摘要都在那里，页面、订阅源和搜索引擎读的都是同一份。"},"para/homework.md":{"title":"本周作业","category":"811Studio","tags":["作业"],"summary":"本周作业清单，内嵌 811 的作业页，打开就是最新的那一份。"},"idea/index.md":{"title":"奇思妙想 · 索引","date":"2026-10-07","author":"JinSuper","category":"奇思妙想","tags":["索引"],"summary":"想到什么写什么，写完就搁在这儿。这里按时间收着，点开卡片就是读一篇。"},"idea/3.枣香童年.md":{"title":"枣香童年","date":"2026-10-06","author":"JinSuper","category":"奇思妙想","tags":["随笔","童年","爷爷"],"summary":"爷爷的红枣饼干齁得恰到好处。等我明白「齁」是什么意思的时候，他已经走了很久。"}};
+window.__POSTS__ = {"idea/index.md":"/p/post/idea/index.html","blog.md":"/p/post/blog.html","idea/3.枣香童年.md":"/p/post/idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html","para/homework.md":"/p/post/para/homework.html","para/1SetUp.md":"/p/post/para/1SetUp.html"};
+window.__BLOG__ = {"title":"JinSuper 奇思妙想","desc":"JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。","origin":"https://jinsuper.rth1.xyz","author":"JinSuper"};
 </script>
-<script src="./docs-card.js?v=3"></script>
-<script src="./docs-md.js?v=3"></script>
+<script src="./docs-card.js?v=4"></script>
+<script src="./docs-md.js?v=4"></script>
 <script>
 /* ═══════════════════════════════════════════════════
    文档站 · 客户端脚本（约 200 行）
@@ -1756,6 +1688,16 @@ function detectKind(p){
 /* 页面在 /p/ 下，相对路径要 ../ 才回到网站根 */
 var ROOT_PREFIX = '../';
 
+/* 站点身份：构建期由 build.mjs 从 site.json 的 blog 段注入 */
+var BLOG = window.__BLOG__ || { title:'JinSuper 奇思妙想', desc:'', origin:'', author:'JinSuper' };
+
+/* 每篇文章的 frontmatter 元数据（构建期扫出来的）：{ '路径': { title, date, tags… } }。
+   运行时新丢进来的稿子不在表里，会现场解析一遍，见 fmOf()。 */
+var FM = window.__FM__ || {};
+
+/* 清单里的路径 → 静态文章页地址（/p/post/…）；没有静态页的就不在这个表里 */
+var POSTS = window.__POSTS__ || {};
+
 var GLASS_NAMES = { mica:'云母', aero:'Aero', acrylic:'亚克力' };
 
 var LIBS = {
@@ -1768,7 +1710,7 @@ var LIBS = {
 
 var settings = {
   theme:'obsidian', fontSize:15, glass:'mica',
-  barOpacity:78, outline:'docked', sideCollapsed:false
+  barOpacity:78, outline:'on', sideCollapsed:false
 };
 
 var activePath = null;
@@ -1845,7 +1787,7 @@ function syncFromHash(){
 
   /* 卡片通常在页面底部：换完正文把视口带回顶部，
      不然人是从页脚开始读的。 */
-  try { contentEl.scrollTop = 0; }catch(e){}
+  try { window.scrollTo(0, 0); }catch(e){}
 
   toast('已切换：' + doc.name);
 }
@@ -2015,22 +1957,28 @@ function classifyContent(res){
  */
 function extractArchiveBody(html){
   var s = String(html || '');
-  var start = s.indexOf('<div class="md">');
-  if (start < 0) return s;
-  var from = start + '<div class="md">'.length;
+  /* 外壳换过代：老产物是 <div class="md">…</div>，新产物和文章页一样是
+     <article class="md" id="post">…</article>（见 build/lib/chrome.mjs）。
+     两种都认，别只认老的那一种 —— 否则整页会被当成正文塞进阅读器。 */
+  var open = /<(div|article)\b[^>]*\bclass="md"[^>]*>/i.exec(s);
+  if (!open) return s;
+  var tag = open[1];
+  var from = open.index + open[0].length;
 
-  /* 从正文起点往后找配对的 </div>：数一下嵌套层数 */
-  var depth = 1, i = from;
-  var re = /<div\b|<\/div>/gi;
+  /* 从正文起点往后找配对的收尾标签：数一下同名的嵌套层数 */
+  var depth = 1;
+  var re = new RegExp('<' + tag + '\\b[^>]*>|<\\/' + tag + '\\s*>', 'gi');
   re.lastIndex = from;
   var m;
   while ((m = re.exec(s))){
-    if (m[0].charAt(1) === '/'){ depth--; if (!depth){ i = m.index; break; } }
-    else depth++;
+    if (m[0].slice(0, 2) === '</'){
+      depth--;
+      if (!depth) return s.slice(from, m.index);
+    } else if (!/\/\s*>$/.test(m[0])) {
+      depth++;
+    }
   }
-  if (!i || i <= from) return s.slice(from).replace(/<\/div>[\s\S]*$/, '');
-
-  return s.slice(from, i);
+  return s.slice(from);
 }
 
 /** 读文本：raw.php 优先，退回平台渲染版 */
@@ -2163,7 +2111,8 @@ function getRaw(doc, cb){ loadText(doc, function(err, text){ cb(err ? null : tex
 /* ═══ DOM ═══ */
 var $ = function(id){ return document.getElementById(id); };
 var loadBadgeEl = $('loadBadge'), btnSideToggle = $('btnSideToggle'), btnSideCollapse = $('btnSideCollapse');
-var glassGridEl = $('glassGrid'), outlineGridEl = $('outlineGrid'), outlineXEl = $('outlineX'), outlinePillEl = $('outlinePill');
+var glassGridEl = $('glassGrid'), outlineGridEl = $('outlineGrid'), outlineXEl = $('outlineX');
+var outlineBadgeEl = $('outlineBadge');
 var searchInput = $('searchInput'), searchClear = $('searchClear'), fileListEl = $('fileList');
 var contentEl = $('content'), docNameEl = $('docName'), docMetaEl = $('docMeta');
 var btnToggle = $('btnToggle'), btnViewer = $('btnViewer'), btnCopy = $('btnCopy'), btnOpen = $('btnOpen');
@@ -2187,16 +2136,31 @@ function fmtSize(n){
 }
 
 /**
- * 把文档里的相对链接补回网站根。
+ * 把一个地址解析成「从当前页面出发」的相对地址。
  *
  * 规则与浏览器一致：
  *   · #锚点、//协议相对、http(s):/mailto: 等绝对地址 —— 原样不动
- *   · / 开头的根路径 —— 原样不动（它本来就是相对站点根的）
- *   · 其余（a.md、./a.md、../asset/a.md、img/x.png）—— 补 ROOT_PREFIX
+ *   · / 开头的根路径 —— 补 ROOT_PREFIX（从 /p/ 回到网站根）
+ *   · 其余相对路径 —— 按 base 决定基准目录
+ *
+ * base 有两种，务必分清楚，混了就是 404：
+ *   · 'site'（默认）—— 相对「网站根」。doc.root 是这种
+ *     （renderOne 用 path.relative(siteRoot, …) 算出来的 "p/para/x.md"）。
+ *   · 'p'           —— 相对「/p/」。正文里的链接、图片和 sk.json 是这种
+ *     （"archive/a.html" 指 /p/archive/a.html）。页面自己就在 /p/ 下，
+ *     所以原样返回即可。
+ *
+ * 给正文链接补 ROOT_PREFIX 是错的：会把 "archive/a.html" 顶到网站根去
+ * （../archive/a.html → /archive/a.html），而它其实在 /p/archive/ 下，
+ * 于是卡片一点开就 404。
+ *
+ * 注意：注释里别写星号紧跟斜杠（星号加粗两个词那种），那会提前闭合这个块注释，
+ * 后面的字会变成代码。（本项目踩过一次：写「相对 星号星号/p/星号星号」直接
+ * 让整页脚本报 ReferenceError。）
  *
  * 为什么不在构建期写死前缀：站点目录层级将来可能变，运行时算最稳。
  */
-function renderURL(u){
+function renderURL(u, base){
   var s = String(u || '');
   if (!s) return s;
   if (s.charAt(0) === '#') return s;
@@ -2205,7 +2169,9 @@ function renderURL(u){
      "/sk.json" 得变成 "../sk.json" 才真的指向网站根。
      这样整站挪进子目录也不会断。 */
   if (s.charAt(0) === '/') return ROOT_PREFIX + s.replace(/^\/+/, '');
-  return ROOT_PREFIX + s.split('/').map(encodeURIComponent).join('/');
+  /* 相对路径逐段编码（中文文件名必须编码），.. 与 . 编码后不变 */
+  var rel = s.split('/').map(encodeURIComponent).join('/');
+  return base === 'p' ? rel : ROOT_PREFIX + rel;
 }
 
 /* 命中的关键词高亮：先切段再逐段转义，避免注入 */
@@ -2228,6 +2194,78 @@ function toast(msg, isErr){
   toastEl.className = 'toast show' + (isErr ? ' error' : '');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function(){ toastEl.className = 'toast'; }, 2200);
+}
+
+/* ═══ 文章元数据（frontmatter）═══
+   ---------------------------------------------------
+   标题 / 日期 / 标签这些东西有两个来源：
+     · 构建期扫出来的 window.__FM__（快，且和静态文章页完全一致）
+     · 现场用渲染器拆一遍（刚丢进 /p 还没重新构建的新稿）
+
+   两边走的是同一个 parseFrontmatter（docs-md.js 里的那份），
+   所以不会出现「阅读器显示一个标题、文章页显示另一个」。 */
+
+function fmOf(doc, text){
+  if (FM[doc.path]) return FM[doc.path];
+  if (text && window.DocsMd && typeof window.DocsMd.frontmatter === 'function'){
+    try {
+      var r = window.DocsMd.frontmatter(text);
+      if (r && r.ok) return r.data;
+    }catch(e){ /* 拆不出来就当这篇没有头信息 */ }
+  }
+  return null;
+}
+
+/* 显示用标题：frontmatter 的 title（或 name）优先，其次才是清单里的名字 */
+function fmTitle(doc, fm){
+  var t = fm && (fm.title || fm.name);
+  return t ? String(t) : doc.name;
+}
+
+function fmDate(fm){
+  if (!fm) return '';
+  return String(fm.date || fm.updated || '');
+}
+
+/* 把 <title> / 描述 / canonical / og:* 换成当前这一篇的。
+   hash 路由在爬虫眼里和 /p/docs.html 是同一个页面，所以 canonical
+   指向**静态文章页**（有的话）—— 那才是它该被收录的地址。 */
+function setTag(sel, make){
+  var el = document.head.querySelector(sel);
+  if (!el){
+    el = make();
+    if (!el) return;
+    document.head.appendChild(el);
+  }
+  return el;
+}
+
+function applyDocMeta(doc, fm){
+  var title = fmTitle(doc, fm);
+  document.title = title + ' · ' + BLOG.title;
+
+  var desc = (fm && (fm.summary || fm.description || fm.excerpt)) || BLOG.desc || '';
+  var href = POSTS[doc.path] || '';
+  var canonical = href && BLOG.origin ? BLOG.origin + href : (BLOG.origin ? BLOG.origin + '/p/docs.html' : '');
+
+  var d = setTag('meta[name="description"]', function(){
+    var m = document.createElement('meta'); m.setAttribute('name', 'description'); return m;
+  });
+  if (d && desc) d.setAttribute('content', desc);
+
+  var c = document.head.querySelector('link[rel="canonical"]');
+  if (c && canonical) c.setAttribute('href', canonical);
+
+  var pairs = [
+    ['meta[property="og:title"]', title],
+    ['meta[property="og:description"]', desc],
+    ['meta[property="og:url"]', canonical],
+    ['meta[property="og:type"]', href ? 'article' : 'website'],
+  ];
+  for (var i = 0; i < pairs.length; i++){
+    var el = document.head.querySelector(pairs[i][0]);
+    if (el && pairs[i][1]) el.setAttribute('content', pairs[i][1]);
+  }
 }
 
 /* ═══ 侧栏 ═══ */
@@ -2257,10 +2295,13 @@ function renderSidebar(){
     html += '<div class="group-items">';
     for (var ii = 0; ii < items.length; ii++){
       var it = items[ii];
+      /* 日期来自 frontmatter：写了才有这一段，没写的条目照样对齐 */
+      var itDate = fmDate(FM[it.path]);
       html += '<div class="file-item' + (it.path === activePath ? ' active' : '') + '" data-path="' + esc(it.path) +
         '" role="button" tabindex="0" title="' + esc(it.path) + '">' +
         '<span class="file-icon">' + (LIBS[it.kind] || LIBS.unknown) + '</span>' +
-        '<span class="file-name">' + (ql ? highlightText(it.name, q) : esc(it.name)) + '</span></div>';
+        '<span class="file-name">' + (ql ? highlightText(it.name, q) : esc(it.name)) + '</span>' +
+        (itDate ? '<span class="file-date">' + esc(itDate) + '</span>' : '') + '</div>';
     }
     html += '</div>';
     totalShown += items.length;
@@ -2293,13 +2334,14 @@ function openDoc(p, fromHash){
   if (!fromHash){
     try { history.pushState(null, '', '#' + encodeURIComponent(p)); } catch(e){}
   }
-  document.title = doc.name + ' · JinSuper';
+  /* 顶栏与 <head> 都跟着这一篇走（标题优先用 frontmatter 里的） */
+  applyDocMeta(doc, FM[doc.path] || null);
   renderSidebar();
 
   /* 手机端：选完文档就把侧栏收回，别让它继续挡着正文 */
   if (isNarrow() && !settings.sideCollapsed) setSideCollapsed(true);
 
-  docNameEl.textContent = doc.name;
+  docNameEl.textContent = fmTitle(doc, FM[doc.path] || null);
   docMetaEl.textContent = '';
   outlineEl.classList.remove('on');
   progressEl.style.transform = 'scaleX(0)';
@@ -2441,18 +2483,20 @@ function openDoc(p, fromHash){
     function showPrerendered(text){
       if (!text || !text.trim()){ showLoadError(doc, new Error('产物是空的')); return; }
       contentEl.innerHTML = '<div class="md">' + extractArchiveBody(text) + '</div>';
-      /* 后面这几步和 Markdown 路线共用：相对路径、代码组、选项卡、复制按钮、卡片兜底 */
+      /* 卡片兜底必须排在 fixURLs 前面：enhance 换出来的 a.card 也要过一遍链接改写，
+         否则残留的 <card> 会留下没改写过的相对地址。 */
+      if (window.DocsCard && typeof window.DocsCard.enhance === 'function'){
+        try { window.DocsCard.enhance(contentEl); }catch(e){}
+      }
+      /* 后面这几步和 Markdown 路线共用：相对路径、代码组、选项卡、复制按钮 */
       fixURLs(contentEl);
       fixChartBlocks(contentEl);
       initCodeGroups(contentEl);
       initTabs(contentEl);
       addCodeCopyButtons(contentEl);
-      if (window.DocsCard && typeof window.DocsCard.enhance === 'function'){
-        try { window.DocsCard.enhance(contentEl); }catch(e){}
-      }
       buildOutline();
       appendDocNav();
-      contentEl.scrollTop = 0;
+      window.scrollTo(0, 0);
       updateProgress();
       docMetaEl.textContent = 'HTML · 归档预渲染';
     }
@@ -2479,13 +2523,22 @@ function doRenderMarkdown(doc, text, preHtml, fromPlatform){
   var html = preHtml;
   var fromPrerender = !!preHtml;
 
+  /* 元数据：构建期扫过就用现成的，没有（新丢进来的稿子）就现场拆一遍，
+     顺手把顶栏和 <head> 也换成这一篇的标题 */
+  var fm = fmOf(doc, text);
+  if (fm && !FM[doc.path]){
+    FM[doc.path] = fm;
+    applyDocMeta(doc, fm);
+  }
+  var suffix = fmDate(fm) ? ' · ' + fmDate(fm) : '';
+
   if (html == null){
     if (fromPlatform){
       /* 平台已经把 md 渲染成 HTML 了（raw.php 不可用时的降级路径）。
          这已经是成品，再交给 Markdown 渲染器处理只会画蛇添足，
          直接当正文用。代价是公式退化成平台渲染的样子。 */
       html = text;
-      docMetaEl.textContent = 'Markdown · 平台渲染';
+      docMetaEl.textContent = 'Markdown · 平台渲染' + suffix;
     } else {
       if (!window.DocsMd || !window.DocsMd.ready()){
         showNoRenderer(doc);
@@ -2498,26 +2551,28 @@ function doRenderMarkdown(doc, text, preHtml, fromPlatform){
         return;
       }
     }
-    if (!fromPlatform) docMetaEl.textContent = 'Markdown';
+    if (!fromPlatform) docMetaEl.textContent = 'Markdown' + suffix;
   }
 
-  if (fromPrerender) docMetaEl.textContent = 'Markdown · 预渲染';
+  if (fromPrerender) docMetaEl.textContent = 'Markdown · 预渲染' + suffix;
   contentEl.innerHTML = '<div class="md">' + html + '</div>';
+
+  /* <card> 兜底：预渲染稿和平台渲染稿没走行内规则，
+     里面残留的 <card> 元素到这里才被换成真卡片。
+     必须排在 fixURLs 前面，换出来的 a.card 才会被一起改写地址。 */
+  if (window.DocsCard && typeof window.DocsCard.enhance === 'function'){
+    try { window.DocsCard.enhance(contentEl); }catch(e){}
+  }
+
   fixURLs(contentEl);
   fixChartBlocks(contentEl);
   initCodeGroups(contentEl);
   initTabs(contentEl);
   addCodeCopyButtons(contentEl);
 
-  /* <card> 兜底：预渲染稿和平台渲染稿没走行内规则，
-     里面残留的 <card> 元素到这里才被换成真卡片。 */
-  if (window.DocsCard && typeof window.DocsCard.enhance === 'function'){
-    try { window.DocsCard.enhance(contentEl); }catch(e){}
-  }
-
   buildOutline();
   appendDocNav();
-  contentEl.scrollTop = 0;
+  window.scrollTo(0, 0);
   updateProgress();
 }
 
@@ -2870,17 +2925,44 @@ function renderCodeView(text){
   contentEl.innerHTML = '<div class="code-view"><div class="gutter">' + g + '</div>' +
     '<div class="code" id="__code"></div></div>';
   contentEl.querySelector('#__code').textContent = text;
-  contentEl.scrollTop = 0;
+  window.scrollTo(0, 0);
   updateProgress();
 }
 
-/** 把正文里的相对链接补回网站根 */
+/**
+ * 正文里的链接指向清单里的某一篇时，改成阅读器的深链接。
+ * ---------------------------------------------------
+ * 点卡片、点文档链接本来就该是在同一个页面里换一篇（只换 hash、不重新加载），
+ * 而不是跳到一篇没有侧栏 / 目录 / 上下篇的裸页面：
+ *
+ *   archive/idea/3.枣香童年.html
+ *   → ../p/docs.html#archive%2Fidea%2F3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html
+ *
+ * 认不认得出「这是一篇文档」只查清单（sk.json）—— 路径的唯一来源，
+ * 不在这里另写一套解析。查不到就返回 null，交回 renderURL 按普通地址处理
+ * （工具页、图片、外链、归档片段里指向自己的链接都走那条）。
+ * 清单还没读到时 ALL 是空的，findDoc 返回 null，同样安全退化成普通链接。
+ */
+function docDeepLink(raw){
+  var s = String(raw == null ? '' : raw);
+  if (!s || s.charAt(0) === '#') return null;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) return null; /* 外链不绕 */
+  var doc = findDoc(s);
+  if (!doc) return null;
+  return ROOT_PREFIX + 'p/docs.html#' + encodeURIComponent(doc.path);
+}
+
+/** 把正文里的链接与图片补成「从本页出发」的地址。
+    正文里的相对路径是相对 /p/ 的（和 sk.json 一个写法），所以传 base='p'。
+    链接先看是不是清单里的文档（是就走阅读器深链接），不是再按普通地址解析。 */
 function fixURLs(root){
-  var i, el;
+  var i, el, raw, deep;
   var as = root.querySelectorAll('a[href]');
   for (i = 0; i < as.length; i++){
     el = as[i];
-    el.setAttribute('href', renderURL(el.getAttribute('href')));
+    raw = el.getAttribute('href');
+    deep = docDeepLink(raw);
+    el.setAttribute('href', deep != null ? deep : renderURL(raw, 'p'));
     if (/^https?:\/\//i.test(el.getAttribute('href'))){
       el.setAttribute('target', '_blank');
       el.setAttribute('rel', 'noopener');
@@ -2889,7 +2971,7 @@ function fixURLs(root){
   var imgs = root.querySelectorAll('img[src]');
   for (i = 0; i < imgs.length; i++){
     el = imgs[i];
-    el.setAttribute('src', renderURL(el.getAttribute('src')));
+    el.setAttribute('src', renderURL(el.getAttribute('src'), 'p'));
   }
 }
 
@@ -2907,56 +2989,63 @@ function fixChartBlocks(root){
   }
 }
 
-/* ═══ 本页目录 ═══ */
+/* ═══ 本页目录 ═══
+   ---------------------------------------------------
+   目录现在**嵌在左边栏里**（不再是右侧常驻栏位、也不跟着滚动走）：
+   页面整体滚动，目录跟着正文一起往上走 —— 想按目录跳，就在文章开头用它。
 
-/**
- * 还放得下「停靠」的目录吗。
- * ---------------------------------------------------
- * 停靠目录是 226px 的常驻栏位，侧栏又是 280px：窗口不够宽时
- * 正文只剩一两百像素，英文单词都换行、中文一行几个字。
- * 900px 是「正文还能舒服读」的下限（那时正文栏还有 ~310px）。
- */
-function fitsDockedOutline(){
-  try { return matchMedia('(min-width: 901px)').matches; }
-  catch(e){ return true; }
+   设置里只有「显示 / 隐藏」两态；老版本存过 'docked' / 'float' 的，
+   一律当成显示。 */
+
+/** 目录该不该出现：用户没关、且目录里至少有一条（一节也算，见 buildOutline 的兜底） */
+function outlineWanted(){
+  return settings.outline !== 'off' && outlineListEl.children.length > 0;
 }
 
-/**
- * 这次会话里目录该用哪种形态。
- * ---------------------------------------------------
- * 放不下停靠就用悬浮：它是浮层，不占正文的宽度。
- * 这只影响本次会话的呈现，不动用户存下来的设置 ——
- * 窗口拉宽回来还是他原来挑的那一种。
- */
-function outlineMode(){
-  if (settings.outline === 'off') return 'off';
-  return fitsDockedOutline() ? settings.outline : 'float';
-}
-
-/* 悬浮形态默认收起：浮层展开着会压住正文标题（窄屏首屏就只剩它了）。
-   要看目录点右上角那颗「本页目录」胶囊。 */
-function syncOutlineOpen(){
-  if (outlineMode() === 'float') outlineEl.classList.add('hide');
-  else outlineEl.classList.remove('hide');
+function refreshOutline(){
+  outlineEl.classList.toggle('on', outlineWanted());
+  if (outlineBadgeEl) outlineBadgeEl.textContent = outlineListEl.children.length + ' 节';
 }
 
 function buildOutline(){
   var heads = contentEl.querySelectorAll('.md h1, .md h2, .md h3, .md h4');
-  var html = '';
+  var items = [];
   for (var i = 0; i < heads.length; i++){
     var h = heads[i];
     if (!h.id) continue;
     var lvl = parseInt(h.tagName.charAt(1), 10);
     if (lvl < 1 || lvl > 4) continue;
-    var label = h.textContent.replace(/#\s*$/, '').trim();
-    html += '<li class="lv-' + lvl + '"><a href="#' + esc(h.id) + '" data-target="' + esc(h.id) + '">' + esc(label) + '</a></li>';
+    items.push({ id: h.id, lvl: lvl, label: h.textContent.replace(/#\s*$/, '').trim() });
+  }
+  /* 一个小节都没有的短文（随笔那种）：退回「文章标题 → 正文容器」这一条，
+     别让「本页目录」整块消失 —— 文章页 / 归档稿也是这条规矩（build/lib/chrome.mjs）。 */
+  if (!items.length){
+    var label = docNameEl ? String(docNameEl.textContent || '').trim() : '';
+    if (label) items.push({ id: 'content', lvl: 1, label: label });
+  }
+  /* 层级归一：最浅的那一级算 1。文章从 h2 起（标题写在 frontmatter 里）时，
+     按绝对级别缩进会让整份目录平白缩进一格 —— 看着就是「没有层次」。 */
+  var minLvl = 4;
+  for (var m = 0; m < items.length; m++) if (items[m].lvl < minLvl) minLvl = items[m].lvl;
+  var html = '';
+  for (var j = 0; j < items.length; j++){
+    var lv = items[j].lvl - minLvl + 1;
+    html += '<li class="lv-' + lv + '"><a href="#' + esc(items[j].id) + '" data-target="' + esc(items[j].id) +
+            '" title="' + esc(items[j].label) + '">' + esc(items[j].label) + '</a></li>';
   }
   outlineListEl.innerHTML = html;
-  syncOutlineOpen();
-  var has = heads.length > 1 && outlineMode() !== 'off';
-  outlineEl.classList.toggle('on', has);
-  if (has) setupOutlineSpy();
-  updateOutlinePill();
+  refreshOutline();
+  if (outlineWanted()) setupOutlineSpy();
+}
+
+/** 顶栏 / 文档栏各有多高（CSS 变量给的值，读不到就退回默认） */
+function navHeight(){
+  var v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'));
+  return isNaN(v) ? 40 : v;
+}
+function barHeight(){
+  var bar = document.querySelector('.main-bar');
+  return bar ? bar.offsetHeight : 52;
 }
 
 var outlineSpyOff = null;
@@ -2968,10 +3057,11 @@ function setupOutlineSpy(){
   function onScroll(){
     var heads = contentEl.querySelectorAll('.md h1, .md h2, .md h3, .md h4');
     if (!heads.length) return;
-    var top = contentEl.getBoundingClientRect().top;
+    /* 判据：标题顶边越过「顶栏 + 文档栏 + 一点余量」的就是当前这一节 */
+    var line = navHeight() + barHeight() + 24;
     var current = heads[0];
     for (var i = 0; i < heads.length; i++){
-      if (heads[i].getBoundingClientRect().top - top <= 90) current = heads[i];
+      if (heads[i].getBoundingClientRect().top <= line) current = heads[i];
       else break;
     }
     var id = current ? current.id : null;
@@ -2981,10 +3071,11 @@ function setupOutlineSpy(){
     updateProgress();
   }
 
-  contentEl.addEventListener('scroll', onScroll, { passive: true });
+  /* 页面整体滚动：监听 window，不再监听内容区 */
+  window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
   outlineSpyOff = function(){
-    contentEl.removeEventListener('scroll', onScroll);
+    window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
   };
   onScroll();
@@ -2996,39 +3087,23 @@ outlineListEl.addEventListener('click', function(e){
   e.preventDefault();
   var target = document.getElementById(a.dataset.target);
   if (!target) return;
-  var offset = target.getBoundingClientRect().top - contentEl.getBoundingClientRect().top;
-  var bar = document.querySelector('.main-bar');
-  var barH = bar ? bar.offsetHeight : 52;
-  contentEl.scrollTo({ top: contentEl.scrollTop + offset - barH - 14, behavior: 'smooth' });
+  var top = target.getBoundingClientRect().top + window.pageYOffset - navHeight() - barHeight() - 14;
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 });
 
-outlineXEl.addEventListener('click', function(){
-  outlineEl.classList.add('hide');
-  updateOutlinePill();
+/* 目录右上角的 ×：关掉目录（记住这个选择） */
+if (outlineXEl) outlineXEl.addEventListener('click', function(){
+  settings.outline = 'off';
+  saveSetting('outline', 'off');
+  applySettings();
 });
-outlinePillEl.addEventListener('click', function(){
-  outlineEl.classList.remove('hide');
-  updateOutlinePill();
-});
-
-function updateOutlinePill(){
-  var has = outlineListEl.children.length > 1;
-  outlinePillEl.classList.toggle('shown',
-    outlineMode() === 'float' && has && outlineEl.classList.contains('hide'));
-}
-
-function refreshOutline(){
-  syncOutlineOpen();
-  var has = outlineListEl.children.length > 1 && outlineMode() !== 'off';
-  outlineEl.classList.toggle('on', has);
-  updateOutlinePill();
-}
 
 function updateProgress(){
-  var max = contentEl.scrollHeight - contentEl.clientHeight;
-  var p = max > 0 ? contentEl.scrollTop / max : 0;
+  var doc = document.documentElement;
+  var max = doc.scrollHeight - window.innerHeight;
+  var p = max > 0 ? window.pageYOffset / max : 0;
   progressEl.style.transform = 'scaleX(' + Math.min(1, Math.max(0, p)) + ')';
-  btnTopEl.classList.toggle('on', contentEl.scrollTop > 240);
+  btnTopEl.classList.toggle('on', window.pageYOffset > 240);
 }
 
 /* ═══ 上一篇 / 下一篇 ═══ */
@@ -3047,9 +3122,11 @@ function appendDocNav(){
   nav.className = 'doc-nav';
 
   function card(d, isNext){
+    /* 标题同样优先用 frontmatter 的 title：清单里的名字常带序号前缀，
+       「3.枣香童年」当标题读起来像文件名，「枣香童年」才像文章 */
     return '<a href="#" data-path="' + esc(d.path) + '"' + (isNext ? ' class="next"' : '') + '>' +
       '<span class="dir">' + (isNext ? '下一篇 →' : '← 上一篇') + '</span>' +
-      '<span class="ttl">' + esc(d.name) + '</span></a>';
+      '<span class="ttl">' + esc(fmTitle(d, FM[d.path] || null)) + '</span></a>';
   }
 
   /* 目录是两列栅格。只有一边有卡片时（第一篇没有上一篇、最后一篇没有下一篇）
@@ -3128,7 +3205,7 @@ function applySettings(){
   var root = document.documentElement;
   root.setAttribute('data-theme', settings.theme);
   root.setAttribute('data-glass', settings.glass);
-  root.setAttribute('data-outline', outlineMode());
+  root.setAttribute('data-outline', settings.outline === 'off' ? 'off' : 'on');
   root.style.setProperty('--bar-alpha', settings.barOpacity + '%');
   root.classList.toggle('side-collapsed', !!settings.sideCollapsed);
   btnSideToggle.setAttribute('aria-expanded', String(!settings.sideCollapsed));
@@ -3167,7 +3244,9 @@ function saveSetting(k, v){
     var a = parseInt(localStorage.getItem('docs.barOpacity'), 10);
     if (a >= 10 && a <= 100) settings.barOpacity = a;
     var o = localStorage.getItem('docs.outline');
-    if (o === 'docked' || o === 'float' || o === 'off') settings.outline = o;
+    /* 老版本存的是 'docked' / 'float'：那时目录跟着滚动走，
+       现在只有显示 / 隐藏两种，老值一律当显示 */
+    if (o) settings.outline = (o === 'off') ? 'off' : 'on';
     settings.sideCollapsed = localStorage.getItem('docs.sideCollapsed') === 'true';
     var f = parseInt(localStorage.getItem('docs.fontSize'), 10);
     if (f && f >= 13 && f <= 20) settings.fontSize = f;
@@ -3269,7 +3348,7 @@ function syncSideScrim(){
 
 btnSideToggle.addEventListener('click', function(){ setSideCollapsed(!settings.sideCollapsed); });
 btnSideCollapse.addEventListener('click', function(){ setSideCollapsed(true); });
-btnTopEl.addEventListener('click', function(){ contentEl.scrollTo({ top: 0, behavior: 'smooth' }); });
+btnTopEl.addEventListener('click', function(){ window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
 if (sideScrimEl){
   sideScrimEl.addEventListener('click', function(){ setSideCollapsed(true); });
@@ -3279,20 +3358,13 @@ if (sideScrimEl){
    从桌面拉窄 → 按手机端默认收起（别让常驻栏突然变遮罩挡屏）
    从手机拉宽 → 恢复桌面端上次的选择 */
 var lastNarrow = isNarrow();
-var lastDock = fitsDockedOutline();
 window.addEventListener('resize', function(){
   var now = isNarrow();
-  var nowDock = fitsDockedOutline();
-  if (now === lastNarrow && nowDock === lastDock){ syncSideScrim(); return; }
-
-  if (now !== lastNarrow){
-    lastNarrow = now;
-    if (now) setSideCollapsedEphemeral(true);
-    else setSideCollapsed(settings.sideCollapsed);
-  }
-  lastDock = nowDock;
-  /* 跨过断点要把目录形态重算一遍：位置不够就用悬浮（不占栏位） */
-  applySettings();
+  if (now === lastNarrow){ syncSideScrim(); return; }
+  lastNarrow = now;
+  if (now) setSideCollapsedEphemeral(true);
+  else setSideCollapsed(settings.sideCollapsed);
+  syncSideScrim();
 });
 
 /* 手机端按 Esc 收起侧栏；侧栏展开时锁住背景滚动 */

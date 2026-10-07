@@ -1,16 +1,17 @@
 {
 	"启程": {
 		"测试文档（归档）": "archive/TEST.html",
-		"1SetUp": "para/1SetUp.md",
-		"枣香童年（归档）": "archive/idea/枣香童年.html"
+		"启程": "para/1SetUp.md",
+		"写作指南：博客与 Frontmatter": "blog.md"
 	},
 	"811Studio": {
-		"科技节活动方案": "science.md",
-		"作业": "para/homework.md"
+		"本周作业": "para/homework.md"
 	},
 	"奇思妙想": {
-		"索引": "idea/index.md",
+		"奇思妙想 · 索引": "idea/index.md",
+		"枣香童年": "idea/3.枣香童年.md",
 		"2.Screen Off,To the Real World": "archive/2.ScreenOff.html",
-		"1.归途，且慢.（归档）": "archive/idea/1.归途且慢.html"
+		"1.归途，且慢.（归档）": "archive/idea/1.归途且慢.html",
+		"枣香童年（归档）": "archive/idea/3.枣香童年.html"
 	}
 }

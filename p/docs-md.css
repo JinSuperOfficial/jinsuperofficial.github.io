@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════
    文档站样式 · 由 build/lib/css.mjs 生成，请勿手改
-   组成：KaTeX 数学排版 + 扩展元素样式 + 剧透块 + 卡片
+   组成：KaTeX 数学排版 + 扩展元素样式 + 剧透块 + 卡片 + 正文排版
    字体：./fonts/ 本地自托管，无任何 CDN
    ═══════════════════════════════════════════════════ */
 
@@ -1883,4 +1883,230 @@ html[data-theme="sepia"],html[data-theme="paper"],html[data-theme="moss"]{
   color: var(--ink, #E7E9E6);
   text-decoration: none;
   border-bottom: 0;
+}
+
+
+/* ─────────── 5. 正文排版（阅读器 / 静态文章页共用） ─────────── */
+/* ═══════════════════════════════════════════════════
+   正文排版（阅读器与静态文章页共用）
+   ---------------------------------------------------
+   这一份以前住在 build/template/docs.html 的 <style> 里，
+   只有阅读器吃得到 —— 归档产物、静态文章页（/p/post/*.html）
+   都是独立页面，只引 docs-md.css，于是标题/表格/代码块全是浏览器默认样式。
+
+   现在统一并进 docs-md.css（构建时由 build/lib/css.mjs 追加）：
+   谁引了这份样式，谁就有一模一样的正文排版。
+   注意：.md 的**布局**（max-width / padding / 字号）留在各自页面里 ——
+   阅读器与文章页的可用宽度不同，不能混为一谈。
+   ═══════════════════════════════════════════════════ */
+
+/* ── 正文元素 ── */
+.md h1,.md h2,.md h3,.md h4,.md h5,.md h6{
+  color:var(--ink);
+  font-weight:640;
+  line-height:1.3;
+  letter-spacing:-.012em;
+  margin:1.8em 0 .7em;
+}
+.md h1{font-size:1.85em;margin-top:0;padding-bottom:.35em;border-bottom:1px solid var(--line)}
+.md h2{font-size:1.4em;padding-bottom:.3em;border-bottom:1px solid var(--line-soft)}
+.md h3{font-size:1.15em}
+.md h4{font-size:1em}
+.md h5,.md h6{font-size:.92em;color:var(--md-dim)}
+
+.md p{margin:1em 0}
+.md a{
+  color:var(--accent);
+  text-decoration:none;
+  border-bottom:1px solid var(--accent-line);
+  transition:border-color .13s var(--ease);
+}
+.md a:hover{border-bottom-color:var(--accent)}
+.md strong{color:var(--ink);font-weight:640}
+.md em{color:var(--md-ink);font-style:italic}
+.md del{color:var(--md-dim)}
+
+.md code{
+  font-family:var(--mono);
+  font-size:.86em;
+  background:var(--md-code-inline);
+  color:var(--accent);
+  padding:.15em .4em;
+  border-radius:var(--radius-badge);
+  word-break:break-word;
+}
+.md pre{
+  background:var(--md-code-bg);
+  border:1px solid var(--line);
+  border-radius:var(--radius-card);
+  padding:14px 18px;
+  overflow-x:auto;
+  margin:1.2em 0;
+  font-size:13px;
+  line-height:1.65;
+}
+.md pre code{
+  background:transparent;
+  color:var(--md-ink);
+  padding:0;
+  font-size:inherit;
+  white-space:pre;
+  /* 内容自带底色时按同心公式收敛一圈；外层 pre 已经兜住圆角，这里只做兜底 */
+  border-radius:var(--radius-inner);
+}
+.md blockquote{
+  margin:1.2em 0;
+  padding:.2em 0 .2em 1.2em;
+  border-left:3px solid var(--accent-line);
+  color:var(--md-dim);
+  font-style:italic;
+}
+.md blockquote p{margin:.5em 0}
+.md ul,.md ol{padding-left:1.6em;margin:1em 0}
+.md li{margin:.35em 0}
+.md li > p{margin:.4em 0}
+.md hr{
+  border:none;height:1px;
+  background:var(--line);
+  margin:2.4em 0;
+}
+.md table{
+  border-collapse:collapse;
+  width:100%;
+  margin:1.2em 0;
+  font-size:13.5px;
+  display:block;
+  overflow-x:auto;
+}
+.md table thead{background:color-mix(in srgb,var(--ink) 3%,transparent)}
+.md table th,.md table td{
+  padding:9px 14px;
+  border:1px solid var(--line);
+  text-align:left;
+  vertical-align:top;
+}
+.md table th{font-weight:640;color:var(--ink)}
+.md img{
+  max-width:100%;
+  border-radius:var(--radius-control);
+  border:1px solid var(--line);
+  margin:1em 0;
+}
+
+/* ── 标题锚点（markdown-it-anchor 输出的 .anchor） ── */
+/* 跳锚点时要躲开常驻的栏：阅读器有「站点顶栏 + 文档栏」两条，
+   文章页只有一条（那里把 --nav-h 覆盖成 0）。 */
+.md h1,.md h2,.md h3,.md h4{scroll-margin-top:calc(var(--nav-h,0px) + var(--bar-h) + 14px)}
+.md .anchor{
+  margin-left:8px;
+  color:var(--faint);text-decoration:none;border:0;
+  font-weight:400;opacity:0;
+  transition:opacity .13s var(--ease),color .13s var(--ease);
+}
+.md h1:hover .anchor,.md h2:hover .anchor,
+.md h3:hover .anchor,.md h4:hover .anchor{opacity:1}
+.md .anchor:hover{color:var(--accent);border:0}
+.md .anchor:focus-visible{opacity:1;outline:2px solid var(--accent);outline-offset:1px}
+
+/* ── 文章头元数据（frontmatter 渲染出来的那块） ──
+   结构由 build/lib/markdown.cjs 的 renderFrontmatter() 产出：
+     header.md-fm
+       h1.md-fm-title / p.md-fm-sub / p.md-fm-summary
+       div.md-fm-chips > span.md-fm-chip（日期 / 作者 / 分类 / 阅读时间）
+                       + span.md-fm-tags > span.md-fm-tag
+       dl.md-fm-extra（其余自定义字段，原样列出）
+   Node 端与浏览器端共用同一份渲染函数，所以这里只认这一套类名。 */
+.md .md-fm{
+  margin:0 0 2.2em;
+  padding-bottom:1.4em;
+  border-bottom:1px solid var(--line-soft);
+}
+.md .md-fm-title{
+  margin:0;
+  padding-bottom:0;
+  border-bottom:0;
+  font-size:1.95em;
+  line-height:1.25;
+  letter-spacing:-.02em;
+  color:var(--ink);
+}
+.md .md-fm-title-plain{
+  font-size:1.1em;
+  font-weight:640;
+}
+.md .md-fm-sub{
+  margin:.5em 0 0;
+  color:var(--md-dim);
+  font-size:1.02em;
+}
+.md .md-fm-summary{
+  margin:.7em 0 0;
+  max-width:64ch;
+  color:var(--md-dim);
+  font-size:.96em;
+  line-height:1.7;
+}
+.md .md-fm-chips{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px 14px;
+  margin-top:.95em;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--faint);
+}
+.md .md-fm-chip,
+.md .md-fm-tags{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-width:0;
+}
+.md .md-fm-chip svg,
+.md .md-fm-tags > svg{
+  flex:none;
+  color:var(--accent);
+  opacity:.85;
+}
+.md .md-fm-chip-t{
+  white-space:nowrap;
+}
+.md .md-fm-tag{
+  padding:2px 7px;
+  border:1px solid var(--line);
+  border-radius:var(--radius-badge);
+  background:color-mix(in srgb,var(--ink) 3%,transparent);
+  color:var(--md-dim);
+  font-family:var(--mono);
+  font-size:11.5px;
+  line-height:1.6;
+}
+.md .md-fm-tags{ gap:6px }
+.md .md-fm-extra{
+  display:grid;
+  grid-template-columns:max-content 1fr;
+  gap:4px 14px;
+  margin:1em 0 0;
+  font-size:12.5px;
+  color:var(--md-dim);
+}
+.md .md-fm-extra dt{
+  font-family:var(--mono);
+  color:var(--faint);
+}
+.md .md-fm-extra dd{
+  margin:0;
+  word-break:break-word;
+}
+/* 只写了 title 的极简 frontmatter：不留一条空的分隔线给孩子看 */
+.md .md-fm:has(.md-fm-title:only-child){
+  padding-bottom:0;
+  border-bottom:0;
+  margin-bottom:1.6em;
+}
+@media (max-width:640px){
+  .md .md-fm-title{ font-size:1.6em }
+  .md .md-fm-extra{ grid-template-columns:1fr; gap:2px 0 }
+  .md .md-fm-extra dt{ margin-top:6px }
 }

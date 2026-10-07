@@ -267,7 +267,34 @@ window.SITE_INDEX = {
               "dir": true,
               "children": [
                 {
-                  "name": "TEST.html.2026-10-03T05-32-24-020Z.bak"
+                  "name": "idea/",
+                  "dir": true,
+                  "children": [
+                    {
+                      "name": "1.归途且慢.html.2026-10-07T07-11-24-056Z.bak"
+                    },
+                    {
+                      "name": "1.归途且慢.html.2026-10-07T07-39-18-895Z.bak"
+                    },
+                    {
+                      "name": "3.枣香童年.html.2026-10-07T07-11-24-060Z.bak"
+                    },
+                    {
+                      "name": "3.枣香童年.html.2026-10-07T07-39-18-905Z.bak"
+                    }
+                  ]
+                },
+                {
+                  "name": "2.ScreenOff.html.2026-10-07T07-11-24-052Z.bak"
+                },
+                {
+                  "name": "2.ScreenOff.html.2026-10-07T07-39-18-924Z.bak"
+                },
+                {
+                  "name": "TEST.html.2026-10-07T07-11-24-041Z.bak"
+                },
+                {
+                  "name": "TEST.html.2026-10-07T07-39-18-914Z.bak"
                 }
               ]
             },
@@ -279,7 +306,7 @@ window.SITE_INDEX = {
                   "name": "1.归途且慢.html"
                 },
                 {
-                  "name": "枣香童年.html"
+                  "name": "3.枣香童年.html"
                 }
               ]
             },
@@ -294,14 +321,7 @@ window.SITE_INDEX = {
         {
           "name": "asset/",
           "dir": true,
-          "children": [
-            {
-              "name": "hook.png"
-            },
-            {
-              "name": "woodbridge.jpeg"
-            }
-          ]
+          "children": []
         },
         {
           "name": "fonts/",
@@ -374,6 +394,9 @@ window.SITE_INDEX = {
           "dir": true,
           "children": [
             {
+              "name": "3.枣香童年.md"
+            },
+            {
               "name": "index.md"
             }
           ]
@@ -387,6 +410,39 @@ window.SITE_INDEX = {
             },
             {
               "name": "homework.md"
+            }
+          ]
+        },
+        {
+          "name": "post/",
+          "dir": true,
+          "children": [
+            {
+              "name": "idea/",
+              "dir": true,
+              "children": [
+                {
+                  "name": "3.枣香童年.html"
+                },
+                {
+                  "name": "index.html"
+                }
+              ]
+            },
+            {
+              "name": "para/",
+              "dir": true,
+              "children": [
+                {
+                  "name": "1SetUp.html"
+                },
+                {
+                  "name": "homework.html"
+                }
+              ]
+            },
+            {
+              "name": "blog.html"
             }
           ]
         },
@@ -406,6 +462,9 @@ window.SITE_INDEX = {
           "name": "black.html"
         },
         {
+          "name": "blog.md"
+        },
+        {
           "name": "color-theme.md"
         },
         {
@@ -421,13 +480,13 @@ window.SITE_INDEX = {
           "name": "docs.html"
         },
         {
+          "name": "feed.xml"
+        },
+        {
           "name": "index.html"
         },
         {
           "name": "raw.php"
-        },
-        {
-          "name": "science.md"
         },
         {
           "name": "SKILL.md"

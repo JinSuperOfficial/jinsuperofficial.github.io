@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>JinSuper 奇思妙想</title>
+    <link>https://jinsuper.rth1.xyz/p/docs.html</link>
+    <description>JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。</description>
+    <language>zh-CN</language>
+    <atom:link href="https://jinsuper.rth1.xyz/p/feed.xml" rel="self" type="application/rss+xml"/>
+    <lastBuildDate>Wed, 07 Oct 2026 00:00:00 GMT</lastBuildDate>
+    <item>
+      <title>奇思妙想 · 索引</title>
+      <link>https://jinsuper.rth1.xyz/p/post/idea/index.html</link>
+      <guid isPermaLink="true">https://jinsuper.rth1.xyz/p/post/idea/index.html</guid>
+      <pubDate>Wed, 07 Oct 2026 00:00:00 GMT</pubDate>
+      <dc:creator>JinSuper</dc:creator>
+      <category>索引</category>
+      <description>想到什么写什么，写完就搁在这儿。这里按时间收着，点开卡片就是读一篇。</description>
+    </item>
+    <item>
+      <title>写一篇：博客与 Frontmatter</title>
+      <link>https://jinsuper.rth1.xyz/p/post/blog.html</link>
+      <guid isPermaLink="true">https://jinsuper.rth1.xyz/p/post/blog.html</guid>
+      <pubDate>Wed, 07 Oct 2026 00:00:00 GMT</pubDate>
+      <dc:creator>JinSuper</dc:creator>
+      <category>说明</category>
+      <category>博客</category>
+      <category>写作</category>
+      <description>这个站点的文章怎么来的：把 .md 丢进 /p、在 sk.json 加一行，然后正文顶上写一段 frontmatter。标题、日期、标签、摘要都在那里，页面、订阅源和搜索引擎读的都是同一份。</description>
+    </item>
+    <item>
+      <title>枣香童年</title>
+      <link>https://jinsuper.rth1.xyz/p/post/idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html</link>
+      <guid isPermaLink="true">https://jinsuper.rth1.xyz/p/post/idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html</guid>
+      <pubDate>Tue, 06 Oct 2026 00:00:00 GMT</pubDate>
+      <dc:creator>JinSuper</dc:creator>
+      <category>随笔</category>
+      <category>童年</category>
+      <category>爷爷</category>
+      <description>爷爷的红枣饼干齁得恰到好处。等我明白「齁」是什么意思的时候，他已经走了很久。</description>
+    </item>
+    <item>
+      <title>本周作业</title>
+      <link>https://jinsuper.rth1.xyz/p/post/para/homework.html</link>
+      <guid isPermaLink="true">https://jinsuper.rth1.xyz/p/post/para/homework.html</guid>
+      <dc:creator>JinSuper</dc:creator>
+      <category>作业</category>
+      <description>本周作业清单，内嵌 811 的作业页，打开就是最新的那一份。</description>
+    </item>
+    <item>
+      <title>启程</title>
+      <link>https://jinsuper.rth1.xyz/p/post/para/1SetUp.html</link>
+      <guid isPermaLink="true">https://jinsuper.rth1.xyz/p/post/para/1SetUp.html</guid>
+      <dc:creator>JinSuper</dc:creator>
+      <category>站点</category>
+      <category>说明</category>
+      <description>这个站点的起点：关于金旭的个人文档，学校事务、项目文档与随笔日记都放在这里。</description>
+    </item>
+  </channel>
+</rss>

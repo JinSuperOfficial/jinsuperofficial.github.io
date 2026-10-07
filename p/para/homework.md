@@ -1,3 +1,9 @@
+---
+title: 本周作业
+category: 811Studio
+tags: [作业]
+summary: 本周作业清单，内嵌 811 的作业页，打开就是最新的那一份。
+---
 # 本周作业
 
 <div style="width:100%; height:600px;">

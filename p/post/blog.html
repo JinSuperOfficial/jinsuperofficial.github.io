@@ -2,30 +2,39 @@
 <html lang="zh-CN" data-theme="obsidian" data-glass="mica">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
-<link rel="apple-touch-icon" href="../../../apple-touch-icon.svg">
+<link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- 有没有脚本，样式要区别对待（见下面 html:not(.has-js) 那几条）。
+     放在样式表之前执行，避免闪一下。 -->
 <script>document.documentElement.classList.add('has-js');</script>
-<meta name="description" content="且将白日的喧嚣，换作夏夜的一缕清风。于暗路的树影里，偷得浮生半刻闲。">
-<title>归途，且慢 · JinSuper 奇思妙想</title>
-<meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="https://jinsuper.rth1.xyz/p/archive/idea/1.%E5%BD%92%E9%80%94%E4%B8%94%E6%85%A2.html">
-<link rel="alternate" type="application/rss+xml" title="JinSuper 奇思妙想 · RSS" href="../../feed.xml">
+<title>写一篇：博客与 Frontmatter · JinSuper 奇思妙想</title>
+<meta name="description" content="这个站点的文章怎么来的：把 .md 丢进 /p、在 sk.json 加一行，然后正文顶上写一段 frontmatter。标题、日期、标签、摘要都在那里，页面、订阅源和搜索引擎读的都是同一份。">
+<meta name="author" content="JinSuper">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<link rel="canonical" href="https://jinsuper.rth1.xyz/p/post/blog.html">
+<link rel="alternate" type="application/rss+xml" title="JinSuper 奇思妙想 · RSS" href="../feed.xml">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="JinSuper 奇思妙想">
-<meta property="og:title" content="归途，且慢">
-<meta property="og:description" content="且将白日的喧嚣，换作夏夜的一缕清风。于暗路的树影里，偷得浮生半刻闲。">
-<meta property="og:url" content="https://jinsuper.rth1.xyz/p/archive/idea/1.%E5%BD%92%E9%80%94%E4%B8%94%E6%85%A2.html">
+<meta property="og:title" content="写一篇：博客与 Frontmatter">
+<meta property="og:description" content="这个站点的文章怎么来的：把 .md 丢进 /p、在 sk.json 加一行，然后正文顶上写一段 frontmatter。标题、日期、标签、摘要都在那里，页面、订阅源和搜索引擎读的都是同一份。">
+<meta property="og:url" content="https://jinsuper.rth1.xyz/p/post/blog.html">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2026-09-27">
+<meta property="article:published_time" content="2026-10-07">
+<meta property="article:modified_time" content="2026-10-07">
+<meta property="article:tag" content="说明">
+<meta property="article:tag" content="博客">
+<meta property="article:tag" content="写作">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="归途，且慢">
-<meta name="twitter:description" content="且将白日的喧嚣，换作夏夜的一缕清风。于暗路的树影里，偷得浮生半刻闲。">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"归途，且慢","description":"且将白日的喧嚣，换作夏夜的一缕清风。于暗路的树影里，偷得浮生半刻闲。","url":"https://jinsuper.rth1.xyz/p/archive/idea/1.%E5%BD%92%E9%80%94%E4%B8%94%E6%85%A2.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jinsuper.rth1.xyz/p/archive/idea/1.%E5%BD%92%E9%80%94%E4%B8%94%E6%85%A2.html"},"datePublished":"2026-09-27","author":{"@type":"Person","name":"JinSuper"},"publisher":{"@type":"Organization","name":"JinSuper 奇思妙想"},"inLanguage":"zh-CN","keywords":"随笔,校园","isPartOf":{"@type":"Blog","name":"JinSuper 奇思妙想","url":"https://jinsuper.rth1.xyz/p/docs.html"}}</script>
-<!-- 由发布控制台预渲染：源 Markdown 在项目根 para\ 留底，这里是成品 -->
-<link rel="stylesheet" href="../../docs-md.css">
+<meta name="twitter:title" content="写一篇：博客与 Frontmatter">
+<meta name="twitter:description" content="这个站点的文章怎么来的：把 .md 丢进 /p、在 sk.json 加一行，然后正文顶上写一段 frontmatter。标题、日期、标签、摘要都在那里，页面、订阅源和搜索引擎读的都是同一份。">
+<meta name="x-post-index" content="第 2 / 5 篇">
+<link rel="prev" href="idea/index.html">
+<link rel="next" href="idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"写一篇：博客与 Frontmatter","description":"这个站点的文章怎么来的：把 .md 丢进 /p、在 sk.json 加一行，然后正文顶上写一段 frontmatter。标题、日期、标签、摘要都在那里，页面、订阅源和搜索引擎读的都是同一份。","url":"https://jinsuper.rth1.xyz/p/post/blog.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jinsuper.rth1.xyz/p/post/blog.html"},"datePublished":"2026-10-07","dateModified":"2026-10-07","author":{"@type":"Person","name":"JinSuper"},"publisher":{"@type":"Organization","name":"JinSuper 奇思妙想"},"inLanguage":"zh-CN","articleSection":"启程","keywords":"说明,博客,写作","isPartOf":{"@type":"Blog","name":"JinSuper 奇思妙想","url":"https://jinsuper.rth1.xyz/p/docs.html"}}</script>
+<link rel="stylesheet" href="../docs-md.css?v=4">
 <style>
-/* 主题 token：构建时从 build/template/docs.html 抠出来（build/lib/theme.mjs），别抄第二遍 */
+/* ═══════════ 主题 token：构建时从 build/template/docs.html 抠出来 ═══════════ */
 /* 下面这一段是从 build/template/docs.html 里抠出来的（build/lib/theme.mjs），
    改配色请改模板，改完重新构建。 */
 :root{
@@ -245,7 +254,12 @@ html[data-glass="acrylic"]{
   --glass-size:4px 4px,auto;
   --glass-blend:normal;
 }
-/* 文章外壳：和 /p/post/*.html 是同一份（build/template/post-chrome.css） */
+
+/* ═══════════ 外壳：顶栏 + 两列布局 + 侧栏目录 + 页脚 ═══════════
+   ---------------------------------------------------
+   这一份住在 build/template/post-chrome.css，只此一份：
+   构建期（这一页）和控制台烘的归档稿（/p/archive/**）共用，
+   别在这儿另抄一份。见 build/lib/chrome.mjs。 */
 /* ═══════════════════════════════════════════════════
    文章外壳的样式（顶栏 + 两列布局 + 侧栏目录 + 上下篇 + 页脚）
    ---------------------------------------------------
@@ -512,14 +526,16 @@ html:not(.has-js) .md .cg-panel{ display:block }
 </head>
 <body>
 
+<!-- 顶栏 / 两列布局 / 侧栏目录 / 上下篇 / 页脚都由 build/lib/chrome.mjs 的
+     chromeBody() 生成（控制台烘的归档稿用同一份，见 console/lib/render.mjs） -->
 <header class="top">
-  <a class="brand" href="../../">
+  <a class="brand" href="../">
     <svg class="logo-mark" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill="currentColor" d="M512 629.04c-64.536 0-117.04-52.504-117.04-117.04S447.464 394.96 512 394.96 629.04 447.464 629.04 512 576.536 629.04 512 629.04z m0-160.08c-23.732 0-43.04 19.308-43.04 43.04s19.308 43.04 43.04 43.04 43.04-19.308 43.04-43.04-19.308-43.04-43.04-43.04zM799.529 836.529c-9.469 0-18.938-3.612-26.163-10.837-14.45-14.449-14.45-37.877 0-52.326C843.18 703.553 881.628 610.731 881.628 512S843.18 320.447 773.366 250.634c-14.449-14.449-14.449-37.877 0-52.326 14.45-14.449 37.876-14.449 52.326 0 40.73 40.73 72.712 88.17 95.058 141.001 23.143 54.717 34.878 112.818 34.878 172.691s-11.734 117.975-34.878 172.691c-22.346 52.831-54.328 100.271-95.058 141.001-7.224 7.225-16.694 10.837-26.163 10.837zM224.471 836.529c-9.469 0-18.938-3.612-26.163-10.837-40.73-40.73-72.712-88.17-95.058-141.001C80.107 629.974 68.372 571.873 68.372 512s11.734-117.975 34.878-172.691c22.346-52.831 54.328-100.271 95.058-141.001 14.45-14.449 37.877-14.448 52.326 0 14.45 14.449 14.45 37.877 0 52.326C180.82 320.447 142.372 413.268 142.372 512s38.448 191.553 108.261 261.366c14.449 14.449 14.449 37.877 0 52.326-7.224 7.225-16.693 10.837-26.162 10.837z"/><path fill="currentColor" d="M339.681 721.319c-9.47 0-18.938-3.611-26.163-10.837-53.016-53.016-82.214-123.506-82.214-198.482 0-74.978 29.198-145.466 82.214-198.481 14.45-14.448 37.877-14.448 52.326 0 14.449 14.45 14.449 37.877 0 52.326-39.04 39.039-60.54 90.944-60.54 146.155s21.5 107.116 60.54 146.156c14.449 14.449 14.449 37.877 0 52.326-7.224 7.224-16.695 10.837-26.163 10.837zM684.319 721.319c-9.469 0-18.938-3.612-26.163-10.837-14.449-14.449-14.449-37.877 0-52.326 39.04-39.04 60.54-90.945 60.54-146.156s-21.5-107.116-60.54-146.155c-14.449-14.449-14.45-37.876 0-52.326 14.449-14.449 37.876-14.449 52.326 0 53.016 53.016 82.214 123.504 82.214 198.481 0 74.977-29.198 145.466-82.214 198.482-7.225 7.225-16.694 10.837-26.163 10.837z"/></svg>
     <span>JinSuper 奇思妙想</span>
     <span class="brand-sub" id="brandSub"></span>
   </a>
   <nav class="top-nav" aria-label="站点导航">
-    <a href="/p/">博客</a><a href="/p/#timeline">时间线</a><a href="/p/#tags">标签</a><a href="/p/docs.html">阅读器</a><a href="/p/feed.xml">RSS</a><a href="/" class="wide">百宝箱</a>
+    <a href="/p/" class="on" aria-current="page">博客</a><a href="/p/#timeline">时间线</a><a href="/p/#tags">标签</a><a href="/p/docs.html">阅读器</a><a href="/p/feed.xml">RSS</a><a href="/" class="wide">百宝箱</a>
   </nav>
 </header>
 
@@ -529,68 +545,174 @@ html:not(.has-js) .md .cg-panel{ display:block }
   <aside class="ptoc" id="ptoc" aria-label="本页目录">
     <p class="ptoc-title">本页目录</p>
     <ul id="ptocList">
-      <li class="lv-1"><a href="#归途且慢" data-target="归途且慢" title="归途，且慢">归途，且慢</a></li>
+      <li class="lv-1"><a href="#三十秒上手" data-target="三十秒上手" title="三十秒上手">三十秒上手</a></li>
+      <li class="lv-1"><a href="#frontmatter-写什么" data-target="frontmatter-写什么" title="Frontmatter 写什么">Frontmatter 写什么</a></li>
+      <li class="lv-1"><a href="#目录" data-target="目录" title="目录">目录</a></li>
+      <li class="lv-1"><a href="#构建之后多了什么" data-target="构建之后多了什么" title="构建之后多了什么">构建之后多了什么</a></li>
+      <li class="lv-1"><a href="#三条老规矩别踩" data-target="三条老规矩别踩" title="三条老规矩（别踩）">三条老规矩（别踩）</a></li>
+      <li class="lv-1"><a href="#归档稿" data-target="归档稿" title="归档稿">归档稿</a></li>
     </ul>
   </aside>
 
   <article class="md" id="post">
-
-
-
 <header class="md-fm">
-<h1 class="md-fm-title">归途，且慢</h1>
-<p class="md-fm-summary">且将白日的喧嚣，换作夏夜的一缕清风。于暗路的树影里，偷得浮生半刻闲。</p>
-<div class="md-fm-chips"><span class="md-fm-chip" data-fm="date"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.3 1.5"/></svg><span class="md-fm-chip-t">2026-09-27</span></span><span class="md-fm-chip" data-fm="author"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="5.6" r="2.6"/><path d="M3.2 13.2c.6-2.3 2.5-3.6 4.8-3.6s4.2 1.3 4.8 3.6"/></svg><span class="md-fm-chip-t">JinSuper</span></span><span class="md-fm-chip" data-fm="category"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 7.4 7.6 2.4h5.4v5.4l-5 5z"/><circle cx="10.2" cy="5.4" r="1"/></svg><span class="md-fm-chip-t">奇思妙想</span></span><span class="md-fm-chip md-fm-reading" data-fm="reading"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.3 1.5"/></svg><span class="md-fm-chip-t">约 1 分钟</span></span><span class="md-fm-tags" data-fm="tags"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 7.4 7.6 2.4h5.4v5.4l-5 5z"/><circle cx="10.2" cy="5.4" r="1"/></svg><span class="md-fm-tag">随笔</span><span class="md-fm-tag">校园</span></span></div>
+<h1 class="md-fm-title">写一篇：博客与 Frontmatter</h1>
+<p class="md-fm-summary">这个站点的文章怎么来的：把 .md 丢进 /p、在 sk.json 加一行，然后正文顶上写一段 frontmatter。标题、日期、标签、摘要都在那里，页面、订阅源和搜索引擎读的都是同一份。</p>
+<div class="md-fm-chips"><span class="md-fm-chip" data-fm="date"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.3 1.5"/></svg><span class="md-fm-chip-t">2026-10-07</span></span><span class="md-fm-chip" data-fm="author"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="5.6" r="2.6"/><path d="M3.2 13.2c.6-2.3 2.5-3.6 4.8-3.6s4.2 1.3 4.8 3.6"/></svg><span class="md-fm-chip-t">JinSuper</span></span><span class="md-fm-chip" data-fm="category"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 7.4 7.6 2.4h5.4v5.4l-5 5z"/><circle cx="10.2" cy="5.4" r="1"/></svg><span class="md-fm-chip-t">启程</span></span><span class="md-fm-chip md-fm-reading" data-fm="reading"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.3 1.5"/></svg><span class="md-fm-chip-t">约 4 分钟</span></span><span class="md-fm-tags" data-fm="tags"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 7.4 7.6 2.4h5.4v5.4l-5 5z"/><circle cx="10.2" cy="5.4" r="1"/></svg><a class="md-fm-tag" href="../../p/#tag-%E8%AF%B4%E6%98%8E">说明</a><a class="md-fm-tag" href="../../p/#tag-%E5%8D%9A%E5%AE%A2">博客</a><a class="md-fm-tag" href="../../p/#tag-%E5%86%99%E4%BD%9C">写作</a></span></div>
 </header>
-<h2 id="归途且慢">归途，且慢<a class="anchor" href="#归途且慢" aria-label="锚点链接">#</a></h2>
-<div style="font-size: 0.85em; color: #666; text-align: left; line-height: 1.6;">
-  且将白日的喧嚣，换作夏夜的一缕清风。于暗路的树影里，偷得浮生半刻闲。
-</div>
-<p>　　也许那是一个盛夏的傍晚，由于我作业还未写完，出乎意料地留到了<em>9:00</em><sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>。<br>
-　　平时八点半放学，我总在人挤人中狼狈挪步，想快，却快不了半分。然而这次，我却拐上了<em>靠操场的另一条道路</em><sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup>。<br>
-　　外面天色已黑，月色带走了盛夏的燥热，也隐去了四周的界线。<br>
-　　踏上这条路，一切又熟悉又陌生。两侧传来空灵的蝉鸣，借着夜色掩护，一阵高过一阵。我踱步在小道上，鞋底叩击石板的“嗒嗒”声显得格外空旷。夏季的晚风吹到，传来树叶“沙沙”的声响。泥土的气息在鼻腔中回荡，一遍遍地洗去了空调的味道。<em>“明月别枝惊鹊，清风半夜鸣蝉”</em>。<sup class="footnote-ref"><a href="#fn3" id="fnref3">[3]</a></sup>平时漫长的小道，此刻却如此短暂。<br>
-　　保安大叔的探照灯照过，我一惊，大感不妙，却怎么也舍不得加快脚步。一块石子绊了我个踉跄，我索性借着这股惯性，慢吞吞地向前走去。</p>
-<div style="font-size: 0.85em; color: #b9af72; text-align: left; line-height: 1.6;">
-<details>
-  <summary>著作时间</summary>
-  <div style="font-size: 0.85em; color: #666; text-align: left; line-height: 1.6;">
-    2026.9.27<br>
-    星期日，初二
-  </div>
-</details>
-</div>
-<p>© JinSuper</p>
-<hr class="footnotes-sep">
-<section class="footnotes">
-<ol class="footnotes-list">
-<li id="fn1" class="footnote-item"><p>正常情况下是8:35放学 <a href="#fnref1" class="footnote-backref">↩︎</a></p>
-</li>
-<li id="fn2" class="footnote-item"><p>相对较远的一条路 <a href="#fnref2" class="footnote-backref">↩︎</a></p>
-</li>
-<li id="fn3" class="footnote-item"><p>选自《西江月·夜行黄沙道中》 <a href="#fnref3" class="footnote-backref">↩︎</a></p>
-</li>
+<p>这个站点对外就是一份博客：<strong>JinSuper 奇思妙想</strong>。<br>
+写一篇不是「填后台表单」，是往 <code>/p/</code> 丢一个 Markdown 文件 —— 然后正文顶上写一段头信息。</p>
+<h2 id="三十秒上手">三十秒上手<a class="anchor" href="#三十秒上手" aria-label="锚点链接">#</a></h2>
+<ol>
+<li>把 <code>.md</code> 放进 <code>/p/</code>（可以带子目录，比如 <code>/p/idea/</code>）</li>
+<li>在 <code>/sk.json</code> 里加一行：分组 → 标题 → 相对 <code>/p/</code> 的路径</li>
+<li>正文最上面写一段 frontmatter（本文开头那段就是）</li>
+<li>刷新阅读器就能看见；要让搜索引擎也看到独立网址（以及出现在博客首页的时间线里），跑一次构建</li>
 </ol>
-</section>
+<pre><code class="hljs language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;奇思妙想&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;枣香童年&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;idea/3.枣香童年.md&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h2 id="frontmatter-写什么">Frontmatter 写什么<a class="anchor" href="#frontmatter-写什么" aria-label="锚点链接">#</a></h2>
+<p>文件必须以<strong>第一行的 <code>---</code></strong> 开头，再以<strong>单独一行的 <code>---</code></strong> 收尾。中间是「键: 值」：</p>
+<pre><code class="hljs language-yaml"><span class="hljs-meta">---</span>
+<span class="hljs-attr">title:</span> <span class="hljs-string">枣香童年</span>
+<span class="hljs-attr">date:</span> <span class="hljs-number">2026-10-06</span>
+<span class="hljs-attr">updated:</span> <span class="hljs-number">2026-10-07</span>
+<span class="hljs-attr">author:</span> <span class="hljs-string">JinSuper</span>          <span class="hljs-comment"># 多个作者写 [JinSuper, ABC]</span>
+<span class="hljs-attr">category:</span> <span class="hljs-string">奇思妙想</span>
+<span class="hljs-attr">tags:</span> [<span class="hljs-string">随笔</span>, <span class="hljs-string">童年</span>]
+<span class="hljs-attr">summary:</span> <span class="hljs-string">爷爷的红枣饼干齁得恰到好处。</span>
+<span class="hljs-meta">---
+</span></code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">字段</th>
+<th style="text-align:left">作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>title</code></td>
+<td style="text-align:left">文章标题。阅读器顶栏、浏览器标签、搜索结果里显示的都是它；写了它，正文开头那行一模一样的 <code># 标题</code> 会自动去掉（免得一页两个标题）</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>date</code></td>
+<td style="text-align:left">发布日期，<code>2026-10-06</code> 或 <code>2026.10.6</code> 都认，写进 sitemap 的 <code>lastmod</code>、RSS 的 <code>pubDate</code> 和结构化数据</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>updated</code></td>
+<td style="text-align:left">最后修改日期，填了就多显示一枚「更新于」</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>author</code></td>
+<td style="text-align:left">作者，默认 JinSuper（写在 <code>site.json</code> 的 <code>blog.author</code> 里）。单个作者写 <code>author: JinSuper</code>，多个写 <code>author: [JinSuper, ABC]</code> —— 会画成多枚，也分别进 RSS 与结构化数据</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>category</code></td>
+<td style="text-align:left">分类，显示成标签行里的一枚</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>summary</code></td>
+<td style="text-align:left">摘要 / 一句话简介，进 <code>&lt;meta name=&quot;description&quot;&gt;</code>、Open Graph 与 RSS</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>tags</code></td>
+<td style="text-align:left">标签，写成 <code>[随笔, 童年]</code> 或者一行一个 <code>-</code>。标签在页面上是<strong>可点的</strong>：指向博客首页的标签筛选</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>toc</code></td>
+<td style="text-align:left">写 <code>toc: true</code> 在正文开头再插一份目录（默认不插：阅读器与文章页都已有侧栏目录）</td>
+</tr>
+</tbody>
+</table>
+<p>其余键不会丢：已知的排成上面那样，不认识的照样列在元数据卡片的下半部分，<br>
+写成什么样就显示成什么样。</p>
+<p>不打算发出去的稿子，在 frontmatter 里写 <code>draft: true</code>（或者 <code>nopage: true</code>）：<br>
+它会留在清单里、读得到，但不会生成独立文章页，也不进订阅源和 sitemap。</p>
+<h2 id="目录">目录<a class="anchor" href="#目录" aria-label="锚点链接">#</a></h2>
+<p>目录不用你操心，两处都是自动的：</p>
+<ul>
+<li><strong>阅读器</strong>（<code>/p/docs.html</code>）：左边栏一份「本页目录」，嵌在页面里跟着一起滚，高亮当前小节</li>
+<li><strong>文章页</strong>（<code>/p/post/…</code>）：文章左侧一列目录，跟随阅读高亮当前小节。<br>
+一节也算，<strong>每篇都有</strong>：通篇没有小标题的短文（随笔那种）会退回一条「文章标题」兜底</li>
+</ul>
+<p>层级按<strong>相对级别</strong>缩进（文档里最浅的一级算第一层，标题写在 frontmatter 里时正文从 <code>h2</code> 起也算第一层），<br>
+所以缩进和文章结构对得上，不会整份目录平白缩一格。</p>
+<p>想在正文开头再摆一份，frontmatter 写 <code>toc: true</code>（或者自己写 <code>[[toc]]</code>，放在你想放的位置）。</p>
+<h2 id="构建之后多了什么">构建之后多了什么<a class="anchor" href="#构建之后多了什么" aria-label="锚点链接">#</a></h2>
+<p>跑一次 <code>node build/build.mjs</code>（或 <code>部署.cmd build</code>），除了阅读器还会产出：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">产物</th>
+<th style="text-align:left">是什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>/p/index.html</code></td>
+<td style="text-align:left"><strong>博客首页</strong>：最新几篇、标签筛选、完整时间线（列表全是构建期渲染的静态 HTML）。「最新」只放活稿，时间线与标签里<strong>归档稿也一起列</strong>（带「归档」徽标，标签栏里点「归档」能只看归档）</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>/p/post/&lt;路径&gt;.html</code></td>
+<td style="text-align:left">每篇文章一个<strong>独立网址</strong>，服务端渲染好的正文 + 元数据卡片 + 上下篇</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>/p/feed.xml</code></td>
+<td style="text-align:left">RSS 2.0 订阅源，最新 30 篇</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>/p/docs.html</code></td>
+<td style="text-align:left">阅读器本身，标题、描述、canonical、结构化数据都跟着 <code>site.json</code> 的 <code>blog</code> 段走</td>
+</tr>
+</tbody>
+</table>
+<p><code>sitemap.xml</code> 里会带上每篇文章的独立地址和 <code>lastmod</code>，<br>
+<code>robots.txt</code> 对主流搜索引擎与 AI 抓取一律放行。</p>
+<h2 id="三条老规矩别踩">三条老规矩（别踩）<a class="anchor" href="#三条老规矩别踩" aria-label="锚点链接">#</a></h2>
+<ul>
+<li><strong>相对路径按 <code>/p/</code> 算</strong>：正文里写 <code>pic/a.png</code>，指的是 <code>/p/pic/a.png</code>。构建期会自动补成文章页能用的前缀。</li>
+<li><strong>不引外链、不用 base64</strong>：这是托管平台的硬规则，图片、字体都放站点里。</li>
+<li><strong>文件名里的中文要编码</strong>：写链接时用 <code>%E6%9E%A3...</code>，别指望浏览器猜。</li>
+</ul>
+<h2 id="归档稿">归档稿<a class="anchor" href="#归档稿" aria-label="锚点链接">#</a></h2>
+<p>发布控制台可以把一篇 Markdown 烘成静态 HTML，放进 <code>/p/archive/</code>（原文留底到项目根的 <code>para/</code>）。<br>
+归档稿是成品：阅读器直接注入正文，不再走浏览器端渲染器；它也是能独立打开的页面，<br>
+所以控制台的产物外壳同样会写 canonical / OG / JSON-LD —— 元数据一样取自源文件的 frontmatter。</p>
+<p>几条差别记一下：</p>
+<ul>
+<li>归档稿<strong>不会</strong>被藏起来：博客首页的时间线里照样列（带一枚「归档」徽标），<br>
+标签栏里也有一枚「归档」可以只看归档；只有「最新」那几张卡片只放活稿</li>
+<li>归档稿的外壳和文章页是<strong>同一套</strong>：站点顶栏、左侧「本页目录」（每篇都有，短文也有兜底那一条）、<br>
+上下留白都一样（样式 / 脚本 / 骨架都来自 <code>build/lib/chrome.mjs</code> 那一份）</li>
+<li>归档稿<strong>不会</strong>再有 <code>/p/post/</code> 那套独立文章页（它本身就是一份独立页面）</li>
+<li>同一篇既有活着的正文、又有归档稿时，在<strong>归档稿源文件</strong>的 frontmatter 里写一行<br>
+<code>canonical: /p/post/…</code> 指过去，搜索引擎就不会把它当成第二份内容</li>
+</ul>
+<p>想让一篇稿子回到「活文章」的状态，把 Markdown 放回 <code>/p/</code> 并在 <code>sk.json</code> 里登记即可。</p>
 
-
-  
-  
   </article>
+
+    <a class="pn-prev" href="idea/index.html"><span class="pn-k">← 更新的一篇</span><span class="pn-t">奇思妙想 · 索引</span></a>
+    <a class="pn-next" href="idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html"><span class="pn-k">更早的一篇 →</span><span class="pn-t">枣香童年</span></a>
 
   <footer class="foot">
     <div class="foot-row">
       © JinSuper · 想到什么写什么
-      <a href="../../">博客首页</a>
-      <a href="../../feed.xml">订阅 RSS</a>
-      <a href="../../../">回百宝箱</a>
+      <a href="../docs.html">在阅读器里看这一篇</a>
+      <a href="../feed.xml">订阅 RSS</a>
+      <a href="../../">回百宝箱</a>
     </div>
   </footer>
 </main>
 
-<script src="../../../p/docs-card.js"></script>
-<script src="../../../p/docs-md.js"></script>
 <script>
+/* 文章页的小增强（选项卡 / 代码组 / 复制按钮 / 剧透 / 目录高亮）住在
+   build/template/post-script.js —— 归档稿共用同一份，别另抄。 */
 /* ═══════════════════════════════════════════════════
    文章页的小增强（选项卡 / 代码组 / 复制按钮 / 剧透 / 目录高亮）
    ---------------------------------------------------
@@ -736,5 +858,6 @@ html:not(.has-js) .md .cg-panel{ display:block }
 })();
 
 </script>
+
 </body>
 </html>

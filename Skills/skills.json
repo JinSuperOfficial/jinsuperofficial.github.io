@@ -5,9 +5,9 @@
   "items": [
     {
       "id": "docs",
-      "title": "文档站",
-      "desc": "查看文档",
-      "href": "/Skills/docs/docs.html",
+      "title": "JinSuper 奇思妙想",
+      "desc": "博客首页：最新几篇、时间线、标签筛选，另带一个阅读器",
+      "href": "/p/",
       "icon": "file",
       "kind": "doc",
       "order": 10
@@ -32,9 +32,9 @@
     },
     {
       "id": "blog",
-      "title": "BLOG",
-      "desc": "那些奇妙的文章",
-      "href": "/Skills/docs/blog.html",
+      "title": "写作指南：怎么发一篇",
+      "desc": "frontmatter 怎么写：标题、日期、标签、作者；写完放进 p/ 就是一篇，另附目录 / 归档 / SEO 规则",
+      "href": "/p/post/blog.html",
       "icon": "file",
       "kind": "doc",
       "order": 50

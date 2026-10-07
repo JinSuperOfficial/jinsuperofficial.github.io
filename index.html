@@ -742,6 +742,8 @@ function setLoading(on){
 /* 一张卡的 HTML（结构必须和改造前一致，CSS 才能原样生效） */
 function cardHTML(it, num, lead, q){
   const icon = it.iconSvg || M.iconSvg(it.icon);
+  /* 卡脚显示的路径：目录地址（/p/ 这种）补回末尾斜杠，别显示成光秃秃一个 "p" */
+  const shown = M.sitePath(it.href) + (/\/$/.test(String(it.href)) ? '/' : '');
   return `
       <a class="card${lead ? ' card-lead' : ''}" href="${it.href}" target="_blank" rel="noopener"
          data-id="${esc(it.id)}" data-key="${esc(it.key)}" data-href="${esc(it.href)}" role="listitem">
@@ -755,7 +757,7 @@ function cardHTML(it, num, lead, q){
         <h2>${M.highlight(it.title, q)}</h2>
         <p>${it.desc ? M.highlight(it.desc, q) : '点开看看，具体是什么只有它自己知道。'}</p>
         <div class="card-foot">
-          <span class="card-path">${esc(M.sitePath(it.href))}</span>
+          <span class="card-path">${esc(shown)}</span>
           <span class="card-go">
             打开
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"

@@ -1,1334 +1,605 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="obsidian" data-glass="mica">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="apple-touch-icon" href="../apple-touch-icon.svg">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="apple-touch-icon" href="./apple-touch-icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="JinSuper 网站的随笔与手稿栏目，收录以 Markdown 存放的文章，支持在线阅读、编辑与上传。">
-<title>para/ — 随笔与手稿</title>
+<!-- 有没有脚本，样式要区别对待（标签筛选、时间线折叠都靠它） -->
+<script>document.documentElement.classList.add('has-js');</script>
+<title>JinSuper 奇思妙想</title>
+<meta name="description" content="JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。">
+<meta name="author" content="JinSuper">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<link rel="canonical" href="https://jinsuper.rth1.xyz/p/">
+<link rel="alternate" type="application/rss+xml" title="JinSuper 奇思妙想 · RSS" href="./feed.xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="JinSuper 奇思妙想">
+<meta property="og:title" content="JinSuper 奇思妙想">
+<meta property="og:description" content="JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。">
+<meta property="og:url" content="https://jinsuper.rth1.xyz/p/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JinSuper 奇思妙想">
+<meta name="twitter:description" content="JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Blog","name":"JinSuper 奇思妙想","description":"JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。","url":"https://jinsuper.rth1.xyz/p/","inLanguage":"zh-CN","author":{"@type":"Person","name":"JinSuper"},"blogPost":[{"@type":"BlogPosting","headline":"奇思妙想 · 索引","url":"https://jinsuper.rth1.xyz/p/post/idea/index.html","datePublished":"2026-10-07","dateModified":"2026-10-07","author":{"@type":"Person","name":"JinSuper"},"keywords":"索引"},{"@type":"BlogPosting","headline":"写一篇：博客与 Frontmatter","url":"https://jinsuper.rth1.xyz/p/post/blog.html","datePublished":"2026-10-07","dateModified":"2026-10-07","author":{"@type":"Person","name":"JinSuper"},"keywords":"说明,博客,写作"},{"@type":"BlogPosting","headline":"枣香童年","url":"https://jinsuper.rth1.xyz/p/post/idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html","datePublished":"2026-10-06","dateModified":"2026-10-06","author":{"@type":"Person","name":"JinSuper"},"keywords":"随笔,童年,爷爷"},{"@type":"BlogPosting","headline":"本周作业","url":"https://jinsuper.rth1.xyz/p/post/para/homework.html","author":{"@type":"Person","name":"JinSuper"},"keywords":"作业"},{"@type":"BlogPosting","headline":"启程","url":"https://jinsuper.rth1.xyz/p/post/para/1SetUp.html","author":{"@type":"Person","name":"JinSuper"},"keywords":"站点,说明"}]}</script>
+<link rel="stylesheet" href="./docs-md.css?v=4">
 <style>
+/* ═══════════ 主题 token：构建时从 build/template/docs.html 抠出来 ═══════════ */
+/* 下面这一段是从 build/template/docs.html 里抠出来的（build/lib/theme.mjs），
+   改配色请改模板，改完重新构建。 */
 :root{
-  --paper:#F7F2EA;
-  --paper-2:#FBF8F2;
-  --paper-3:#F3EDE2;
-  --ink:#2E2723;
-  --ink-soft:#6B5D52;
-  --ink-faint:#9C8D80;
-  --line:#E3D9CC;
-  --olive:#8E9867;
-  --clay:#D97757;
-  --clay-dark:#C96848;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   --ease:cubic-bezier(.2,.7,.2,1);
-  --serif: ui-serif, Georgia, "Songti SC", "Noto Serif SC", "Source Han Serif SC", serif;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "PingFang SC", monospace;
+
+  /* ── 圆角：macOS 风格层级 token ──
+     一个页面里只有这几档，别的写法一律不出现。
+     档位与用法见 .Skills/theme-plus/references/circle_angle.md：
+       4px 标签 / 徽章 · 6px 小控件 · 8px 按钮输入框 · 10px 卡片 · 12px 窗口弹窗
+     胶囊只留给开关、状态点、独立浮起的小按钮。
+     --radius-*   按组件取用（语义）
+     --radius-<层级>-px   …-px 是给嵌套元素做同心计算的数字版本
+     --curve       连续曲率开关：squircle 由 @supports 渐进增强，不支持就退回普通圆角 */
+  --radius-xs:4px;
+  --radius-sm:6px;
+  --radius-md:8px;
+  --radius-lg:10px;
+  --radius-xl:12px;
+  --radius-pill:999px;
+
+  --radius-window:var(--radius-xl);
+  --radius-card:var(--radius-lg);
+  --radius-control:var(--radius-md);
+  --radius-badge:var(--radius-xs);
+  --radius-pill-ctl:var(--radius-pill);
+  --radius-inner:var(--radius-sm);
+
+  /* 连续曲率：只在 @supports (corner-shape:squircle) 的浏览器里生效，
+     不支持就当它不存在，圆角退回上面这几档 */
+  --curve:squircle;
+
+  --sidebar-w:300px;
+  --bar-h:52px;
+  /* 站点顶栏高度：main-bar 的 sticky 偏移、目录跳转的落点都按它算 */
+  --nav-h:40px;
+  --fs-md:15px;
+
+  /* 顶栏半透明：不透明度 + 光学参数，各效果在 html[data-glass] 里覆盖 */
+  --bar-alpha:78%;
+  --glass-blur:14px;
+  --glass-sat:160%;
+  --glass-bright:100%;
+  --glass-sheen:none;
+  --glass-size:auto;
+  --glass-blend:normal;
 }
 
-*{ box-sizing:border-box; }
-[hidden]{ display:none !important; }
-html,body{ height:100%; }
+[data-theme="obsidian"]{
+  --bg:#0E1214; --panel:#13181B; --raised:#191F23;
+  --line:#232C31; --line-soft:#1A2226;
+  --ink:#E7E9E6; --dim:#929EA4; --faint:#869298;
+  --accent:#D97757;
+  --accent-soft:rgba(215,119,87,.12);
+  --accent-line:rgba(215,119,87,.36);
+  --md-ink:#DCE0DE; --md-dim:#9AA5AB;
+  --md-code-bg:#0A0D0F; --md-code-inline:#1C2429;
+  --bar-bg:rgba(19,24,27,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.72), 0 2px 10px -6px rgba(0,0,0,.5);
+}
+[data-theme="cloud"]{
+  --bg:#F2F0EB; --panel:#FBFAF7; --raised:#F6F4EF;
+  --line:#DCD7CD; --line-soft:#E9E5DD;
+  --ink:#1F1D1A; --dim:#6B6862; --faint:#6e6b62;
+  --accent:#A8482A;
+  --accent-soft:rgba(168,72,42,.09);
+  --accent-line:rgba(168,72,42,.30);
+  --md-ink:#2A2622; --md-dim:#6f6b61;
+  --md-code-bg:#EAE6DE; --md-code-inline:#E0DACF;
+  --bar-bg:rgba(251,250,247,.78);
+  --shadow:0 20px 50px -30px rgba(60,50,40,.36), 0 2px 10px -6px rgba(60,50,40,.16);
+}
+[data-theme="linen"]{
+  --bg:#F8F3EC; --panel:#FFFDF9; --raised:#FBF6EE;
+  --line:#E3DACB; --line-soft:#EEE7DB;
+  --ink:#2A241D; --dim:#776b5e; --faint:#7a6c5c;
+  --accent:#5F6B3A;
+  --accent-soft:rgba(95,107,58,.11);
+  --accent-line:rgba(95,107,58,.34);
+  --md-ink:#33302B; --md-dim:#766d5e;
+  --md-code-bg:#F0E8DA; --md-code-inline:#E8E0D0;
+  --bar-bg:rgba(255,253,249,.80);
+  --shadow:0 20px 50px -30px rgba(70,60,40,.34), 0 2px 10px -6px rgba(70,60,40,.15);
+}
+[data-theme="ink"]{
+  --bg:#1A1A1A; --panel:#212121; --raised:#2A2A2A;
+  --line:#2E2E2E; --line-soft:#242424;
+  --ink:#F0F0E8; --dim:#9A9A90; --faint:#94948c;
+  --accent:#E05A42;
+  --accent-soft:rgba(224,90,66,.12);
+  --accent-line:rgba(224,90,66,.34);
+  --md-ink:#E0E0D8; --md-dim:#94948b;
+  --md-code-bg:#141414; --md-code-inline:#242424;
+  --bar-bg:rgba(33,33,33,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.8), 0 2px 10px -6px rgba(0,0,0,.55);
+}
+[data-theme="forest"]{
+  --bg:#0F1611; --panel:#141C16; --raised:#1A231C;
+  --line:#24301F; --line-soft:#1B251A;
+  --ink:#E3EAE0; --dim:#7F9080; --faint:#7c917e;
+  --accent:#7DA05C;
+  --accent-soft:rgba(125,160,92,.14);
+  --accent-line:rgba(125,160,92,.38);
+  --md-ink:#D5DED0; --md-dim:#8A9988;
+  --md-code-bg:#0B110D; --md-code-inline:#1D2820;
+  --bar-bg:rgba(20,28,22,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.75), 0 2px 10px -6px rgba(0,0,0,.5);
+}
+[data-theme="ocean"]{
+  --bg:#0B1418; --panel:#101A1F; --raised:#152228;
+  --line:#1E2E35; --line-soft:#16232A;
+  --ink:#E0E8EC; --dim:#7C8C94; --faint:#768d97;
+  --accent:#4A9DB5;
+  --accent-soft:rgba(74,157,181,.14);
+  --accent-line:rgba(74,157,181,.38);
+  --md-ink:#D4DFE4; --md-dim:#8695A0;
+  --md-code-bg:#081013; --md-code-inline:#18262D;
+  --bar-bg:rgba(16,26,31,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.78), 0 2px 10px -6px rgba(0,0,0,.52);
+}
+[data-theme="rose"]{
+  --bg:#F7EDEF; --panel:#FDF8F9; --raised:#FAF0F2;
+  --line:#EBD9DD; --line-soft:#F0E2E5;
+  --ink:#2B1F23; --dim:#77656b; --faint:#7c666d;
+  --accent:#B04A6A;
+  --accent-soft:rgba(176,74,106,.09);
+  --accent-line:rgba(176,74,106,.30);
+  --md-ink:#35262B; --md-dim:#77656e;
+  --md-code-bg:#F0E2E6; --md-code-inline:#EAD8DD;
+  --bar-bg:rgba(253,248,249,.80);
+  --shadow:0 20px 50px -30px rgba(80,50,60,.30), 0 2px 10px -6px rgba(80,50,60,.14);
+}
+[data-theme="sepia"]{
+  --bg:#F2EAD8; --panel:#FAF3E2; --raised:#F5EDDC;
+  --line:#DDD0B4; --line-soft:#E5DAC2;
+  --ink:#2C251A; --dim:#716754; --faint:#716651;
+  --accent:#8A6B3A;
+  --accent-soft:rgba(138,107,58,.11);
+  --accent-line:rgba(138,107,58,.32);
+  --md-ink:#332A1E; --md-dim:#73664f;
+  --md-code-bg:#E8DEC5; --md-code-inline:#E0D4B6;
+  --bar-bg:rgba(250,243,226,.82);
+  --shadow:0 20px 50px -30px rgba(70,55,35,.32), 0 2px 10px -6px rgba(70,55,35,.14);
+}
+[data-theme="midnight"]{
+  --bg:#0A0E17; --panel:#101623; --raised:#151C2B;
+  --line:#1E273A; --line-soft:#161E2F;
+  --ink:#E0E6EF; --dim:#7C8AA0; --faint:#7a88a2;
+  --accent:#5B8FB9;
+  --accent-soft:rgba(91,143,185,.14);
+  --accent-line:rgba(91,143,185,.38);
+  --md-ink:#D4DCE6; --md-dim:#8694AA;
+  --md-code-bg:#070A11; --md-code-inline:#182132;
+  --bar-bg:rgba(16,22,35,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.80), 0 2px 10px -6px rgba(0,0,0,.55);
+}
+[data-theme="paper"]{
+  --bg:#FAFAF7; --panel:#FFFFFF; --raised:#F5F5F0;
+  --line:#E0E0D8; --line-soft:#EDEDE5;
+  --ink:#1A1A1A; --dim:#6B6B65; --faint:#6f6f67;
+  --accent:#333333;
+  --accent-soft:rgba(51,51,51,.08);
+  --accent-line:rgba(51,51,51,.28);
+  --md-ink:#2A2A2A; --md-dim:#6d6d69;
+  --md-code-bg:#F0F0EA; --md-code-inline:#E8E8E0;
+  --bar-bg:rgba(255,255,255,.82);
+  --shadow:0 20px 50px -32px rgba(0,0,0,.20), 0 2px 10px -6px rgba(0,0,0,.08);
+}
+[data-theme="amber"]{
+  --bg:#18140E; --panel:#1F1A12; --raised:#262016;
+  --line:#332A1C; --line-soft:#272015;
+  --ink:#EDE5D5; --dim:#A09080; --faint:#968772;
+  --accent:#D9A44A;
+  --accent-soft:rgba(217,164,74,.14);
+  --accent-line:rgba(217,164,74,.38);
+  --md-ink:#E0D8C8; --md-dim:#968A78;
+  --md-code-bg:#120F0A; --md-code-inline:#262018;
+  --bar-bg:rgba(31,26,18,.78);
+  --shadow:0 20px 50px -28px rgba(0,0,0,.78), 0 2px 10px -6px rgba(0,0,0,.52);
+}
+[data-theme="moss"]{
+  --bg:#EEF1E6; --panel:#F7F9F0; --raised:#F2F5E9;
+  --line:#D8DFC8; --line-soft:#E3E9D6;
+  --ink:#232A1A; --dim:#666e5b; --faint:#656d59;
+  --accent:#5A6B3A;
+  --accent-soft:rgba(90,107,58,.11);
+  --accent-line:rgba(90,107,58,.32);
+  --md-ink:#2D3521; --md-dim:#666e5a;
+  --md-code-bg:#E4EAD8; --md-code-inline:#DCE3CC;
+  --bar-bg:rgba(247,249,240,.82);
+  --shadow:0 20px 50px -32px rgba(50,60,35,.28), 0 2px 10px -6px rgba(50,60,35,.12);
+}
+
+html[data-glass="mica"]{
+  --glass-blur:6px; --glass-sat:130%; --glass-bright:100%;
+  --glass-sheen:linear-gradient(180deg,
+    rgba(255,255,255,.05) 0%,
+    rgba(255,255,255,0) 58%,
+    rgba(0,0,0,.06) 100%);
+  --glass-blend:normal;
+}
+html[data-glass="aero"]{
+  --glass-blur:22px; --glass-sat:190%; --glass-bright:106%;
+  --glass-sheen:linear-gradient(180deg,
+    rgba(255,255,255,.22) 0%,
+    rgba(255,255,255,.07) 42%,
+    rgba(255,255,255,0) 64%,
+    rgba(0,0,0,.06) 100%);
+  --glass-blend:screen;
+}
+html[data-glass="acrylic"]{
+  --glass-blur:28px; --glass-sat:150%; --glass-bright:100%;
+  --glass-sheen:
+    radial-gradient(circle at 0 0,rgba(255,255,255,.13) 0 1px,rgba(255,255,255,0) 1.6px),
+    linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(0,0,0,.05) 100%);
+  --glass-size:4px 4px,auto;
+  --glass-blend:normal;
+}
+
+/* 这两页的顶栏本身就是站点的栏（--bar-h），没有额外的 --nav-h */
+:root{ --nav-h:0px }
+
+*,*::before,*::after{box-sizing:border-box}
 body{
   margin:0;
-  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-              "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  background:var(--paper);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-  overflow:hidden;
-}
-
-/* 极淡的纸面颗粒 */
-body::after{
-  content:"";
-  position:fixed; inset:0; z-index:2; pointer-events:none;
-  opacity:.03;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
-}
-
-::selection{ background:#EBD8CC; }
-
-/* ---------- 顶栏 ---------- */
-.app{ position:relative; z-index:3; height:100dvh; height:100vh; display:flex; flex-direction:column; }
-
-.topbar{
-  position:relative;
-  height:56px; flex:0 0 56px;
-  display:flex; align-items:center; justify-content:space-between;
-  padding:0 18px 0 20px;
-  border-bottom:1px solid var(--line);
-  background:rgba(251,248,242,.88);
-  backdrop-filter:blur(10px);
-}
-.brand{ display:flex; align-items:baseline; gap:8px; user-select:none; }
-.brand-mark{
-  font-family:var(--serif);
-  font-size:19px; font-weight:600; letter-spacing:-.01em;
-}
-.brand-slash{ color:var(--clay); font-weight:600; font-size:19px; }
-.brand-sub{
-  font-size:12px; color:var(--ink-faint);
-  letter-spacing:.04em;
-  padding-left:6px;
-  border-left:1px solid var(--line);
-}
-.top-actions{ display:flex; align-items:center; gap:8px; }
-
-.menu-btn{
-  display:none;
-  align-items:center; justify-content:center;
-  width:34px; height:34px;
-  border:1px solid var(--line); border-radius:4px;
-  background:transparent; color:var(--ink-soft); cursor:pointer;
-  transition:border-color .15s var(--ease), color .15s var(--ease);
-}
-.menu-btn:hover{ border-color:var(--ink-faint); color:var(--ink); }
-
-/* 进度条 */
-.progress{
-  position:absolute; left:0; bottom:-1px; height:2px; width:100%;
-  background:var(--clay);
-  transform:scaleX(0); transform-origin:0 50%;
-  transition:transform .08s linear;
-  z-index:5;
-}
-
-/* ---------- 按钮 ---------- */
-.btn{
-  font:inherit; font-size:14px;
-  border:1px solid transparent; background:transparent; color:var(--ink);
-  padding:7px 14px; border-radius:3px; cursor:pointer;
-  transition:background .15s var(--ease), border-color .15s var(--ease),
-             color .15s var(--ease), transform .12s var(--ease);
-}
-.btn:active{ transform:translateY(1px); }
-.btn:focus-visible{ outline:2px solid var(--clay); outline-offset:2px; }
-
-.btn-primary{
-  background:var(--clay); color:#fff;
-  border-radius:999px; padding:8px 20px; font-weight:500;
-  letter-spacing:.01em;
-}
-.btn-primary:hover{ background:var(--clay-dark); }
-
-.btn-quiet{ border-color:var(--line); color:var(--ink-soft); }
-.btn-quiet:hover{ border-color:var(--ink-faint); color:var(--ink); background:var(--paper-3); }
-.btn-quiet.danger:hover{ border-color:#C0432F; color:#C0432F; background:#FBEDE8; }
-
-.btn-mini{
-  border:1px solid var(--line); border-radius:3px;
-  padding:6px 10px; font-size:13px; color:var(--ink-soft);
-}
-.btn-mini:hover{ border-color:var(--ink-faint); color:var(--ink); }
-
-/* ---------- 布局 ---------- */
-.layout{
-  flex:1; min-height:0;
-  display:grid;
-  grid-template-columns:288px 1fr;
-}
-
-/* ---------- 侧栏 ---------- */
-.sidebar{
-  border-right:1px solid var(--line);
-  background:var(--paper-2);
-  display:flex; flex-direction:column; min-height:0;
-}
-.sidebar-head{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:18px 18px 10px;
-}
-.sidebar-head h2{
-  margin:0; font-size:12px; font-weight:600;
-  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint);
-}
-.count{
-  font-size:11px; color:var(--ink-faint);
-  background:var(--paper-3); border-radius:999px;
-  padding:2px 8px; font-variant-numeric:tabular-nums;
-}
-.search-wrap{ padding:0 14px 10px; }
-#search{
-  width:100%; font:inherit; font-size:13.5px;
-  padding:8px 11px;
-  background:var(--paper-3);
-  border:1px solid transparent; border-radius:4px;
-  color:var(--ink);
-  transition:border-color .15s var(--ease), background .15s var(--ease);
-}
-#search:focus{ outline:none; border-color:var(--olive); background:var(--paper-2); }
-#search::placeholder{ color:var(--ink-faint); }
-
-.post-list{ flex:1; overflow-y:auto; padding:4px 8px 8px; }
-.post-list::-webkit-scrollbar{ width:8px; }
-.post-list::-webkit-scrollbar-thumb{ background:#E0D5C6; border-radius:4px; }
-
-.post-item{
-  position:relative;
-  display:block; width:100%; text-align:left;
-  font:inherit;
-  border:0; background:transparent;
-  padding:11px 12px 11px 14px;
-  border-radius:4px; cursor:pointer;
-  transition:background .15s var(--ease);
-  animation:rise .32s var(--ease) both;
-  animation-delay:calc(var(--i, 0) * 22ms);
-}
-.post-item:hover{ background:var(--paper-3); }
-.post-item.is-active{ background:#F0E9DC; }
-.post-item.is-active::before{
-  content:""; position:absolute; left:4px; top:11px; bottom:11px;
-  width:2px; border-radius:2px; background:var(--clay);
-}
-.post-title{
-  display:block;
-  font-size:14.5px; line-height:1.45; color:var(--ink);
-  font-weight:500;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  padding-right:44px;
-}
-.post-meta{
-  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
-  margin-top:4px;
-  font-size:11.5px; color:var(--ink-faint);
-  font-variant-numeric:tabular-nums;
-}
-.post-meta .sep{ opacity:.5; }
-.src-badge{
-  position:absolute; right:10px; top:11px;
-  font-size:10px; letter-spacing:.04em;
-  color:var(--olive);
-  border:1px solid #D5DCC2; background:#F0F3E7;
-  padding:1px 5px; border-radius:3px;
-}
-.list-empty{
-  padding:24px 14px; font-size:13px; line-height:1.7;
-  color:var(--ink-faint);
-}
-
-/* 侧栏底部 para 面板 */
-.para-panel{
-  border-top:1px solid var(--line);
-  padding:12px 14px 14px;
-  background:#F8F4EC;
-}
-.para-hint{
-  font-size:11.5px; line-height:1.65; color:var(--ink-faint);
-  margin-bottom:9px;
-}
-.para-hint code{
-  font-family:var(--mono); font-size:11px;
-  background:var(--paper-3); padding:1px 4px; border-radius:3px;
-  color:var(--ink-soft);
-}
-.para-manual{ display:flex; gap:6px; }
-.para-manual input{
-  flex:1; min-width:0; font:inherit; font-size:12.5px;
-  padding:6px 9px;
-  background:var(--paper-2);
-  border:1px solid var(--line); border-radius:3px;
-  color:var(--ink);
-}
-.para-manual input:focus{ outline:none; border-color:var(--olive); }
-.para-manual input::placeholder{ color:#B9AA9B; }
-
-/* ---------- 主舞台 ---------- */
-.stage{
-  position:relative;
-  overflow-y:auto;
-  overflow-x:hidden;
-  background:var(--paper);
-}
-.stage::-webkit-scrollbar{ width:10px; }
-.stage::-webkit-scrollbar-thumb{ background:#E0D5C6; border-radius:5px; border:3px solid var(--paper); }
-
-/* ---------- 阅读 ---------- */
-.reader-inner{
-  max-width:716px;
-  margin:0 auto;
-  padding:68px 32px 140px;
-  animation:rise .42s var(--ease) both;
-}
-.reader-kicker{
-  display:flex; align-items:center; gap:10px;
-  font-size:11px; letter-spacing:.16em; text-transform:uppercase;
-  color:var(--ink-faint);
-  margin-bottom:20px;
-}
-.kicker-line{ display:block; width:26px; height:1px; background:var(--clay); }
-.reader-title{
-  font-family:var(--serif);
-  font-size:clamp(28px, 4vw, 44px);
-  line-height:1.24; letter-spacing:-.015em;
-  font-weight:600;
-  margin:0 0 18px;
-  color:#241E1A;
-}
-.reader-meta{
-  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-  font-size:12.5px; color:var(--ink-faint);
-  font-variant-numeric:tabular-nums;
-  margin-bottom:22px;
-}
-.reader-meta .dot{
-  width:3px; height:3px; border-radius:50%;
-  background:var(--ink-faint); opacity:.5;
-}
-.reader-tags{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:26px; }
-.tag{
-  font-size:11.5px; letter-spacing:.02em;
-  color:var(--olive);
-  background:#F0F3E7;
-  border:1px solid #DCE2CB;
-  padding:2px 9px; border-radius:999px;
-}
-
-.reader-body{
-  font-size:17px; line-height:1.86; color:#3A322C;
-  word-wrap:break-word;
-}
-.reader-body > *:first-child{ margin-top:0; }
-.reader-body p{ margin:0 0 1.35em; }
-.reader-body h1{ font-family:var(--serif); font-size:30px; margin:1.8em 0 .6em; font-weight:600; line-height:1.3; }
-.reader-body h2{ font-family:var(--serif); font-size:25px; margin:1.8em 0 .6em; font-weight:600; line-height:1.35; }
-.reader-body h3{ font-size:19px; margin:1.7em 0 .55em; font-weight:600; }
-.reader-body h4{ font-size:16.5px; margin:1.5em 0 .5em; font-weight:600; color:var(--ink-soft); }
-.reader-body a{
-  color:var(--clay);
-  text-decoration:none;
-  border-bottom:1px solid rgba(215,119,87,.35);
-  transition:border-color .15s var(--ease);
-}
-.reader-body a:hover{ border-bottom-color:var(--clay); }
-.reader-body strong{ font-weight:600; color:#241E1A; }
-.reader-body code{
-  font-family:var(--mono);
-  font-size:.87em;
-  background:var(--paper-3);
-  padding:.16em .42em;
-  border-radius:3px;
-  color:#8A4A32;
-}
-.reader-body pre{
-  background:#2E2723;
-  color:#EFE8DC;
-  padding:18px 20px;
-  border-radius:6px;
-  overflow-x:auto;
-  font-size:13.5px;
+  min-height:100dvh;
+  background:var(--bg);
+  color:var(--md-ink);
+  font-family:var(--sans);
+  font-size:var(--fs-md);
   line-height:1.7;
-  margin:1.6em 0;
+  -webkit-font-smoothing:antialiased;
 }
-.reader-body pre code{
-  background:none; padding:0; color:inherit; font-size:inherit;
-}
-.reader-body blockquote{
-  margin:1.6em 0;
-  padding:.15em 0 .15em 20px;
-  border-left:2px solid var(--olive);
-  color:var(--ink-soft);
-  font-style:italic;
-}
-.reader-body blockquote p:last-child{ margin-bottom:0; }
-.reader-body ul,.reader-body ol{ padding-left:1.45em; margin:0 0 1.35em; }
-.reader-body li{ margin:.42em 0; }
-.reader-body hr{ border:0; border-top:1px solid var(--line); margin:2.6em 0; }
-.reader-body img{ max-width:100%; height:auto; border-radius:4px; display:block; margin:1.6em 0; }
-.reader-body table{
-  width:100%; border-collapse:collapse;
-  font-size:14.5px; margin:1.6em 0;
-  border-top:1px solid var(--line);
-}
-.reader-body th,.reader-body td{
+a{ color:var(--accent) }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:var(--radius-xs) }
+
+/* ── 顶栏（与阅读器、文章页同一套） ── */
+.topnav{
+  position:sticky; top:0; z-index:20;
+  display:flex; align-items:center; gap:14px;
+  min-height:var(--bar-h); padding:0 20px;
   border-bottom:1px solid var(--line);
-  padding:10px 12px; text-align:left; vertical-align:top;
+  background:var(--bar-bg);
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-bright));
 }
-.reader-body th{ font-weight:600; background:var(--paper-3); color:var(--ink-soft); }
+.topnav .brand{
+  display:flex; align-items:center; gap:9px;
+  color:var(--ink); text-decoration:none; font-weight:640;
+  letter-spacing:-.01em; white-space:nowrap; min-width:0;
+}
+.topnav .brand svg{ width:20px; height:20px; flex:none; color:var(--accent) }
+.topnav .nav{ margin-left:auto; display:flex; align-items:center; gap:2px; font-size:13px }
+.topnav .nav a{
+  padding:6px 10px; border-radius:var(--radius-control);
+  color:var(--dim); text-decoration:none;
+  transition:color .14s var(--ease), background .14s var(--ease);
+}
+.topnav .nav a:hover{ color:var(--ink); background:color-mix(in srgb,var(--ink) 6%,transparent) }
+.topnav .nav a.on{ color:var(--accent); background:var(--accent-soft) }
 
-.reader-foot{
-  display:flex; gap:8px; flex-wrap:wrap;
-  margin-top:64px; padding-top:24px;
-  border-top:1px solid var(--line);
-}
+.wrap{ max-width:1000px; margin:0 auto; padding:0 20px 90px }
 
-/* ---------- 空状态 ---------- */
-.empty{
-  height:100%;
-  display:flex; align-items:center;
-  padding:0 32px 0 clamp(32px, 12vw, 160px);
+/* ── 头部 ── */
+.hero{ padding:44px 0 26px }
+.hero h1{
+  margin:0; font-size:2.1em; line-height:1.25; letter-spacing:-.02em; color:var(--ink);
 }
-.empty-inner{ max-width:420px; animation:rise .5s var(--ease) both; }
-.empty-mark{
-  font-family:var(--serif);
-  font-size:52px; line-height:1; color:#DDD0BE;
-  margin-bottom:20px;
+.hero p{ margin:.7em 0 0; max-width:64ch; color:var(--md-dim) }
+.hero .stats{
+  margin-top:14px; display:flex; flex-wrap:wrap; gap:6px 16px;
+  font-family:var(--mono); font-size:12px; color:var(--faint);
 }
-.empty h2{
-  font-family:var(--serif);
-  font-size:26px; font-weight:600;
-  margin:0 0 12px;
-}
-.empty p{
-  font-size:14.5px; line-height:1.85; color:var(--ink-soft);
-  margin:0 0 26px;
-}
-.empty code{
-  font-family:var(--mono); font-size:13px;
-  background:var(--paper-3); padding:1px 5px; border-radius:3px;
-  color:#8A4A32;
-}
-.empty-actions{ display:flex; gap:10px; align-items:center; }
+.hero .stats b{ color:var(--accent); font-weight:640 }
 
-/* ---------- 编辑器 ---------- */
-.editor{ display:flex; flex-direction:column; height:100%; }
-.editor-head{
-  padding:26px 30px 14px;
-  border-bottom:1px solid var(--line);
-  flex:0 0 auto;
+/* ── 区块标题 ── */
+.sec{ margin-top:38px; scroll-margin-top:calc(var(--bar-h) + 14px) }
+.sec-head{
+  display:flex; align-items:baseline; gap:10px;
+  margin:0 0 14px; padding-bottom:8px;
+  border-bottom:1px solid var(--line-soft);
 }
-.ed-title{
-  width:100%; font:inherit;
-  font-family:var(--serif);
-  font-size:clamp(22px, 3vw, 30px); font-weight:600;
-  border:0; background:transparent; color:var(--ink);
-  padding:2px 0; letter-spacing:-.01em;
-}
-.ed-title:focus{ outline:none; }
-.ed-title::placeholder{ color:#C4B5A5; }
-.ed-tags{
-  width:100%; font:inherit; font-size:13px;
-  border:0; background:transparent; color:var(--ink-soft);
-  padding:8px 0 0;
-}
-.ed-tags:focus{ outline:none; }
-.ed-tags::placeholder{ color:#C4B5A5; }
+.sec-head h2{ margin:0; font-size:1.05em; color:var(--ink); font-weight:640 }
+.sec-head .hint{ font-family:var(--mono); font-size:11.5px; color:var(--faint) }
 
-.editor-body{
-  flex:1; min-height:0;
-  display:grid; grid-template-columns:1fr 1fr;
+/* ── 最新几篇 ── */
+.cards{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
+.post-card{
+  position:relative;
+  display:block; padding:14px 16px;
+  border:1px solid var(--line); border-radius:var(--radius-card);
+  background:var(--panel); color:var(--ink);
+  transition:border-color .14s var(--ease), transform .14s var(--ease);
 }
-.pane{ display:flex; flex-direction:column; min-height:0; }
-.pane-write{ border-right:1px solid var(--line); }
-.pane-label{
-  flex:0 0 auto;
-  font-size:10.5px; letter-spacing:.16em; text-transform:uppercase;
-  color:var(--ink-faint);
-  padding:12px 30px 4px;
-}
-#edContent{
-  flex:1; width:100%; resize:none;
-  border:0; background:transparent;
-  font-family:var(--mono);
-  font-size:14.5px; line-height:1.85;
-  color:var(--ink);
-  padding:8px 30px 48px;
-  tab-size:2;
-}
-#edContent:focus{ outline:none; }
-#edContent::placeholder{ color:#C4B5A5; line-height:1.85; }
-
-.md-preview{
-  flex:1; overflow-y:auto;
-  padding:8px 30px 48px;
-  font-size:15.5px;
-}
-.md-preview::-webkit-scrollbar{ width:9px; }
-.md-preview::-webkit-scrollbar-thumb{ background:#E0D5C6; border-radius:5px; border:3px solid var(--paper); }
-.preview-empty{ color:#C4B5A5; font-size:14px; }
-
-.editor-foot{
-  flex:0 0 auto;
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
-  padding:12px 30px;
-  border-top:1px solid var(--line);
-  background:var(--paper-2);
-}
-.ed-status{ font-size:12.5px; color:var(--ink-faint); }
-.ed-buttons{ display:flex; gap:8px; }
-
-/* ---------- 拖拽遮罩 ---------- */
-.drop-overlay{
-  position:fixed; inset:0; z-index:60;
-  display:none;
-  align-items:center; justify-content:center;
-  background:rgba(247,242,234,.86);
-  backdrop-filter:blur(3px);
-}
-body.dragging .drop-overlay{ display:flex; animation:fade .18s var(--ease) both; }
-.drop-overlay-inner{
-  border:1.5px dashed var(--clay);
-  border-radius:6px;
-  padding:46px 62px;
-  font-family:var(--serif);
-  font-size:20px; color:var(--ink);
-  background:var(--paper-2);
-}
-.drop-overlay-inner small{
-  display:block; margin-top:10px;
-  font-family:-apple-system,"PingFang SC",sans-serif;
-  font-size:12.5px; color:var(--ink-faint);
+.post-card:hover{ border-color:var(--accent-line); transform:translateY(-2px) }
+/* 标题链接铺满整张卡片：整卡可点，但标签链接仍然点得动（z-index 抬高即可） */
+.post-card .pc-link{ color:inherit; text-decoration:none }
+.post-card .pc-link::after{ content:''; position:absolute; inset:0; border-radius:var(--radius-card) }
+.post-card .pc-foot a{ position:relative; z-index:1; color:var(--accent); text-decoration:none }
+.post-card .pc-foot a:hover{ text-decoration:underline }
+.post-card .pc-date{ font-family:var(--mono); font-size:11.5px; color:var(--faint) }
+.post-card h3{ margin:.35em 0 0; font-size:1.02em; line-height:1.45 }
+.post-card p{ margin:.5em 0 0; font-size:13px; color:var(--md-dim); line-height:1.65 }
+.post-card .pc-foot{
+  margin-top:.7em; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:center;
+  font-family:var(--mono); font-size:11px; color:var(--faint);
 }
 
-/* ---------- Toast ---------- */
-.toast{
-  position:fixed; left:50%; bottom:34px; z-index:80;
-  transform:translate(-50%, 14px);
-  background:#2E2723; color:#F3EDE2;
-  font-size:13px; padding:9px 18px; border-radius:999px;
-  opacity:0; pointer-events:none;
-  transition:opacity .22s var(--ease), transform .22s var(--ease);
-  box-shadow:0 10px 30px -12px rgba(46,39,35,.5);
+/* ── 标签筛选 ── */
+.tagbar{ display:flex; flex-wrap:wrap; gap:7px }
+.tag-chip{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px;
+  border:1px solid var(--line); border-radius:var(--radius-badge);
+  background:color-mix(in srgb,var(--ink) 3%,transparent);
+  color:var(--md-dim); font-size:12.5px; font-family:inherit;
+  cursor:pointer;
+  transition:color .14s var(--ease), border-color .14s var(--ease), background .14s var(--ease);
 }
-.toast.show{ opacity:1; transform:translate(-50%, 0); }
+.tag-chip:hover{ color:var(--ink); border-color:var(--accent-line) }
+.tag-chip.on{ color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft) }
+.tag-chip .n{ font-family:var(--mono); font-size:10.5px; color:var(--faint) }
+.tag-chip.on .n{ color:inherit }
+.filter-note{ margin:10px 0 0; font-family:var(--mono); font-size:11.5px; color:var(--faint) }
 
-/* ---------- 动效 ---------- */
-@keyframes rise{
-  from{ opacity:0; transform:translateY(12px); }
-  to{ opacity:1; transform:none; }
+/* ── 时间线 ── */
+.tl-year{
+  margin:22px 0 6px; font-family:var(--mono); font-size:12px;
+  color:var(--accent); letter-spacing:.06em;
 }
-@keyframes fade{ from{ opacity:0 } to{ opacity:1 } }
-
-@media (prefers-reduced-motion: reduce){
-  *,*::before,*::after{
-    animation-duration:.01ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:.01ms !important;
-  }
+.tl{ list-style:none; margin:0; padding:0 }
+.tl li{ position:relative; padding-left:22px }
+.tl li::before{
+  content:''; position:absolute; left:4px; top:0; bottom:0;
+  width:1px; background:var(--line);
+}
+.tl li:last-child::before{ bottom:auto; height:1.1em }
+.tl li::after{
+  content:''; position:absolute; left:1px; top:.85em;
+  width:7px; height:7px; border-radius:var(--radius-pill);
+  background:var(--bg); border:1px solid var(--line);
+}
+.tl a{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px;
+  padding:6px 0; text-decoration:none; color:var(--ink);
+}
+.tl a:hover .tl-title{ color:var(--accent) }
+.tl-date{ font-family:var(--mono); font-size:11.5px; color:var(--faint); flex:none; width:4.2em }
+.tl-title{ font-size:14.5px; transition:color .14s var(--ease) }
+.tl-meta{ font-family:var(--mono); font-size:11px; color:var(--faint) }
+/* 归档稿的小标记：它是独立页面（/p/archive/**），和活稿并列在时间线里 */
+.tl-badge{
+  flex:none;
+  padding:0 5px;
+  border:1px solid var(--line); border-radius:var(--radius-badge);
+  font-family:var(--mono); font-size:10.5px; color:var(--faint);
 }
 
-/* ---------- 响应式 ---------- */
-@media (max-width: 900px){
-  .editor-body{ grid-template-columns:1fr; }
-  .pane-write{ border-right:0; }
-  .pane-preview{ display:none; }
-}
+/* 标签筛选时藏起来的条目 */
+.has-js .filtered-out{ display:none }
+#latest[hidden]{ display:none }
+.empty-note{ color:var(--faint); font-family:var(--mono); font-size:12px }
 
-@media (max-width: 860px){
-  .layout{ grid-template-columns:1fr; }
-  .menu-btn{ display:inline-flex; }
-  .brand-sub{ display:none; }
-  .sidebar{
-    position:fixed; top:56px; bottom:0; left:0; z-index:50;
-    width:290px; max-width:84vw;
-    transform:translateX(-102%);
-    transition:transform .26s var(--ease);
-    box-shadow:30px 0 70px -40px rgba(46,39,35,.55);
-  }
-  .sidebar.open{ transform:none; }
-  .reader-inner{ padding:44px 22px 110px; }
-  .empty{ padding:0 24px; align-items:flex-start; padding-top:14vh; }
-  .editor-head{ padding:20px 20px 12px; }
-  #edContent{ padding:8px 20px 40px; }
-  .pane-label{ padding:12px 20px 4px; }
-  .editor-foot{ padding:12px 20px; }
-  .md-preview{ padding:8px 20px 40px; }
+/* ── 页脚 ── */
+.foot{
+  margin-top:46px; padding-top:20px; border-top:1px solid var(--line-soft);
+  display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center;
+  font-size:12.5px; color:var(--faint);
+}
+.foot a{ color:var(--dim); text-decoration:none; border-bottom:1px solid var(--line) }
+.foot a:hover{ color:var(--ink); border-bottom-color:var(--accent) }
+
+@media (max-width:720px){
+  .topnav .nav a.wide{ display:none }
+  .cards{ grid-template-columns:1fr }
+  .hero h1{ font-size:1.7em }
+  .topnav{ padding:0 14px; gap:8px }
+  .topnav .nav a{ padding:6px 8px }
+  .wrap{ padding:0 16px 70px }
+}
+@media (prefers-reduced-motion:reduce){
+  *{ animation-duration:.01ms !important; transition-duration:.01ms !important }
+  .post-card:hover{ transform:none }
 }
 </style>
 </head>
 <body>
 
-<noscript>
-  <main>
-    <h1>para/ — 随笔与手稿</h1>
-    <p>
-      这是 JinSuper 网站的随笔与手稿栏目，文章以 Markdown 文件存放在 <code>p/para/</code> 目录下。
-      页面默认在浏览器中动态读取并渲染这些文章；当前浏览器未启用 JavaScript，因此无法在此处自动显示正文。
-    </p>
-    <p>可直接访问的文章（纯文本 Markdown，任何环境都能阅读）：</p>
-    <ul>
-      <li><a href="/p/para/First.md">欢迎来到该网站</a> —— /p/para/First.md</li>
-      <li><a href="/p/SKILL.md">SKILL.md</a> —— 设计规范</li>
-      <li><a href="/p/color-theme.md">color-theme.md</a> —— 配色库</li>
-      <li><a href="/p/TEST.md">TEST.md</a></li>
-    </ul>
-    <p><a href="/">返回网站首页</a> · <a href="/p/docs.html">查看文档栏目</a></p>
-  </main>
-</noscript>
+<header class="topnav">
+  <a class="brand" href="./">
+    <svg class="logo-mark" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill="currentColor" d="M512 629.04c-64.536 0-117.04-52.504-117.04-117.04S447.464 394.96 512 394.96 629.04 447.464 629.04 512 576.536 629.04 512 629.04z m0-160.08c-23.732 0-43.04 19.308-43.04 43.04s19.308 43.04 43.04 43.04 43.04-19.308 43.04-43.04-19.308-43.04-43.04-43.04zM799.529 836.529c-9.469 0-18.938-3.612-26.163-10.837-14.45-14.449-14.45-37.877 0-52.326C843.18 703.553 881.628 610.731 881.628 512S843.18 320.447 773.366 250.634c-14.449-14.449-14.449-37.877 0-52.326 14.45-14.449 37.876-14.449 52.326 0 40.73 40.73 72.712 88.17 95.058 141.001 23.143 54.717 34.878 112.818 34.878 172.691s-11.734 117.975-34.878 172.691c-22.346 52.831-54.328 100.271-95.058 141.001-7.224 7.225-16.694 10.837-26.163 10.837zM224.471 836.529c-9.469 0-18.938-3.612-26.163-10.837-40.73-40.73-72.712-88.17-95.058-141.001C80.107 629.974 68.372 571.873 68.372 512s11.734-117.975 34.878-172.691c22.346-52.831 54.328-100.271 95.058-141.001 14.45-14.449 37.877-14.448 52.326 0 14.45 14.449 14.45 37.877 0 52.326C180.82 320.447 142.372 413.268 142.372 512s38.448 191.553 108.261 261.366c14.449 14.449 14.449 37.877 0 52.326-7.224 7.225-16.693 10.837-26.162 10.837z"/><path fill="currentColor" d="M339.681 721.319c-9.47 0-18.938-3.611-26.163-10.837-53.016-53.016-82.214-123.506-82.214-198.482 0-74.978 29.198-145.466 82.214-198.481 14.45-14.448 37.877-14.448 52.326 0 14.449 14.45 14.449 37.877 0 52.326-39.04 39.039-60.54 90.944-60.54 146.155s21.5 107.116 60.54 146.156c14.449 14.449 14.449 37.877 0 52.326-7.224 7.224-16.695 10.837-26.163 10.837zM684.319 721.319c-9.469 0-18.938-3.612-26.163-10.837-14.449-14.449-14.449-37.877 0-52.326 39.04-39.04 60.54-90.945 60.54-146.156s-21.5-107.116-60.54-146.155c-14.449-14.449-14.45-37.876 0-52.326 14.449-14.449 37.876-14.449 52.326 0 53.016 53.016 82.214 123.504 82.214 198.481 0 74.977-29.198 145.466-82.214 198.482-7.225 7.225-16.694 10.837-26.163 10.837z"/></svg>
+    <span>JinSuper 奇思妙想</span>
+  </a>
+  <nav class="nav" aria-label="站点导航"><a href="/p/" class="on" aria-current="page">博客</a><a href="/p/#timeline">时间线</a><a href="/p/#tags">标签</a><a href="/p/docs.html">阅读器</a><a href="/p/feed.xml">RSS</a><a href="/" class="wide">百宝箱</a></nav>
+</header>
 
-<div class="app">
+<main class="wrap">
 
-  <!-- 顶栏 -->
-  <header class="topbar">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <button class="menu-btn" id="btnMenu" aria-label="打开文章列表">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-          <path d="M4 7h16M4 12h16M4 17h16"/>
-        </svg>
-      </button>
-      <div class="brand">
-        <span class="brand-mark">para</span><span class="brand-slash">/</span>
-        <span class="brand-sub">随笔与手稿</span>
+  <section class="hero">
+    <h1>JinSuper 奇思妙想</h1>
+    <p>JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。</p>
+    <div class="stats"><span><b>5</b> 篇文章</span><span><b>4</b> 篇归档</span><span><b>11</b> 个标签</span><span>最近更新 <b>2026-10-07</b></span></div>
+  </section>
+
+  <section class="sec" id="latest">
+    <div class="sec-head"><h2>最新</h2><span class="hint">最近发布的几篇</span></div>
+    <div class="cards" id="latestCards">
+      <div class="post-card" data-tags="[&quot;索引&quot;]">
+        <span class="pc-date">2026-10-07</span>
+        <h3><a class="pc-link" href="post/idea/index.html">奇思妙想 · 索引</a></h3>
+        <p>想到什么写什么，写完就搁在这儿。这里按时间收着，点开卡片就是读一篇。</p>
+        <span class="pc-foot"><span>JinSuper</span><span>·</span><a href="/p/#tag-%E7%B4%A2%E5%BC%95">索引</a></span>
+      </div>
+      <div class="post-card" data-tags="[&quot;说明&quot;,&quot;博客&quot;,&quot;写作&quot;]">
+        <span class="pc-date">2026-10-07</span>
+        <h3><a class="pc-link" href="post/blog.html">写一篇：博客与 Frontmatter</a></h3>
+        <p>这个站点的文章怎么来的：把 .md 丢进 /p、在 sk.json 加一行，然后正文顶上写一段 frontmatter。标题、日期、标签、摘要都在那里，页面、订阅源和搜索引擎读的都是同一份。</p>
+        <span class="pc-foot"><span>JinSuper</span><span>·</span><a href="/p/#tag-%E8%AF%B4%E6%98%8E">说明</a><span>·</span><a href="/p/#tag-%E5%8D%9A%E5%AE%A2">博客</a><span>·</span><a href="/p/#tag-%E5%86%99%E4%BD%9C">写作</a></span>
+      </div>
+      <div class="post-card" data-tags="[&quot;随笔&quot;,&quot;童年&quot;,&quot;爷爷&quot;]">
+        <span class="pc-date">2026-10-06</span>
+        <h3><a class="pc-link" href="post/idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html">枣香童年</a></h3>
+        <p>爷爷的红枣饼干齁得恰到好处。等我明白「齁」是什么意思的时候，他已经走了很久。</p>
+        <span class="pc-foot"><span>JinSuper</span><span>·</span><a href="/p/#tag-%E9%9A%8F%E7%AC%94">随笔</a><span>·</span><a href="/p/#tag-%E7%AB%A5%E5%B9%B4">童年</a><span>·</span><a href="/p/#tag-%E7%88%B7%E7%88%B7">爷爷</a></span>
+      </div>
+      <div class="post-card" data-tags="[&quot;作业&quot;]">
+        <span class="pc-date">未标日期</span>
+        <h3><a class="pc-link" href="post/para/homework.html">本周作业</a></h3>
+        <p>本周作业清单，内嵌 811 的作业页，打开就是最新的那一份。</p>
+        <span class="pc-foot"><span>JinSuper</span><span>·</span><a href="/p/#tag-%E4%BD%9C%E4%B8%9A">作业</a></span>
+      </div>
+      <div class="post-card" data-tags="[&quot;站点&quot;,&quot;说明&quot;]">
+        <span class="pc-date">未标日期</span>
+        <h3><a class="pc-link" href="post/para/1SetUp.html">启程</a></h3>
+        <p>这个站点的起点：关于金旭的个人文档，学校事务、项目文档与随笔日记都放在这里。</p>
+        <span class="pc-foot"><span>JinSuper</span><span>·</span><a href="/p/#tag-%E7%AB%99%E7%82%B9">站点</a><span>·</span><a href="/p/#tag-%E8%AF%B4%E6%98%8E">说明</a></span>
       </div>
     </div>
+  </section>
 
-    <div class="top-actions">
-      <button class="btn btn-quiet" id="btnUpload">上传 .md</button>
-      <button class="btn btn-primary" id="btnNew">写一篇</button>
-      <input type="file" id="fileInput" accept=".md,.markdown,.txt" multiple hidden>
+  <section class="sec" id="tags">
+    <div class="sec-head"><h2>标签</h2><span class="hint">点一个筛选下面的列表</span></div>
+    <div class="tagbar" id="tagbar">
+<button type="button" class="tag-chip on" data-all aria-pressed="true">全部</button>
+<button type="button" class="tag-chip" data-tag="随笔" aria-pressed="false">随笔<span class="n">3</span></button>
+<button type="button" class="tag-chip" data-tag="说明" aria-pressed="false">说明<span class="n">2</span></button>
+<button type="button" class="tag-chip" data-tag="童年" aria-pressed="false">童年<span class="n">2</span></button>
+<button type="button" class="tag-chip" data-tag="爷爷" aria-pressed="false">爷爷<span class="n">2</span></button>
+<button type="button" class="tag-chip" data-tag="博客" aria-pressed="false">博客<span class="n">1</span></button>
+<button type="button" class="tag-chip" data-tag="索引" aria-pressed="false">索引<span class="n">1</span></button>
+<button type="button" class="tag-chip" data-tag="校园" aria-pressed="false">校园<span class="n">1</span></button>
+<button type="button" class="tag-chip" data-tag="写作" aria-pressed="false">写作<span class="n">1</span></button>
+<button type="button" class="tag-chip" data-tag="站点" aria-pressed="false">站点<span class="n">1</span></button>
+<button type="button" class="tag-chip" data-tag="作业" aria-pressed="false">作业<span class="n">1</span></button>
+<button type="button" class="tag-chip" data-tag="归档" aria-pressed="false">归档<span class="n">4</span></button>
     </div>
+    <p class="filter-note" id="filterNote"></p>
+  </section>
 
-    <div class="progress" id="progress"></div>
-  </header>
-
-  <!-- 主体 -->
-  <main class="layout">
-
-    <!-- 侧栏 -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-head">
-        <h2>文章</h2>
-        <span class="count" id="postCount">0</span>
-      </div>
-
-      <div class="search-wrap">
-        <input id="search" type="search" placeholder="搜标题，或者搜正文…" autocomplete="off">
-      </div>
-
-      <nav class="post-list" id="postList"></nav>
-
-      <div class="para-panel">
-        <div class="para-hint" id="paraHint">正在翻 <code>para/</code> …</div>
-        <div class="para-manual">
-          <input id="paraFile" type="text" placeholder="para/notes.md" autocomplete="off">
-          <button class="btn btn-mini" id="btnFetchPara" title="拉取这个文件">拉取</button>
+  <section class="sec" id="timeline">
+    <div class="sec-head"><h2>时间线</h2><span class="hint">全部文章，按时间倒序</span></div>
+    <div id="timelineBody">
+        <div data-tl-year="2026">
+          <p class="tl-year">2026</p>
+          <ul class="tl">
+          <li data-tags="[&quot;索引&quot;]"><a href="post/idea/index.html"><time class="tl-date" datetime="2026-10-07">10-07</time><span class="tl-title">奇思妙想 · 索引</span><span class="tl-meta">JinSuper · 索引</span></a></li>
+          <li data-tags="[&quot;说明&quot;,&quot;博客&quot;,&quot;写作&quot;]"><a href="post/blog.html"><time class="tl-date" datetime="2026-10-07">10-07</time><span class="tl-title">写一篇：博客与 Frontmatter</span><span class="tl-meta">JinSuper · 说明 · 博客 · 写作</span></a></li>
+          <li data-tags="[&quot;随笔&quot;,&quot;童年&quot;,&quot;爷爷&quot;]"><a href="post/idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html"><time class="tl-date" datetime="2026-10-06">10-06</time><span class="tl-title">枣香童年</span><span class="tl-meta">JinSuper · 随笔 · 童年 · 爷爷</span></a></li>
+          <li data-tags="[&quot;随笔&quot;,&quot;童年&quot;,&quot;爷爷&quot;,&quot;归档&quot;]" data-archived="1"><a href="archive/idea/3.%E6%9E%A3%E9%A6%99%E7%AB%A5%E5%B9%B4.html"><time class="tl-date" datetime="2026-10-06">10-06</time><span class="tl-title">枣香童年（归档）</span><span class="tl-badge" title="同一篇还有活着的版本">归档</span><span class="tl-meta">JinSuper · 随笔 · 童年 · 爷爷</span></a></li>
+          <li data-tags="[&quot;随笔&quot;,&quot;校园&quot;,&quot;归档&quot;]" data-archived="1"><a href="archive/idea/1.%E5%BD%92%E9%80%94%E4%B8%94%E6%85%A2.html"><time class="tl-date" datetime="2026-09-27">09-27</time><span class="tl-title">1.归途，且慢.（归档）</span><span class="tl-badge">归档</span><span class="tl-meta">JinSuper · 随笔 · 校园</span></a></li>
+          </ul>
         </div>
-      </div>
-    </aside>
-
-    <!-- 舞台 -->
-    <section class="stage" id="stage">
-
-      <!-- 阅读 -->
-      <article class="reader" id="reader" hidden></article>
-
-      <!-- 编辑 -->
-      <div class="editor" id="editor" hidden>
-        <div class="editor-head">
-          <input id="edTitle" class="ed-title" type="text" placeholder="标题…" autocomplete="off">
-          <input id="edTags" class="ed-tags" type="text" placeholder="标签，逗号隔开（可选）" autocomplete="off">
+        <div data-tl-year="更早">
+          <p class="tl-year">更早</p>
+          <ul class="tl">
+          <li data-tags="[&quot;作业&quot;]"><a href="post/para/homework.html"><time class="tl-date">—</time><span class="tl-title">本周作业</span><span class="tl-meta">JinSuper · 作业</span></a></li>
+          <li data-tags="[&quot;站点&quot;,&quot;说明&quot;]"><a href="post/para/1SetUp.html"><time class="tl-date">—</time><span class="tl-title">启程</span><span class="tl-meta">JinSuper · 站点 · 说明</span></a></li>
+          <li data-tags="[&quot;归档&quot;]" data-archived="1"><a href="archive/2.ScreenOff.html"><time class="tl-date">—</time><span class="tl-title">2.Screen Off,To the Real World</span><span class="tl-badge">归档</span><span class="tl-meta">JinSuper</span></a></li>
+          <li data-tags="[&quot;归档&quot;]" data-archived="1"><a href="archive/TEST.html"><time class="tl-date">—</time><span class="tl-title">测试文档（归档）</span><span class="tl-badge">归档</span><span class="tl-meta">JinSuper</span></a></li>
+          </ul>
         </div>
+    </div>
+  </section>
 
-        <div class="editor-body">
-          <div class="pane pane-write">
-            <div class="pane-label">Markdown</div>
-            <textarea id="edContent" spellcheck="false"
-              placeholder="# 从这儿开始&#10;&#10;支持标题、**加粗**、`行内代码`、列表、引用、表格、代码块、图片。&#10;&#10;> 写点具体的。别写“提升用户体验”。"></textarea>
-          </div>
-          <div class="pane pane-preview">
-            <div class="pane-label">预览</div>
-            <div class="md-preview reader-body" id="edPreview"></div>
-          </div>
-        </div>
+  <footer class="foot">
+    <span>© JinSuper · 想到什么写什么</span>
+    <a href="./docs.html">阅读器</a>
+    <a href="./feed.xml">RSS 订阅</a>
+    <a href="/">百宝箱</a>
+  </footer>
 
-        <div class="editor-foot">
-          <span class="ed-status" id="edStatus"></span>
-          <div class="ed-buttons">
-            <button class="btn btn-quiet" id="btnCancelEdit">取消</button>
-            <button class="btn btn-primary" id="btnSave">保存这篇</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 空 -->
-      <div class="empty" id="empty" hidden>
-        <div class="empty-inner">
-          <div class="empty-mark">¶</div>
-          <h2>这儿还是空的</h2>
-          <p>
-            写一篇新的，或者把 <code>.md</code> 直接拖进窗口。<br>
-            页面也会自动去读同目录下 <code>para/</code> 里的文件 ——<br>
-            放个 <code>index.json</code> 列出文件名，就能全部读到。
-          </p>
-          <div class="empty-actions">
-            <button class="btn btn-primary" id="btnNew2">写第一篇</button>
-            <button class="btn btn-quiet" id="btnUpload2">上传 .md</button>
-          </div>
-        </div>
-      </div>
-
-    </section>
-  </main>
-</div>
-
-<!-- 拖拽遮罩 -->
-<div class="drop-overlay">
-  <div class="drop-overlay-inner">
-    松手，就收下
-    <small>支持 .md / .markdown / .txt</small>
-  </div>
-</div>
+</main>
 
 <script>
-/* =========================================================
-   0. 工具
-   ========================================================= */
-const $ = s => document.querySelector(s);
+/* ═══════════════════════════════════════════════════
+   博客首页：标签筛选 + 时间线
+   ---------------------------------------------------
+   列表本身是**构建期渲染好的静态 HTML**（爬虫读得到），
+   这里只做两件事：按标签显示 / 隐藏、把 URL 上的 #tag-xxx 还原成筛选状态。
+   ═══════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  var bar = document.getElementById('tagbar');
+  if (!bar) return;
+  var chips = Array.prototype.slice.call(bar.querySelectorAll('.tag-chip'));
+  var items = Array.prototype.slice.call(document.querySelectorAll('[data-tags]'));
+  var note = document.getElementById('filterNote');
+  var current = '';
 
-function escapeHtml(s){
-  return String(s)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
-}
-
-function uid(){
-  return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-}
-
-function fmtDate(iso){
-  const d = new Date(iso);
-  if (isNaN(d)) return '';
-  const p = n => String(n).padStart(2,'0');
-  return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}`;
-}
-
-function countWords(text){
-  const cn = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-  const en = (text.replace(/[\u4e00-\u9fa5]/g,' ').match(/[A-Za-z0-9]+/g) || []).length;
-  return cn + en;
-}
-
-let toastTimer;
-function flash(msg){
-  let el = document.getElementById('toast');
-  if (!el){
-    el = document.createElement('div');
-    el.id = 'toast';
-    el.className = 'toast';
-    document.body.appendChild(el);
-  }
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
-}
-
-/* =========================================================
-   1. Markdown 渲染器（零依赖）
-   ========================================================= */
-function inlineMd(s){
-  s = escapeHtml(s);
-  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1" loading="lazy">');
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>');
-  s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
-  return s;
-}
-
-function mdToHtml(src){
-  const lines = String(src).replace(/\r\n?/g, '\n').split('\n');
-  const out = [];
-  let i = 0;
-
-  const isTableSep = l =>
-    /\|/.test(l) === false
-      ? /^\s*:?-{2,}:?(\s*\|?\s*:?-{2,}:?)*\s*$/.test(l)
-      : /^\s*\|?(\s*:?-{2,}:?\s*\|)+\s*:?-{2,}:?\s*\|?\s*$/.test(l);
-
-  while (i < lines.length){
-    const line = lines[i];
-
-    /* 代码块 */
-    let m = line.match(/^\s*```\s*(\S*)\s*$/);
-    if (m){
-      const lang = m[1];
-      const buf = [];
-      i++;
-      while (i < lines.length && !/^\s*```/.test(lines[i])) buf.push(lines[i++]);
-      i++;
-      out.push(
-        `<pre data-lang="${escapeHtml(lang)}"><code>${escapeHtml(buf.join('\n'))}</code></pre>`
-      );
-      continue;
-    }
-
-    /* 标题 */
-    m = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
-    if (m){
-      const lv = m[1].length;
-      out.push(`<h${lv}>${inlineMd(m[2])}</h${lv}>`);
-      i++;
-      continue;
-    }
-
-    /* 分割线 */
-    if (/^\s*([-*_])\s*\1\s*\1[\s\1]*$/.test(line)){
-      out.push('<hr>');
-      i++;
-      continue;
-    }
-
-    /* 引用 */
-    if (/^\s*>\s?/.test(line)){
-      const buf = [];
-      while (i < lines.length && /^\s*>\s?/.test(lines[i])){
-        buf.push(lines[i++].replace(/^\s*>\s?/, ''));
-      }
-      out.push(`<blockquote>${mdToHtml(buf.join('\n'))}</blockquote>`);
-      continue;
-    }
-
-    /* 表格 */
-    if (line.includes('|') && i + 1 < lines.length && isTableSep(lines[i+1])){
-      const cells = l => l.replace(/^\s*\|/, '').replace(/\|\s*$/, '')
-                          .split('|').map(s => s.trim());
-      const head = cells(line);
-      i += 2;
-      const rows = [];
-      while (i < lines.length && lines[i].includes('|') && lines[i].trim()){
-        rows.push(cells(lines[i++]));
-      }
-      out.push(
-        '<table><thead><tr>' +
-        head.map(h => `<th>${inlineMd(h)}</th>`).join('') +
-        '</tr></thead><tbody>' +
-        rows.map(r => '<tr>' + r.map(c => `<td>${inlineMd(c)}</td>`).join('') + '</tr>').join('') +
-        '</tbody></table>'
-      );
-      continue;
-    }
-
-    /* 无序列表 */
-    if (/^\s*[-*+]\s+/.test(line)){
-      const items = [];
-      while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])){
-        items.push(lines[i++].replace(/^\s*[-*+]\s+/, ''));
-      }
-      out.push('<ul>' + items.map(t => `<li>${inlineMd(t)}</li>`).join('') + '</ul>');
-      continue;
-    }
-
-    /* 有序列表 */
-    if (/^\s*\d+\.\s+/.test(line)){
-      const items = [];
-      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])){
-        items.push(lines[i++].replace(/^\s*\d+\.\s+/, ''));
-      }
-      out.push('<ol>' + items.map(t => `<li>${inlineMd(t)}</li>`).join('') + '</ol>');
-      continue;
-    }
-
-    /* 空行 */
-    if (!line.trim()){ i++; continue; }
-
-    /* 段落 */
-    const buf = [];
-    while (
-      i < lines.length &&
-      lines[i].trim() &&
-      !/^\s*(#{1,6}\s|>|```|[-*+]\s|\d+\.\s)/.test(lines[i])
-    ){
-      buf.push(lines[i++]);
-    }
-    if (!buf.length) buf.push(lines[i++]); // 保险
-    out.push(`<p>${inlineMd(buf.join(' '))}</p>`);
+  /* 标签写在 data-tags 上（构建期序列化成 JSON；实体转义后属性里是安全的） */
+  function tagsOf(el){
+    try { return JSON.parse(el.getAttribute('data-tags') || '[]') || []; }
+    catch (e) { return []; }
   }
 
-  return out.join('\n');
-}
-
-/* =========================================================
-   2. 数据
-   ========================================================= */
-const LS_KEY = 'para.posts.v1';
-
-let posts = [];
-let activeId = null;
-let mode = 'empty';       // read | edit | empty
-let editingId = null;
-
-function loadStore(){
-  try { posts = JSON.parse(localStorage.getItem(LS_KEY)) || []; }
-  catch { posts = []; }
-}
-
-function saveStore(){
-  try {
-    localStorage.setItem(
-      LS_KEY,
-      JSON.stringify(posts.filter(p => p.source === 'local'))
-    );
-  } catch {
-    flash('本地存储满了，先下载几篇吧');
-  }
-}
-
-/* front-matter */
-function parseFrontMatter(text){
-  const m = String(text).match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
-  if (!m) return { meta:{}, body:String(text) };
-  const meta = {};
-  m[1].split('\n').forEach(line => {
-    const idx = line.indexOf(':');
-    if (idx > 0){
-      const k = line.slice(0, idx).trim().toLowerCase();
-      const v = line.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
-      if (k) meta[k] = v;
-    }
-  });
-  return { meta, body: String(text).slice(m[0].length) };
-}
-
-function importMd(filename, raw){
-  const { meta, body } = parseFrontMatter(raw);
-  const hm = body.match(/^\s*#\s+(.+)$/m);
-  const title = (
-    meta.title ||
-    (hm ? hm[1].trim() : '') ||
-    filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ')
-  ).trim() || '无题';
-
-  const tags = meta.tags
-    ? meta.tags.split(/[,，\s]+/).map(s => s.trim()).filter(Boolean)
-    : [];
-
-  const d = meta.date ? new Date(meta.date) : new Date();
-
-  const post = {
-    id: uid(),
-    title,
-    tags,
-    date: (isNaN(d) ? new Date() : d).toISOString(),
-    content: (body.trim() || String(raw).trim()),
-    source: 'local'
-  };
-  posts.push(post);
-  return post;
-}
-
-/* 从 para/ 构造只读文章 */
-function makeParaPost(filename, raw){
-  const { meta, body } = parseFrontMatter(raw);
-  const hm = body.match(/^\s*#\s+(.+)$/m);
-  const title = (
-    meta.title ||
-    (hm ? hm[1].trim() : '') ||
-    filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ')
-  ).trim() || '未命名';
-
-  const tags = meta.tags
-    ? meta.tags.split(/[,，\s]+/).map(s => s.trim()).filter(Boolean)
-    : [];
-
-  const d = meta.date ? new Date(meta.date) : new Date();
-
-  return {
-    id: 'para:' + filename,
-    title,
-    tags,
-    date: (isNaN(d) ? new Date() : d).toISOString(),
-    content: body.trim() || String(raw).trim(),
-    source: 'para',
-    file: filename
-  };
-}
-
-/* =========================================================
-   3. 渲染
-   ========================================================= */
-function sortedPosts(){
-  return [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
-}
-
-function renderList(){
-  const q = ($('#search').value || '').trim().toLowerCase();
-  const list = $('#postList');
-
-  const items = sortedPosts().filter(p =>
-    !q ||
-    p.title.toLowerCase().includes(q) ||
-    p.content.toLowerCase().includes(q)
-  );
-
-  $('#postCount').textContent = items.length;
-
-  if (!items.length){
-    list.innerHTML = `<div class="list-empty">${
-      q ? '没找着。换个词试试？'
-        : '还没有文章。<br>点右上角「写一篇」，或者把 .md 拖进来。'
-    }</div>`;
-    return;
-  }
-
-  list.innerHTML = items.map((p, idx) => `
-    <button class="post-item ${p.id === activeId ? 'is-active' : ''}"
-            data-id="${p.id}" style="--i:${Math.min(idx, 10)}">
-      <span class="post-title">${escapeHtml(p.title)}</span>
-      <span class="post-meta">
-        <span>${fmtDate(p.date)}</span>
-        ${p.tags.length
-          ? `<span class="sep">·</span><span>${p.tags.slice(0,2).map(t => escapeHtml(t)).join(' / ')}</span>`
-          : ''}
-      </span>
-      ${p.source === 'para' ? '<span class="src-badge">para/</span>' : ''}
-    </button>
-  `).join('');
-
-  list.querySelectorAll('.post-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      openReader(btn.dataset.id);
-      $('#sidebar').classList.remove('open');
+  function apply(tag, opts){
+    current = tag || '';
+    var shown = 0;
+    items.forEach(function(el){
+      var hit = !current || tagsOf(el).indexOf(current) >= 0;
+      el.classList.toggle('filtered-out', !hit);
+      /* 计数只算时间线的行：同一篇在「最新」里还有一张卡片，
+         两边都数的话篇数会翻倍 */
+      if (hit && el.closest('#timelineBody')) shown++;
     });
-  });
-}
-
-function renderStage(){
-  $('#reader').hidden = mode !== 'read';
-  $('#editor').hidden = mode !== 'edit';
-  $('#empty').hidden  = mode !== 'empty';
-  $('#stage').scrollTop = 0;
-  $('#progress').style.transform = 'scaleX(0)';
-}
-
-function renderReader(){
-  const p = posts.find(x => x.id === activeId);
-  if (!p){ mode = 'empty'; renderStage(); return; }
-
-  const words = countWords(p.content);
-  const mins  = Math.max(1, Math.round(words / 350));
-
-  $('#reader').innerHTML = `
-    <div class="reader-inner">
-      <div class="reader-kicker">
-        <span class="kicker-line"></span>
-        <span>${p.source === 'para' ? 'para/' + escapeHtml(p.file || '') : '本地草稿'}</span>
-      </div>
-
-      <h1 class="reader-title">${escapeHtml(p.title)}</h1>
-
-      <div class="reader-meta">
-        <span>${fmtDate(p.date)}</span>
-        <span class="dot"></span>
-        <span>${words} 字</span>
-        <span class="dot"></span>
-        <span>约 ${mins} 分钟</span>
-      </div>
-
-      ${p.tags.length
-        ? `<div class="reader-tags">${p.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`
-        : ''}
-
-      <div class="reader-body">${mdToHtml(p.content)}</div>
-
-      <div class="reader-foot">
-        <button class="btn btn-quiet" data-act="copy">复制 Markdown</button>
-        <button class="btn btn-quiet" data-act="download">下载 .md</button>
-        ${p.source === 'local'
-          ? `<button class="btn btn-quiet" data-act="edit">编辑</button>
-             <button class="btn btn-quiet danger" data-act="delete">删除</button>`
-          : `<button class="btn btn-quiet" data-act="fork">拷到本地再改</button>`}
-      </div>
-    </div>
-  `;
-}
-
-/* =========================================================
-   4. 视图切换
-   ========================================================= */
-function openReader(id){
-  const p = posts.find(x => x.id === id);
-  if (!p) return;
-  activeId = id;
-  mode = 'read';
-  renderReader();
-  renderStage();
-  renderList();
-}
-
-function openEditor(id){
-  const p = id ? posts.find(x => x.id === id) : null;
-
-  editingId = (p && p.source === 'local') ? p.id : null;
-  activeId  = p ? p.id : null;
-
-  $('#edTitle').value   = p ? p.title : '';
-  $('#edTags').value    = p ? p.tags.join(', ') : '';
-  $('#edContent').value = p ? p.content : '';
-
-  if (!p)                  $('#edStatus').textContent = '新的一篇';
-  else if (p.source === 'para') $('#edStatus').textContent = '从 para/ 拷来的副本，保存后归你';
-  else                     $('#edStatus').textContent = '';
-
-  updatePreview();
-  mode = 'edit';
-  renderStage();
-  renderList();
-  setTimeout(() => $('#edTitle').focus(), 40);
-}
-
-function updatePreview(){
-  const html = mdToHtml($('#edContent').value).trim();
-  $('#edPreview').innerHTML = html || '<p class="preview-empty">预览会出现在这儿…</p>';
-}
-
-/* =========================================================
-   5. 交互
-   ========================================================= */
-$('#search').addEventListener('input', renderList);
-
-$('#btnNew').addEventListener('click', () => openEditor(null));
-$('#btnNew2').addEventListener('click', () => openEditor(null));
-
-$('#btnMenu').addEventListener('click', () => {
-  $('#sidebar').classList.toggle('open');
-});
-
-/* 上传 */
-$('#btnUpload').addEventListener('click', () => $('#fileInput').click());
-$('#btnUpload2').addEventListener('click', () => $('#fileInput').click());
-$('#fileInput').addEventListener('change', e => {
-  if (e.target.files?.length) handleFiles(e.target.files);
-  e.target.value = '';
-});
-
-async function handleFiles(fileList){
-  const files = [...fileList].filter(f => /\.(md|markdown|txt)$/i.test(f.name));
-  if (!files.length){ flash('只认 .md / .markdown / .txt'); return; }
-
-  const loaded = await Promise.all(files.map(f => new Promise(resolve => {
-    const r = new FileReader();
-    r.onload  = () => resolve({ name: f.name, text: String(r.result) });
-    r.onerror = () => resolve(null);
-    r.readAsText(f, 'utf-8');
-  })));
-
-  let last = null;
-  let ok = 0;
-  loaded.filter(Boolean).forEach(({ name, text }) => {
-    last = importMd(name, text);
-    ok++;
-  });
-
-  if (!ok){ flash('这几个文件读不出来'); return; }
-
-  saveStore();
-  renderList();
-  if (last) openReader(last.id);
-  flash(`收了 ${ok} 篇`);
-}
-
-/* 拖拽 */
-let dragDepth = 0;
-addEventListener('dragenter', e => {
-  e.preventDefault();
-  dragDepth++;
-  document.body.classList.add('dragging');
-});
-addEventListener('dragover', e => e.preventDefault());
-addEventListener('dragleave', () => {
-  dragDepth--;
-  if (dragDepth <= 0){ dragDepth = 0; document.body.classList.remove('dragging'); }
-});
-addEventListener('drop', e => {
-  e.preventDefault();
-  dragDepth = 0;
-  document.body.classList.remove('dragging');
-  if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files);
-});
-
-/* 编辑器 */
-$('#edContent').addEventListener('input', updatePreview);
-
-$('#btnSave').addEventListener('click', () => {
-  const title = $('#edTitle').value.trim() || '无题';
-  const content = $('#edContent').value;
-
-  if (!content.trim()){
-    flash('正文空着呢，写两句再存');
-    $('#edContent').focus();
-    return;
-  }
-
-  const tags = $('#edTags').value
-    .split(/[,，]/).map(s => s.trim()).filter(Boolean);
-
-  let p = editingId ? posts.find(x => x.id === editingId) : null;
-
-  if (p){
-    p.title   = title;
-    p.tags    = tags;
-    p.content = content;
-    p.date    = new Date().toISOString();
-  } else {
-    p = {
-      id: uid(),
-      title, tags, content,
-      date: new Date().toISOString(),
-      source: 'local'
-    };
-    posts.push(p);
-  }
-
-  saveStore();
-  flash('存好了');
-  openReader(p.id);
-});
-
-$('#btnCancelEdit').addEventListener('click', () => {
-  if (activeId && posts.find(x => x.id === activeId)) openReader(activeId);
-  else { mode = 'empty'; activeId = null; renderStage(); renderList(); }
-});
-
-/* 阅读器底部按钮 */
-$('#reader').addEventListener('click', e => {
-  const btn = e.target.closest('[data-act]');
-  if (!btn) return;
-
-  const p = posts.find(x => x.id === activeId);
-  if (!p) return;
-  const act = btn.dataset.act;
-
-  if (act === 'copy'){
-    navigator.clipboard
-      .writeText(p.content)
-      .then(() => flash('Markdown 已复制'))
-      .catch(() => flash('复制失败，手动选一下吧'));
-  }
-
-  if (act === 'download'){
-    const blob = new Blob([p.content], { type: 'text/markdown;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = (p.title || 'untitled').replace(/[\\/:*?"<>|]/g, '_') + '.md';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    flash('下载好了，扔进 para/ 就是一篇');
-  }
-
-  if (act === 'edit') openEditor(p.id);
-
-  if (act === 'delete'){
-    if (!confirm(`删掉「${p.title}」？删了就找不回来了。`)) return;
-    posts = posts.filter(x => x.id !== p.id);
-    saveStore();
-    activeId = null;
-    mode = posts.length ? 'read' : 'empty';
-    renderList();
-    if (posts.length) openReader(sortedPosts()[0].id);
-    else renderStage();
-    flash('删了');
-  }
-
-  if (act === 'fork'){
-    const copy = {
-      id: uid(),
-      title: p.title + '（副本）',
-      tags: [...p.tags],
-      date: new Date().toISOString(),
-      content: p.content,
-      source: 'local'
-    };
-    posts.push(copy);
-    saveStore();
-    renderList();
-    openReader(copy.id);
-    flash('拷过来了，现在随便改');
-  }
-});
-
-/* =========================================================
-   6. 读取 para/
-   ========================================================= */
-async function tryFetchText(url){
-  try {
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const ct = res.headers.get('content-type') || '';
-    if (ct.includes('text/html')) return null;  // 多半是服务器的 404 页面
-    return await res.text();
-  } catch {
-    return null;
-  }
-}
-
-async function initPara(){
-  const hint = $('#paraHint');
-  let files = [];
-
-  // 1) 优先读 index.json
-  try {
-    const res = await fetch('./para/index.json', { cache: 'no-store' });
-    if (res.ok){
-      const data = await res.json();
-      if (Array.isArray(data)) files = data;
-      else if (Array.isArray(data.files)) files = data.files;
+    chips.forEach(function(c){
+      var on = c.getAttribute('data-tag') === current;
+      c.classList.toggle('on', on);
+      c.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (!current && c.hasAttribute('data-all')) c.classList.add('on');
+    });
+    if (note){
+      note.textContent = current
+        ? '筛选中：' + current + ' · ' + shown + ' 篇（再点一次取消）'
+        : '共 ' + shown + ' 篇';
     }
-  } catch { /* 静默 */ }
-
-  // 2) 没有索引，就碰碰运气
-  if (!files.length){
-    files = ['hello.md', 'demo.md', 'post.md'];
+    /* 年份下面一篇都不剩时，隐藏那一年的小标题 */
+    Array.prototype.forEach.call(document.querySelectorAll('[data-tl-year]'), function(box){
+      var any = box.querySelector('[data-tags]:not(.filtered-out)');
+      box.hidden = !any;
+    });
+    /* 「最新」里只放活稿：筛到「归档」这种只属于归档稿的标签时这里会空，
+       空着不如整块收起来（条目都在下面的时间线里） */
+    var latest = document.getElementById('latest');
+    if (latest) latest.hidden = !latest.querySelector('.post-card:not(.filtered-out)');
+    if (!opts || opts.hash !== false){
+      var h = current ? '#tag-' + encodeURIComponent(current) : '#tags';
+      try { history.replaceState(null, '', h); } catch (e) { /* 本地打开时忽略 */ }
+    }
   }
 
-  const found = [];
-  for (const f of files){
-    const name = String(f).trim().replace(/^\.?\/*/, '');
-    if (!name || !/\.(md|markdown|txt)$/i.test(name)) continue;
-    const text = await tryFetchText('./para/' + name);
-    if (text === null) continue;
-    found.push(makeParaPost(name, text));
+  function fromHash(){
+    var h = String(location.hash || '');
+    if (h.indexOf('#tag-') === 0){
+      var t = h.slice(5);
+      try { t = decodeURIComponent(t); } catch (e) { /* 原样试 */ }
+      return t;
+    }
+    return '';
   }
 
-  if (found.length){
-    posts = posts.filter(p => p.source !== 'para').concat(found);
-    hint.innerHTML = `从 <code>para/</code> 读到 ${found.length} 篇。`;
-  } else {
-    hint.innerHTML =
-      `没读到 <code>para/</code> 里的文件。放个 <code>index.json</code>：` +
-      `<br><code>{"files":["a.md","b.md"]}</code>`;
-  }
+  bar.addEventListener('click', function(e){
+    var chip = e.target.closest ? e.target.closest('.tag-chip') : null;
+    if (!chip) return;
+    var tag = chip.getAttribute('data-tag') || '';
+    apply(tag === current ? '' : tag);
+  });
 
-  renderList();
-
-  if (mode === 'empty' && posts.length){
-    openReader(sortedPosts()[0].id);
-  }
-}
-
-/* 手动拉单个文件 */
-$('#btnFetchPara').addEventListener('click', async () => {
-  let name = $('#paraFile').value.trim();
-  if (!name) return;
-  if (!/\.(md|markdown|txt)$/i.test(name)) name += '.md';
-  name = name.replace(/^\.?\/*/, '').replace(/^para\//i, '');
-
-  const text = await tryFetchText('./para/' + name);
-  if (text === null){ flash('没找到 para/' + name); return; }
-
-  const p = makeParaPost(name, text);
-  posts = posts.filter(x => x.id !== p.id).concat(p);
-  $('#paraFile').value = '';
-  renderList();
-  openReader(p.id);
-  flash('读到了');
-});
-
-$('#paraFile').addEventListener('keydown', e => {
-  if (e.key === 'Enter') $('#btnFetchPara').click();
-});
-
-/* =========================================================
-   7. 滚动进度
-   ========================================================= */
-$('#stage').addEventListener('scroll', () => {
-  const el = $('#stage');
-  const max = el.scrollHeight - el.clientHeight;
-  const ratio = max > 0 ? el.scrollTop / max : 0;
-  $('#progress').style.transform = `scaleX(${ratio})`;
-}, { passive: true });
-
-/* =========================================================
-   8. 启动
-   ========================================================= */
-(async function boot(){
-  loadStore();
-  renderList();
-  renderStage();
-  await initPara();
+  window.addEventListener('hashchange', function(){ apply(fromHash(), { hash: false }); });
+  /* 首次进来只还原筛选状态，**别动地址栏** ——
+     否则点「时间线」跳到 #timeline 后会被改写成 #tags，页面又被拽回去 */
+  apply(fromHash(), { hash: false });
 })();
 </script>
+
 </body>
 </html>

@@ -1,5 +1,11 @@
 {
   "title": "百宝箱",
+  "blog": {
+    "title": "JinSuper 奇思妙想",
+    "desc": "JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。",
+    "origin": "https://jinsuper.rth1.xyz",
+    "author": "JinSuper"
+  },
   "collections": [
     "/811/tools.json",
     "/Skills/skills.json"
@@ -15,7 +21,8 @@
     "/docs/sitemap.html",
     "/p/black.html",
     "/p/viewer.html",
-    "/p/test/"
+    "/p/test/",
+    "/p/post/"
   ],
   "extraUrls": [
     { "loc": "/Skills/", "priority": 0.9 },
@@ -34,5 +41,5 @@
     { "loc": "/asset/color-theme.md", "priority": 0.4 },
     { "loc": "/asset/功能.md", "priority": 0.4 }
   ],
-  "note": "站点级目录：有哪些 collection、sitemap 里手工维护的额外条目、校验时要忽略的页面。字段说明见 MANIFEST.md。"
+  "note": "站点级目录：有哪些 collection、博客身份（blog：标题/简介/主域名）、sitemap 里手工维护的额外条目、校验时要忽略的页面。字段说明见 MANIFEST.md。"
 }

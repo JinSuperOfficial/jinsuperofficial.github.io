@@ -1,13 +1,55 @@
-User-agent: GPTBot
-Allow: /p/
-Allow: /public
-
-User-agent: ClaudeBot
-Allow: /p/
-Allow: /public
+# JinSuper 奇思妙想 —— 博客 + 百宝箱
+# 全站欢迎收录：文章在 /p/post/<路径>.html（每篇一个独立网址）
+# 与 /p/docs.html（阅读器），目录见 sitemap.xml，订阅见 /p/feed.xml。
 
 User-agent: *
 Allow: /
-Allow: /public
+
+# ── 主流搜索引擎：显式放行（避免继承到任何收紧的默认规则） ──
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: Sogou web spider
+Allow: /
+
+User-agent: 360Spider
+Allow: /
+
+User-agent: YisouSpider
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: PetalBot
+Allow: /
+
+# ── AI 抓取：一并放开（内容本来就是给人看的，被引用是好事） ──
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
 
 Sitemap: https://jinsuper{$rthSuffix}/sitemap.xml
