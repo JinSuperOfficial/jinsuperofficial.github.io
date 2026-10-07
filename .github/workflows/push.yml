@@ -1,0 +1,32 @@
+name: 每日作业推送
+
+on:
+  # 允许你手动点击按钮触发（用于测试）
+  workflow_dispatch:
+  # 定时触发（注意：默认是 UTC 时间，比北京时间晚 8 小时）
+  schedule:
+    # 以下代表 UTC 时间 09:00，对应北京时间下午 17:00
+    - cron: '0 9 * * *'
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检查代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 安装依赖库
+        run: pip install requests
+
+      - name: 执行推送脚本
+        env:
+          # 敏感信息依然通过 GitHub Secrets 传入
+          WX_APPID: ${{ secrets.WX_APPID }}
+          WX_SECRET: ${{ secrets.WX_SECRET }}
+          WX_TEMPLATE_ID: ${{ secrets.WX_TEMPLATE_ID }}
+        run: python push_homework.py
