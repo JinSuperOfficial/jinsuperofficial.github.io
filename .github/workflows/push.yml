@@ -35,6 +35,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add last_push_hash.txt
+          git add -A # <--- 改成了这里，不要写具体文件名
           git diff --quiet && git diff --staged --quiet || git commit -m "更新推送哈希记录 [skip ci]"
           git push
