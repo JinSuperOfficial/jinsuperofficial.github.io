@@ -52,4 +52,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://jinsuper{$rthSuffix}/sitemap.xml
+Sitemap: https://www.jinsuper.cn/sitemap.xml

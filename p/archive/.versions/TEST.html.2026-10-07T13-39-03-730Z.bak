@@ -395,6 +395,9 @@ a{ color:var(--accent); }
 /* ---------- 文章头（frontmatter 元数据）用的间距微调 ---------- */
 .md .md-fm{ margin-top:0 }
 
+/* 目录里「没有小节」时的兜底条目指向正文容器本身，跳回来别被吸顶栏盖住 */
+#post{ scroll-margin-top:calc(var(--bar-h) + 14px) }
+
 /* ---------- 上下篇 ---------- */
 .pn{
   grid-column:2;
@@ -597,6 +600,8 @@ html:not(.has-js) .md .cg-panel{ display:block }
   </aside>
 
   <article class="md" id="post">
+
+
 
 
 <h1 id="全功能-markdown-测试文档">全功能 Markdown 测试文档<a class="anchor" href="#全功能-markdown-测试文档" aria-label="锚点链接">#</a></h1>
@@ -1195,6 +1200,8 @@ cond(no)-&gt;op
 </section>
 
 
+  
+  
   
   </article>
 

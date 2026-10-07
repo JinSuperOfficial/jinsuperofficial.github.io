@@ -396,6 +396,9 @@ a{ color:var(--accent); }
 /* ---------- 文章头（frontmatter 元数据）用的间距微调 ---------- */
 .md .md-fm{ margin-top:0 }
 
+/* 目录里「没有小节」时的兜底条目指向正文容器本身，跳回来别被吸顶栏盖住 */
+#post{ scroll-margin-top:calc(var(--bar-h) + 14px) }
+
 /* ---------- 上下篇 ---------- */
 .pn{
   grid-column:2;
@@ -520,9 +523,19 @@ html:not(.has-js) .md .cg-panel{ display:block }
   </nav>
 </header>
 
-<main class="wrap">
+<main class="wrap has-toc">
+
+  <!-- 侧栏目录：目录项由正文章节生成（不足两条整块不出现） -->
+  <aside class="ptoc" id="ptoc" aria-label="本页目录">
+    <p class="ptoc-title">本页目录</p>
+    <ul id="ptocList">
+      <li class="lv-1"><a href="#post" data-target="post" title="枣香童年">枣香童年</a></li>
+    </ul>
+  </aside>
 
   <article class="md" id="post">
+
+
 
 <header class="md-fm">
 <h1 class="md-fm-title">枣香童年</h1>
@@ -552,6 +565,8 @@ html:not(.has-js) .md .cg-panel{ display:block }
 </details>
 </div>
 
+  
+  
   </article>
 
   <footer class="foot">
