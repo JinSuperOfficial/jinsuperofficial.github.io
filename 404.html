@@ -364,6 +364,15 @@
   var raw = location.pathname || '';
   if (raw === '/' || raw === '') return;
 
+  /* ── 专区目录改名：811 → class（2026-10）─────────────────────────
+     站内引用 / sitemap / 站点索引都换成 /class/ 了，站外的老链接还会落到这儿。
+     前缀能对上就直接换掉跳过去；认不出（比如 /811x）就当普通 404 照常显示。 */
+  var legacy = raw.match(/^\/811(\/.*)?$/i);
+  if (legacy){
+    location.replace('/class' + (legacy[1] || '/') + (location.search || '') + (location.hash || ''));
+    return;
+  }
+
   var key = (raw.replace(/\/+$/, '') || '/').toLowerCase();
   var target = DIRS[key];
 
