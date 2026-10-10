@@ -143,6 +143,14 @@
     .bg::after{ --bg-veil:90%; }
   }
 
+  /* 游戏壁纸（整张 cover 铺满）：比四张底纹花得多，纱要厚一点 ——
+     直接压在页面底色上的小字（meta / foot）才稳过 4.5:1。
+     （class 由 JS 按当前档位加减，见「页面背景」一节。） */
+  .bg.is-cover::after{ --bg-veil:70%; }
+  @media (prefers-color-scheme: dark){
+    .bg.is-cover::after{ --bg-veil:92%; }
+  }
+
   .page{max-width:820px;margin:0 auto}
 
   /* ---------- 头部 ---------- */
@@ -735,6 +743,243 @@
   .congrats-btn:active{transform:translateY(0) scale(.98)}
   .congrats-btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 
+  /* ---------- 更新日志（悬浮窗） ----------
+     数据在 /811/data/hwk-log/（和 homework.json 同级）：
+       index.json = 目录，每条日志一个文件 —— 页面只读，从不写、也不改历史。
+     样式和「恭喜弹窗」同一套：遮罩 + 纸卡片，这里左边多一列日期、右边是正文。 */
+  .logwin{
+    position:fixed;
+    inset:0;
+    z-index:70;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:clamp(12px,3.4vw,30px);
+    background:var(--overlay);
+    -webkit-backdrop-filter:blur(3px);
+    backdrop-filter:blur(3px);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity .22s ease, visibility 0s linear .22s, background .3s ease;
+  }
+  .logwin.show{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transition:opacity .22s ease, visibility 0s, background .3s ease;
+  }
+
+  .logwin-card{
+    width:min(720px,100%);
+    max-height:min(80vh,700px);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius-modal);
+    box-shadow:0 30px 64px -32px var(--shadow-3);
+    transform:translateY(12px) scale(.98);
+    transition:transform .3s cubic-bezier(.2,.7,.2,1), background .3s ease, border-color .3s ease;
+  }
+  .logwin.show .logwin-card{transform:none}
+
+  .logwin-head{
+    flex:none;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:13px 12px 13px 18px;
+    background:var(--thead-bg);
+    border-bottom:1px solid var(--line);
+    transition:background .3s ease, border-color .3s ease;
+  }
+  .logwin-head .ico{width:16px;height:16px;flex:none;color:var(--oak)}
+  .logwin-title{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:15.5px;
+    letter-spacing:.06em;
+    color:var(--ink);
+  }
+  .logwin-count{font-size:12px;color:var(--ink-soft);letter-spacing:.04em}
+  .logwin-close{
+    margin-left:auto;
+    flex:none;
+    width:30px;height:30px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid transparent;
+    border-radius:var(--radius-sm);
+    background:transparent;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:background .18s ease, color .18s ease, border-color .18s ease;
+  }
+  .logwin-close:hover{background:var(--tint-soft);border-color:var(--tint-line);color:var(--ink)}
+  .logwin-close:active{transform:scale(.94)}
+  .logwin-close:focus-visible{outline:2px solid var(--tint-accent);outline-offset:2px}
+  .logwin-close svg{width:14px;height:14px}
+
+  .logwin-body{
+    flex:1 1 auto;
+    min-height:0;
+    display:grid;
+    grid-template-columns:186px minmax(0,1fr);
+  }
+
+  .logwin-list{
+    min-height:0;
+    overflow:auto;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    padding:10px;
+    border-right:1px solid var(--line-soft);
+  }
+  .log-item{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    width:100%;
+    text-align:left;
+    padding:8px 10px;
+    border:1px solid transparent;
+    border-radius:var(--radius-sm);
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:inherit;
+    font-size:13px;
+    line-height:1.5;
+    cursor:pointer;
+    transition:background .18s ease, color .18s ease, border-color .18s ease;
+  }
+  .log-item .d{font-size:11px;letter-spacing:.06em;color:var(--oak)}
+  .log-item:hover{background:var(--tint-soft);color:var(--ink)}
+  .log-item[aria-selected="true"]{
+    background:var(--tint-soft);
+    border-color:var(--tint-line);
+    color:var(--ink);
+  }
+  .log-item:focus-visible{outline:2px solid var(--tint-accent);outline-offset:1px}
+
+  .logwin-detail{
+    min-height:0;
+    overflow:auto;
+    padding:18px clamp(16px,2.6vw,24px) 24px;
+    outline:none;
+  }
+  .logwin-detail:focus-visible{outline:2px solid var(--tint-accent);outline-offset:-2px}
+
+  .log-h{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:19px;
+    line-height:1.45;
+    letter-spacing:.02em;
+    color:var(--ink);
+  }
+  .log-meta{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:9px;
+    padding-bottom:13px;
+    border-bottom:1px solid var(--line-soft);
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .log-ver{
+    padding:2px 8px;
+    border-radius:var(--radius-badge);
+    background:var(--mark-bg);
+    border:1px solid var(--mark-border);
+    color:var(--clay);
+    font-size:11.5px;
+    letter-spacing:.06em;
+  }
+  .log-tag{
+    padding:2px 8px;
+    border-radius:var(--radius-badge);
+    background:var(--tint-soft);
+    border:1px solid var(--tint-line);
+    color:var(--tint-text);
+    font-size:11.5px;
+  }
+  .log-sum{margin-top:11px;font-size:14px;line-height:1.8;color:var(--ink-soft)}
+  .log-sec{margin-top:16px}
+  .log-sec h4{
+    margin-bottom:7px;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.06em;
+    color:var(--oak);
+  }
+  .log-sec ul{list-style:none;display:grid;gap:6px}
+  .log-sec li{
+    position:relative;
+    padding-left:16px;
+    font-size:14px;
+    line-height:1.75;
+    color:var(--ink);
+    word-break:break-word;
+  }
+  .log-sec li::before{
+    content:"";
+    position:absolute;
+    left:2px; top:.62em;
+    width:5px;height:5px;
+    border-radius:var(--radius-dot);
+    background:var(--tint-accent);
+  }
+  .log-sec li code,.log-sum code,.log-note code{
+    font-family:"SF Mono",Menlo,Consolas,monospace;
+    font-size:.9em;
+    background:rgba(142,152,103,.1);
+    padding:1px 5px;
+    border-radius:var(--radius-xs);
+  }
+  .log-note{
+    margin-top:16px;
+    padding:11px 14px;
+    border-left:2px solid var(--tint-accent);
+    border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+    background:var(--tint-soft);
+    font-size:13.5px;
+    line-height:1.75;
+    color:var(--ink-soft);
+  }
+  .log-state{
+    padding:26px 4px;
+    text-align:center;
+    font-size:13.5px;
+    line-height:1.8;
+    color:var(--empty-text);
+    letter-spacing:.04em;
+  }
+
+  @media (max-width:640px){
+    .logwin-body{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+    .logwin-list{
+      flex-direction:row;
+      gap:6px;
+      overflow-x:auto;
+      overflow-y:hidden;
+      padding:9px 10px;
+      border-right:0;
+      border-bottom:1px solid var(--line-soft);
+    }
+    .log-item{flex:none;width:auto;max-width:190px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .logwin{transition-duration:1ms}
+    .logwin-card{transition:none}
+    .log-item,.logwin-close{transition:none}
+  }
+
   /* ---------- 连续曲率：支持时启用 squircle，不支持就退回小半径 ---------- */
   @supports (corner-shape: squircle){
     .card,
@@ -746,6 +991,9 @@
     .badge,
     .box,
     .hw-item,
+    .logwin-card,
+    .log-item,
+    .logwin-close,
     .skeleton{
       corner-shape:squircle;
     }
@@ -839,8 +1087,9 @@
 </head>
 <body>
 
-<!-- 页面底纹层：默认由 JS 把四张 bg_*.jpg 随机拼一条（宽度不够就接下一张，竖向平铺）；
-     右上角「切换背景」按钮可改成固定某一张，或换成彩蛋底图 -->
+<!-- 页面底纹层：档位由 JS 决定 —— 默认是四张 bg_*.jpg 随机拼一条；
+     data/homework.json 里写 "bg" 可以指定「游戏-MC / 游戏-UT / 彩蛋」等（见「页面背景」一节）；
+     右上角「切换背景」按钮可在本机覆盖。 -->
 <div class="bg" id="bgLayer" aria-hidden="true"></div>
 
 <main class="page">
@@ -850,7 +1099,8 @@
       <p class="kicker">Homework · 每日清单</p>
 
       <div class="head-acts">
-        <!-- ★ 切换页面背景：随机 → 网格 → 水墨 → 地图 → 植物 → 彩蛋 → 随机 -->
+        <!-- ★ 切换页面背景：默认(跟随 JSON) → 网格 → 水墨 → 地图 → 植物 → 游戏-MC → 游戏-UT → 默认
+             彩蛋不在这一圈里（只有 homework.json 写 "bg":"egg" 才会亮） -->
         <button class="more-btn" id="bgBtn" type="button" title="点一下换一张背景">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -859,6 +1109,17 @@
             <circle cx="9" cy="8" r="1.4"/>
           </svg>
           <span id="bgBtnText">背景：随机</span>
+        </button>
+
+        <!-- ★ 更新日志 → 悬浮窗里读 /811/data/hwk-log/（只读，不改历史） -->
+        <button class="more-btn" id="logBtn" type="button" title="这个页面改过什么">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.9 9.1A8.6 8.6 0 1 1 3.9 14.9"/>
+            <path d="M3.3 5.1v4.2h4.2"/>
+            <path d="M12 8.4V12l2.7 1.7"/>
+          </svg>
+          <span>更新日志</span>
         </button>
 
         <!-- ★ 更多 811 工具 → /811/index.html -->
@@ -954,6 +1215,34 @@
   </div>
 </div>
 
+<!-- ★ 更新日志悬浮窗：数据在 /811/data/hwk-log/（和 homework.json 同级），
+     index.json 是目录、每条日志一个文件。页面**只读** —— 从不写日志，也不改历史条目。 -->
+<div class="logwin" id="logWin" role="dialog" aria-modal="true" aria-labelledby="logWinTitle">
+  <div class="logwin-card">
+    <div class="logwin-head">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3.9 9.1A8.6 8.6 0 1 1 3.9 14.9"/>
+        <path d="M3.3 5.1v4.2h4.2"/>
+        <path d="M12 8.4V12l2.7 1.7"/>
+      </svg>
+      <span class="logwin-title" id="logWinTitle">更新日志</span>
+      <span class="logwin-count" id="logCount"></span>
+      <button class="logwin-close" id="logClose" type="button" aria-label="关闭更新日志">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="logwin-body">
+      <div class="logwin-list" id="logList" role="tablist" aria-orientation="vertical"
+           aria-label="日志日期"></div>
+      <div class="logwin-detail" id="logDetail" role="tabpanel" tabindex="0"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   'use strict';
@@ -1017,8 +1306,8 @@
     '#2D4A3E'  // 森林绿
   ];
 
-  /* ★ 保留字：title 和 id 也被占用了，别当成科目 */
-  const RESERVED_KEYS = ['笔记', 'date', 'homework', 'title', 'id'];
+  /* ★ 保留字：title / id / bg 也被占用了，别当成科目 */
+  const RESERVED_KEYS = ['笔记', 'date', 'homework', 'title', 'id', 'bg'];
 
   function isKnownKey(key){
     const lower = String(key).toLowerCase();
@@ -1060,35 +1349,77 @@
     '社会':  '当上美国总统\n当上日本首相\n当上俄罗斯沙皇\n测量地球表面积'
   };
 
-  /* ============ 页面底纹：四张图随机拼一条 ============
-     「切换背景」按钮可以在 随机 / 4 张底纹 / 彩蛋 之间轮换，选哪张记在 localStorage。
-     图在 /asset/homework/bg_*.jpg（1:1）。单张按 tile 宽铺；视口比一张宽
-     就「接下一张」（顺序每次打开随机一次，resize 不再重摇，免得来回变），
-     每张都向下平铺（CSS 里 .bg 是 repeat-y）。上面还有一层纸张薄纱。 */
+  /* ============ 页面背景 ============
+     三处来源，优先级从低到高：
+       ① data/homework.json 的 "bg" 字段（站点作者说了算）
+       ② 右上角「切换背景」按钮（只覆盖本机，记在 localStorage）
+       ③ 都没有 → 默认：四张底纹随机拼一条（老行为，一点没变）
+
+     JSON 的 "bg" 认这些值（大小写、空格都不敏感）：
+       ""/不写/"default"/"auto"/"随机"   默认 —— 四张底纹随机拼一条
+       "game-mc"                        游戏-MC —— MC 风格壁纸，按视口自动挑最接近的一档
+       "game-ut"                        游戏-UT —— UT 那张壁纸，单张 cover 自适应
+       "egg"                            彩蛋（**只有显式写才亮**；不再随机触发，也不进切换表）
+       "bg_grid"/"bg_ink"/"bg_map"/"bg_botanical"  旧的四张（保留可用）
+     不认识的值 → 按默认处理，并在控制台提醒一句。
+
+     图都在 **项目根 asset/background/**（部署时镜像进 dist/asset/，见 project.md §10.3）：
+       · MC：asset/background/mc/<宽x高>/wallpaper.png —— 一个尺寸一个文件夹，
+             加一档 = 丢个「宽x高」文件夹（里面叫 wallpaper.png）+ 在 MC_SIZES 里加一行
+       · UT：asset/background/ut.png —— 单张，cover 自适应
+     页面路径从 /811/homework.html 出发，所以是 ../asset/background/… */
   const BG_SLUGS = ['bg_grid', 'bg_ink', 'bg_map', 'bg_botanical'];
-  const BG_TILE_MAX = 720;                        /* 单张最多铺这么宽 */
-  const BG_KEY = 'homework.bg';                   /* 记住手动选的那一档 */
+  const BG_TILE_MAX = 720;                        /* 单张底纹最多铺这么宽 */
+  const BG_KEY = 'homework.bg';                   /* 记住本机手动选的那一档 */
+  const TILE_BASE = '../asset/homework/';         /* 四张底纹 */
+  const BG_BASE   = '../asset/background/';       /* 游戏壁纸 */
+  const UT_URL    = BG_BASE + 'ut.png';
 
-  /* 按钮的轮换表：第 0 档是默认的「随机」，往后五张图正好一轮。
-     停在「彩蛋」那一档时，连竖排字一起亮 —— 图和字本来就是同一套。 */
-  const BG_STOPS = [
-    { slug:'auto',           label:'随机', egg:false },
-    { slug:'bg_grid',        label:'网格', egg:false },
-    { slug:'bg_ink',         label:'水墨', egg:false },
-    { slug:'bg_map',         label:'地图', egg:false },
-    { slug:'bg_botanical',   label:'植物', egg:false },
-    { slug:'egg_background', label:'彩蛋', egg:true  }
+  /* MC 的尺寸档（文件夹名就是「宽x高」） */
+  const MC_SIZES = [
+    { w:1080, h:1920 },
+    { w:1920, h:1080 },
+    { w:2048, h:2048 },
+    { w:2058, h:1440 },
+    { w:2560, h:1440 }
   ];
-  const BG_ORDER = (() => {
-    const a = BG_SLUGS.slice();
-    for(let i = a.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
-      const t = a[i]; a[i] = a[j]; a[j] = t;
-    }
-    return a;
-  })();
+  const mcUrl = s => `${BG_BASE}mc/${s.w}x${s.h}/wallpaper.png`;
 
-  /* 当前停在第几档：存 localStorage，刷新后还停在你手选的那张 */
+  /* JSON 的值 → 内部档位 */
+  const BG_ALIAS = {
+    '': 'auto', 'auto': 'auto', 'default': 'auto', 'dafault': 'auto',
+    '默认': 'auto', '随机': 'auto',
+    'game-mc': 'game-mc', 'gamemc': 'game-mc', 'mc': 'game-mc', '游戏-mc': 'game-mc',
+    'game-ut': 'game-ut', 'gameut': 'game-ut', 'ut': 'game-ut', '游戏-ut': 'game-ut',
+    'egg': 'egg', '彩蛋': 'egg',
+    'bg_grid': 'bg_grid', 'bg_ink': 'bg_ink', 'bg_map': 'bg_map', 'bg_botanical': 'bg_botanical'
+  };
+  const BG_LABEL = {
+    auto: '随机', egg: '彩蛋', 'game-mc': '游戏-MC', 'game-ut': '游戏-UT',
+    bg_grid: '网格', bg_ink: '水墨', bg_map: '地图', bg_botanical: '植物'
+  };
+  function normalizeBg(v){
+    const key = String(v === null || v === undefined ? '' : v).trim().toLowerCase();
+    return BG_ALIAS[key] || null;
+  }
+
+  /* 切换表的第 0 档是「默认」= 跟随 JSON 的 bg（JSON 没写就是四张随机）；
+     后面是能手选的几档 —— 游戏壁纸在这里，彩蛋不在（只能在 JSON 里指定）。 */
+  const BG_STOPS = [
+    { slug:'auto',         label:'默认' },
+    { slug:'bg_grid',      label:'网格' },
+    { slug:'bg_ink',       label:'水墨' },
+    { slug:'bg_map',       label:'地图' },
+    { slug:'bg_botanical', label:'植物' },
+    { slug:'game-mc',      label:'游戏-MC' },
+    { slug:'game-ut',      label:'游戏-UT' }
+  ];
+
+  /* JSON 里声明的档；数据还没到手时先当默认 */
+  let bgFromJson = 'auto';
+
+  /* 本机停在第几档：0 = 默认（跟随 JSON），> 0 = 手选的那张。
+     以前存过 'egg_background' 之类已经不在表里的值 → 落回默认。 */
   let bgStop = (() => {
     try{
       const v = localStorage.getItem(BG_KEY);
@@ -1100,68 +1431,102 @@
     return 0;
   })();
 
-  /* 自动档 = 四张随机拼一条；手动档 = 全铺你选的那张 */
-  function bgSequence(){
-    const stop = BG_STOPS[bgStop];
-    return stop.slug === 'auto' ? BG_ORDER : [stop.slug];
+  /* 当前真正生效的档 */
+  function currentBg(){
+    return bgStop === 0 ? bgFromJson : BG_STOPS[bgStop].slug;
+  }
+
+  /* 默认档的随机顺序：每次打开摇一次，resize 不再重摇，免得来回变 */
+  const BG_ORDER = (() => {
+    const a = BG_SLUGS.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  })();
+
+  /* MC：挑一档最接近当前视口的壁纸。形状（宽高比）优先，像素量当次要项；
+     高分屏最多按 2× 算，免得为了那点清晰度去拉一张用不上的大图。 */
+  function pickMcSize(vw, vh){
+    const dpr  = Math.min(window.devicePixelRatio || 1, 2);
+    const need = Math.max(1, vw) * Math.max(1, vh) * dpr * dpr;
+    const want = Math.max(1, vw) / Math.max(1, vh);
+    let best = MC_SIZES[0], bestScore = Infinity;
+    MC_SIZES.forEach(s => {
+      const shape = Math.abs(Math.log((s.w / s.h) / want));       /* 形状差（主） */
+      const pixel = Math.abs(Math.log((s.w * s.h) / need)) * 0.35; /* 像素量差（次） */
+      const score = shape + pixel;
+      if(score < bestScore){ bestScore = score; best = s; }
+    });
+    return best;
+  }
+
+  function viewport(){
+    return {
+      w: Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0) || 1024,
+      h: Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0) || 768
+    };
   }
 
   function paintPageBg(){
     const el = document.getElementById('bgLayer');
     if(!el) return;
-    const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0) || 1024;
-    const tile = Math.min(BG_TILE_MAX, vw);          /* 窄屏一张铺满 */
-    const need = Math.max(1, Math.ceil(vw / tile));  /* 宽度不够就接下一张 */
-    const seq  = bgSequence();
+    const vp   = viewport();
+    const slug = currentBg();
+
+    /* 游戏壁纸：整张铺满（cover），不平铺 */
+    if(slug === 'game-mc' || slug === 'game-ut'){
+      const url = slug === 'game-mc' ? mcUrl(pickMcSize(vp.w, vp.h)) : UT_URL;
+      el.classList.add('is-cover');                  /* 纱加厚，见 CSS */
+      el.style.backgroundImage    = `url('${url}')`;
+      el.style.backgroundRepeat   = 'no-repeat';
+      el.style.backgroundSize     = 'cover';
+      el.style.backgroundPosition = 'center center';
+      console.log(`[homework] 页面底图：${BG_LABEL[slug]} → ${url}（视口 ${vp.w}×${vp.h}）`);
+      return;
+    }
+
+    /* 底纹档（默认 / 旧四张）：单张按 tile 宽铺；视口比一张宽就接下一张，向下平铺 */
+    const tile = Math.min(BG_TILE_MAX, vp.w);
+    const need = Math.max(1, Math.ceil(vp.w / tile));
+    const seq  = slug === 'auto' ? BG_ORDER : [slug];
     const imgs = [], sizes = [], poss = [];
     for(let i = 0; i < need; i++){
-      imgs.push(`url('../asset/homework/${seq[i % seq.length]}.jpg')`);
+      imgs.push(`url('${TILE_BASE}${seq[i % seq.length]}.jpg')`);
       sizes.push(`${tile}px`);                 /* 单值 = 宽 tile、高 auto（图是 1:1） */
       poss.push(`${i * tile}px 0`);
     }
-    el.style.backgroundImage = imgs.join(', ');
-    el.style.backgroundSize = sizes.join(', ');
+    el.classList.remove('is-cover');
+    el.style.backgroundImage    = imgs.join(', ');
+    el.style.backgroundRepeat   = 'repeat-y';
+    el.style.backgroundSize     = sizes.join(', ');
     el.style.backgroundPosition = poss.join(', ');
-    console.log('[homework] 页面底纹：' + seq.join(' / ') + ' → 铺 ' + need + ' 张 · 每张 ' + tile + 'px（视口 ' + vw + 'px）');
+    console.log('[homework] 页面底纹：' + seq.join(' / ') + ' → 铺 ' + need + ' 张 · 每张 ' + tile + 'px（视口 ' + vp.w + 'px）');
   }
 
   /* ============ 彩蛋 ============
-     条件：作业条数 ≥ EGG_MIN_ITEMS，或者 EGG_RANDOM 的随机概率。
-     命中就给 #easterEgg 加 .show-easter-egg（CSS 负责 1.5s 淡入）。 */
-  const EGG_MIN_ITEMS = 2;
-  const EGG_RANDOM    = 0.1;
-  let eggAuto = false;                            /* 自动判定的结果；手动选了背景就由那一档说了算 */
-
-  function maybeEgg(subjectCount, itemCount){
-    const enough = itemCount >= EGG_MIN_ITEMS;
-    const lucky  = Math.random() < EGG_RANDOM;
-    const show   = enough || lucky;
-    console.log(
-      `[homework] 彩蛋判定：作业 ${itemCount} 条 / ${subjectCount} 个科目 · ` +
-      `条数条件「≥${EGG_MIN_ITEMS}」${enough ? '命中' : '未中'} · ` +
-      `随机 ${Math.round(EGG_RANDOM * 100)}% ${lucky ? '命中' : '未中'} → ${show ? '显示' : '不显示'}`
-    );
-    eggAuto = show;
-    syncEggLayer();
-    return show;
-  }
-
-  /* 彩蛋是底图层（z-index:-1），不挡任何操作；不想看就点「切换背景」换到别的档。
-     手动停在「彩蛋」那一档时连竖排字一起亮 —— 图和字本来就是同一套东西。 */
-
-  /* 背景层 + 彩蛋层按当前档位同步（手动档覆盖自动判定） */
+     只剩一条触发条件：data/homework.json 里写了 "bg":"egg"。
+     原来是「作业 ≥ 2 条 或 10% 随机」—— 那条随机概率已经删掉，彩蛋也不再出现在
+     「切换背景」的轮换里（正常情况下它就是不该冒出来）。 */
   function syncEggLayer(){
     const egg = document.getElementById('easterEgg');
     if(!egg) return;
-    const stop = BG_STOPS[bgStop];
-    egg.classList.toggle('show-easter-egg', stop.slug === 'auto' ? eggAuto : stop.egg);
+    const on = currentBg() === 'egg';
+    egg.classList.toggle('show-easter-egg', on);
+    if(on) console.log('[homework] 彩蛋：JSON 里写了 "bg":"egg"，亮起来');
   }
 
+  /* 背景层 + 彩蛋层 + 按钮文案按当前档位同步 */
   function applyBg(){
     paintPageBg();
     syncEggLayer();
     const txt = document.getElementById('bgBtnText');
-    if(txt) txt.textContent = '背景：' + BG_STOPS[bgStop].label;
+    if(txt) txt.textContent = '背景：' + (BG_LABEL[currentBg()] || '随机');
+    const btn = document.getElementById('bgBtn');
+    if(btn) btn.title = bgStop === 0
+      ? '点一下换一张背景（现在跟随 homework.json 的 bg，没写就是随机）'
+      : '点一下换一张背景';
   }
 
   function cycleBg(){
@@ -1412,6 +1777,19 @@
     }
     if(!src || typeof src !== 'object') src = DEMO;
 
+    /* JSON 的 "bg"：默认档跟着它走（取值与含义见上面「页面背景」一节） */
+    const bgRaw = (data && data.bg !== undefined && data.bg !== null)
+                    ? data.bg
+                    : (src.bg !== undefined ? src.bg : '');
+    const bgParsed = normalizeBg(bgRaw);
+    if(bgParsed === null){
+      bgFromJson = 'auto';
+      console.warn('[homework] 不认识的 bg 值：' + JSON.stringify(bgRaw) + '，按默认（四张底纹随机）处理');
+    }else{
+      bgFromJson = bgParsed;
+    }
+    applyBg();
+
     const titleRaw = (data && data.title !== null && data.title !== undefined)
                        ? data.title
                        : src.title;
@@ -1443,7 +1821,6 @@
     const allSubjects = BASE_SUBJECTS.concat(collectExtraSubjects(src));
 
     let html = '';
-    let hwSubjects = 0, hwItems = 0;
 
     allSubjects.forEach(sub => {
       let raw = null;
@@ -1451,8 +1828,6 @@
         if(src[k] !== null && src[k] !== undefined){ raw = src[k]; break; }
       }
       const list = toList(raw);
-      if(list.length) hwSubjects++;
-      hwItems += list.length;
 
       let contentHTML;
       if(list.length === 0){
@@ -1489,9 +1864,6 @@
 
     /* 图在不在盘上，探一次（不在就把行标成 .hw-noimg，走兜底样式） */
     probeSubjectArt();
-
-    /* 彩蛋判定：看今天有多少作业 */
-    maybeEgg(hwSubjects, hwItems);
 
     lastStep = -1;
     updateProgress(false);
@@ -1624,8 +1996,170 @@
     if(e.key === 'Tab'){ e.preventDefault(); congratsBtn.focus(); }
   });
 
+  /* ============ 更新日志（悬浮窗） ============
+     数据目录和 homework.json 同级：/811/data/hwk-log/
+       · index.json —— 目录：一个数组，也可以写成 { "entries": [...] }；
+                       新的写在**最前面**；每条要么在索引里直接写全，
+                       要么只写个 file 指向同目录下的日志文件
+       · 每条日志一个文件 —— 写好就不再动（历史只增不改）
+     页面**只读**：从不写、从不改，历史条目永远是原样。
+     条目字段：date / title / version / tags[] / summary / sections[{heading, items[]}] / note
+     行内支持 **粗体**、*斜体*、`代码`（复用正文那套轻量 Markdown）。 */
+  const LOG_DIR   = './data/hwk-log/';
+  const LOG_INDEX = LOG_DIR + 'index.json';
+
+  const logWin    = document.getElementById('logWin');
+  const logList   = document.getElementById('logList');
+  const logDetail = document.getElementById('logDetail');
+  const logCount  = document.getElementById('logCount');
+  const logBtn    = document.getElementById('logBtn');
+  const logClose  = document.getElementById('logClose');
+
+  let logEntries  = null;   /* 目录（懒加载一次，之后不再请求） */
+  let logActive   = 0;      /* 现在看的是第几条 */
+  let logLastFocus = null;
+
+  /* 和 homework.json 一样宽容：允许多余的逗号（手写的 JSON 常犯） */
+  async function fetchJson(url){
+    const res = await fetch(url, { cache:'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const text = (await res.text()).replace(/,\s*([}\]])/g, '$1');
+    return JSON.parse(text);
+  }
+
+  async function loadLogIndex(){
+    if(logEntries) return logEntries;
+    const json = await fetchJson(LOG_INDEX);
+    const list = Array.isArray(json) ? json
+               : (json && Array.isArray(json.entries) ? json.entries : []);
+    logEntries = list.filter(e => e && typeof e === 'object');
+    return logEntries;
+  }
+
+  /* 索引里只写了 file 的，按需把那一条读进来（只在内存里合并，不写回文件） */
+  async function loadLogEntry(entry){
+    if(entry.sections || entry.body || !entry.file) return entry;
+    const one = await fetchJson(LOG_DIR + entry.file);
+    return Object.assign({}, entry, one && typeof one === 'object' ? one : {});
+  }
+
+  function renderLogEntry(e){
+    const out = [];
+    out.push(`<h3 class="log-h">${esc(e.title || '（无标题）')}</h3>`);
+
+    const meta = [];
+    if(e.version) meta.push(`<span class="log-ver">${esc(e.version)}</span>`);
+    if(e.date)    meta.push(`<span>${esc(e.date)}</span>`);
+    (Array.isArray(e.tags) ? e.tags : []).forEach(t => meta.push(`<span class="log-tag">${esc(t)}</span>`));
+    if(meta.length) out.push(`<div class="log-meta">${meta.join('')}</div>`);
+
+    if(e.summary) out.push(`<p class="log-sum">${parseInlineMD(String(e.summary))}</p>`);
+
+    const secs = Array.isArray(e.sections) ? e.sections : [];
+    secs.forEach(sec => {
+      if(!sec || typeof sec !== 'object') return;
+      const items = Array.isArray(sec.items) ? sec.items
+                  : (sec.items === undefined || sec.items === null ? [] : [sec.items]);
+      out.push('<section class="log-sec">');
+      if(sec.heading) out.push(`<h4>${esc(sec.heading)}</h4>`);
+      if(items.length){
+        out.push('<ul>' + items.map(it => `<li>${parseInlineMD(String(it))}</li>`).join('') + '</ul>');
+      }
+      out.push('</section>');
+    });
+
+    /* 没写 sections 的，也可以直接给一段 body（空行分段，段内换行当空格） */
+    if(!secs.length && e.body){
+      String(e.body).split(/\n{2,}/).map(s => s.trim()).filter(Boolean)
+        .forEach(p => out.push(`<p class="log-sum">${parseInlineMD(p.replace(/\s*\n\s*/g, ' '))}</p>`));
+    }
+
+    if(e.note) out.push(`<p class="log-note">${parseInlineMD(String(e.note))}</p>`);
+    return out.join('');
+  }
+
+  async function selectLog(i){
+    const list = logEntries || [];
+    if(!list.length) return;
+    logActive = Math.max(0, Math.min(i, list.length - 1));
+
+    Array.prototype.forEach.call(logList.children, (el, k) => {
+      el.setAttribute('aria-selected', k === logActive ? 'true' : 'false');
+    });
+    const cur = logList.children[logActive];
+    if(cur && cur.scrollIntoView) cur.scrollIntoView({ block:'nearest', inline:'nearest' });
+
+    logDetail.innerHTML = '<p class="log-state">读取中…</p>';
+    try{
+      const entry = await loadLogEntry(list[logActive]);
+      logDetail.innerHTML = renderLogEntry(entry);
+      logDetail.scrollTop = 0;
+    }catch(err){
+      logDetail.innerHTML =
+        `<p class="log-state">这条日志读不出来：${esc(err.message)}<br>` +
+        `看看 ${esc(LOG_DIR + (list[logActive].file || 'index.json'))} 还在不在。</p>`;
+    }
+  }
+
+  async function openLog(){
+    logLastFocus = document.activeElement;
+    logWin.classList.add('show');
+    lockScroll(true);
+    logClose.focus();
+    if(logEntries) return;                       /* 已经读过了，直接看 */
+
+    logDetail.innerHTML = '<p class="log-state">读取中…</p>';
+    try{
+      const list = await loadLogIndex();
+      logCount.textContent = list.length ? list.length + ' 条' : '';
+      if(!list.length){
+        logList.innerHTML = '';
+        logDetail.innerHTML =
+          `<p class="log-state">还没有日志。<br>把条目写进 <code>${esc(LOG_DIR)}index.json</code>，这里就会列出来。</p>`;
+        return;
+      }
+      logList.innerHTML = list.map((e, i) => `
+        <button class="log-item" type="button" role="tab" aria-controls="logDetail"
+                aria-selected="${i === 0 ? 'true' : 'false'}">
+          <span class="d">${esc(e.date || '')}</span>
+          <span>${esc(e.title || '（无标题）')}</span>
+        </button>`).join('');
+      Array.prototype.forEach.call(logList.children, (el, i) => {
+        el.addEventListener('click', () => selectLog(i));
+      });
+      selectLog(0);
+    }catch(err){
+      logList.innerHTML = '';
+      logCount.textContent = '';
+      logDetail.innerHTML =
+        `<p class="log-state">没读到 <code>${esc(LOG_INDEX)}</code>：${esc(err.message)}<br>` +
+        `（用 file:// 直接打开页面时读不到，跑 部署.cmd serve 或看线上）</p>`;
+    }
+  }
+
+  function closeLog(){
+    if(!logWin.classList.contains('show')) return;
+    logWin.classList.remove('show');
+    lockScroll(false);
+    if(logLastFocus && document.contains(logLastFocus)) logLastFocus.focus();
+  }
+
+  if(logBtn)   logBtn.addEventListener('click', openLog);
+  if(logClose) logClose.addEventListener('click', closeLog);
+  if(logWin)   logWin.addEventListener('click', e => { if(e.target === logWin) closeLog(); });
+  if(logList)  logList.addEventListener('keydown', e => {
+    const dir = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
+    if(!dir) return;
+    e.preventDefault();
+    selectLog(logActive + dir);
+    const el = logList.children[logActive];
+    if(el && el.focus) el.focus();
+  });
+
   document.addEventListener('keydown', e => {
-    if(e.key === 'Escape') closeCongrats();
+    if(e.key !== 'Escape') return;
+    closeLog();
+    closeCongrats();
   });
 
   /* ============ 系统配色切换监听 ============ */

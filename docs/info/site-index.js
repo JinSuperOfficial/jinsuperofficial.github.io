@@ -116,6 +116,18 @@ window.SITE_INDEX = {
               ]
             },
             {
+              "name": "hwk-log/",
+              "dir": true,
+              "children": [
+                {
+                  "name": "2026-10-10-bg-and-log.json"
+                },
+                {
+                  "name": "index.json"
+                }
+              ]
+            },
+            {
               "name": "homework.json"
             }
           ]
