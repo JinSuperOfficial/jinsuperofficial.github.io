@@ -177,27 +177,6 @@ window.SITE_INDEX = {
               "dir": true,
               "children": [
                 {
-                  "name": "hwc-041c72f1.json"
-                },
-                {
-                  "name": "hwc-4ed45c9e.json"
-                },
-                {
-                  "name": "hwc-69865767.json"
-                },
-                {
-                  "name": "hwc-7cd30741.json"
-                },
-                {
-                  "name": "hwc-9dfcd0d1.json"
-                },
-                {
-                  "name": "hwc-b13fe494.json"
-                },
-                {
-                  "name": "hwc-f1a94e67.json"
-                },
-                {
                   "name": "hwk-n261010.json"
                 },
                 {

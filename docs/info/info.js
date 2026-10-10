@@ -70,7 +70,7 @@ const DESC = {
   '/class/classtable.html': '课程表 · 811班：基础版 / 缩略版两套，可切完整课表与今日课程',
   '/class/function.html': 'Plot 图像计算器：瑞士国际主义亮/暗/绿三套主题，函数 / 隐式 / 极坐标 / 参数方程，自变量可用任意单个字母，坐标轴标签自定义，触屏双指缩放-平移-轻点撤回',
   '/class/data/': '作业数据目录',
-  '/class/data/hwk/': '作业数据（一天一份）：hwk-<id>.json 当天记录 + hwc-<id>.json 内容片（科目条目 / 笔记 / 彩蛋）+ index.json 目录',
+  '/class/data/hwk/': '作业数据（一天一份）：hwk-<id>.json 里直接放各科正文 + 笔记，index.json 是目录',
   '/class/data/hwk-log/': '作业页更新日志：index.json 目录 + 每条日志一个文件（只增不改）',
   '/class/data/homework.json': '旧版作业数据（一个大文件）：迁移到 data/hwk/ 之后默认留作备份',
 

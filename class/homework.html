@@ -2609,6 +2609,9 @@
      新结构读不到就退回它，页面永远有东西显示。 */
   const HWK_BASES = ['./data/hwk/', '/class/data/hwk/', '/data/hwk/'];
   const PATHS = ['./data/homework.json', '/class/data/homework.json', '/data/homework.json'];
+  /* 当天文件里这些键不算「科目」；其余顶层键（"语文": "…" 这种）一律当科目 */
+  const INLINE_RESERVED = ['id', 'date', 'title', 'bg', 'subjects', 'notesId', 'eggId',
+                           'homework', 'notes', 'egg', '彩蛋'];
   let hwkBase = null;                       /* 哪条基准读通了就记下来，后面几张片子都用它 */
 
   function parseLooseJson(text){
@@ -2672,44 +2675,57 @@
     }
     if(!record) return null;
 
-    /* ③ 内容片：科目的文本 / 笔记 / 彩蛋。并发取，缺一片不影响别的片 */
-    const subjects = (record.subjects && typeof record.subjects === 'object') ? record.subjects : {};
-    const ids = [];
-    Object.keys(subjects).forEach(k => { if(typeof subjects[k] === 'string') ids.push(subjects[k]); });
-    if(typeof record.notesId === 'string') ids.push(record.notesId);
-    if(typeof record.eggId === 'string') ids.push(record.eggId);
-    const uniq = ids.filter((v, i) => v && ids.indexOf(v) === i);
-
-    const pieces = {};
-    await Promise.all(uniq.map(async cid => {
-      for(const base of [hwkBase].concat(HWK_BASES)){
-        try{
-          const one = await getJson(base + cid + '.json');
-          if(one && typeof one === 'object'){ pieces[cid] = one; return; }
-        }catch(e){}
-      }
-      pieces[cid] = null;
-      console.warn('[homework] 内容片读不到：' + cid + '.json（这一片先当空的）');
-    }));
-
-    /* ④ 拼成 render() 认识的老形状：科目名 → 文本，外加 title / id / bg */
+    /* ③ 拼成 render() 认识的老形状：科目名 → 文本，外加 title / id / bg
+       两种写法都认：
+         · 默认（一天一个文件）：科目正文直接写在记录里 —— "语文": "…"、 "笔记": "…"
+         · 抽共用内容片时才用：subjects: {语文: "<id>"} / notesId / eggId 指向 <id>.json */
+    const subjects = (record.subjects && typeof record.subjects === 'object') ? record.subjects : null;
     const src = {};
-    Object.keys(subjects).forEach(name => {
-      const p = pieces[subjects[name]];
-      if(p && typeof p.text === 'string') src[name] = p.text;
-    });
-    if(record.notesId && pieces[record.notesId] && typeof pieces[record.notesId].text === 'string'){
-      src['笔记'] = pieces[record.notesId].text;
+    let egg = null;
+
+    if(subjects){
+      const ids = [];
+      Object.keys(subjects).forEach(k => { if(typeof subjects[k] === 'string') ids.push(subjects[k]); });
+      if(typeof record.notesId === 'string') ids.push(record.notesId);
+      if(typeof record.eggId === 'string') ids.push(record.eggId);
+      const uniq = ids.filter((v, i) => v && ids.indexOf(v) === i);
+
+      const pieces = {};
+      await Promise.all(uniq.map(async cid => {
+        for(const base of [hwkBase].concat(HWK_BASES)){
+          try{
+            const one = await getJson(base + encodeURIComponent(cid) + '.json');
+            if(one && typeof one === 'object'){ pieces[cid] = one; return; }
+          }catch(e){}
+        }
+        pieces[cid] = null;
+        console.warn('[homework] 内容片读不到：' + cid + '.json（这一片先当空的）');
+      }));
+
+      Object.keys(subjects).forEach(name => {
+        const p = pieces[subjects[name]];
+        if(p && typeof p.text === 'string') src[name] = p.text;
+      });
+      if(record.notesId && pieces[record.notesId] && typeof pieces[record.notesId].text === 'string'){
+        src['笔记'] = pieces[record.notesId].text;
+      }
+      if(record.eggId && pieces[record.eggId] && typeof pieces[record.eggId].text === 'string'){
+        egg = pieces[record.eggId].text;
+      }
+    }else{
+      Object.keys(record).forEach(key => {
+        if(INLINE_RESERVED.indexOf(key) >= 0 || key.slice(0, 2) === '__') return;   /* __ 开头是内部记账键 */
+        if(record[key] === null || record[key] === undefined) return;
+        src[key] = record[key];
+      });
+      if(typeof record['彩蛋'] === 'string') egg = record['彩蛋'];
     }
+
     if(record.title !== undefined) src.title = record.title;
     if(record.id !== undefined) src.id = record.id;
     if(record.bg !== undefined) src.bg = bgValue(record.bg);
 
-    /* 彩蛋文案单独交出去：塞进 src 会被 collectExtraSubjects 当成一个「科目」多画一行 */
-    const egg = (record.eggId && pieces[record.eggId] && typeof pieces[record.eggId].text === 'string')
-      ? pieces[record.eggId].text : null;
-
-    console.log('[homework] 读 ' + hwkBase + files[0].name + '（' + files.length + ' 份历史）');
+    console.log('[homework] 读 ' + hwkBase + files[0].name + '（共 ' + files.length + ' 份历史）');
     return { data: src, egg: egg, demo:false };
   }
 
@@ -3356,8 +3372,12 @@
     if(bgRaw) meta.push(`<span class="log-tag">背景：${esc(BG_LABEL[normalizeBg(bgRaw)] || String(bgRaw))}</span>`);
     out.push(`<div class="log-meta">${meta.join('')}</div>`);
 
-    const subjects = (rec.subjects && typeof rec.subjects === 'object') ? rec.subjects : {};
-    const names = Object.keys(subjects);
+    /* 科目：老的 subjects+内容片写法，或者直接把正文写在记录里的新写法（默认） */
+    const subjectMap = (rec.subjects && typeof rec.subjects === 'object') ? rec.subjects : null;
+    const names = subjectMap
+      ? Object.keys(subjectMap)
+      : Object.keys(rec).filter(k => INLINE_RESERVED.indexOf(k) < 0 && k !== '笔记' &&
+                                    k.slice(0, 2) !== '__' && typeof rec[k] === 'string');
     const colors = tmColors(names);
 
     if(!names.length){
@@ -3365,8 +3385,10 @@
     }else{
       out.push('<ul class="tm-subj">');
       names.forEach(name => {
-        const p = pieces[subjects[name]];
-        const list = toList(p && typeof p.text === 'string' ? p.text : '');
+        const text = subjectMap
+          ? ((pieces && pieces[subjectMap[name]] && typeof pieces[subjectMap[name]].text === 'string') ? pieces[subjectMap[name]].text : '')
+          : String(rec[name] || '');
+        const list = toList(text);
         out.push(`<li class="tm-subj-row">
           <span class="tm-subj-name" style="--c:${colors[name]}">${subjectIcon(name)}${esc(name)}</span>`);
         out.push(list.length
@@ -3377,7 +3399,10 @@
       out.push('</ul>');
     }
 
-    const note = rec.notesId ? pieces[rec.notesId] : null;
+    /* 笔记：老的 notesId 内容片，或者记录里的 "笔记" */
+    const note = rec.notesId
+      ? (pieces ? pieces[rec.notesId] : null)
+      : (typeof rec['笔记'] === 'string' ? { text: rec['笔记'] } : null);
     if(note && typeof note.text === 'string' && note.text.trim() !== ''){
       out.push(`<div class="log-note tm-note"><span class="tm-note-label">Notes</span>${parseBlockMD(note.text)}</div>`);
     }
@@ -3385,6 +3410,7 @@
   }
 
   async function tmPiecesFor(rec){
+    if(!rec.subjects) return null;              /* 内联写法（默认）：正文就在记录里，不用再拉文件 */
     const subjects = (rec.subjects && typeof rec.subjects === 'object') ? rec.subjects : {};
     const ids = [];
     Object.keys(subjects).forEach(k => { if(typeof subjects[k] === 'string') ids.push(subjects[k]); });
