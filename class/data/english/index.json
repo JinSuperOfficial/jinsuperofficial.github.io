@@ -1,7 +1,7 @@
 {
   "title": "英语教材音频",
   "note": "按单元分组。文件名规则：<单元>/<章节>.mp3；加音频 = 丢进目录 + 在 tracks 里加一行。",
-  "dir": "/811/data/english/",
+  "dir": "/class/data/english/",
   "units": [
     {
       "unit": "U1",

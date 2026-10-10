@@ -1,13 +1,13 @@
 {
-  "collection": "811",
+  "collection": "class",
   "title": "811 专区",
-  "root": "/811/",
+  "root": "/class/",
   "items": [
     {
       "id": "homework",
       "title": "美味的作业",
-      "desc": "读 data/homework.json 渲染每日清单，勾一下自动保存，全部勾完有惊喜。",
-      "href": "/811/homework.html",
+      "desc": "读 data/hwk/ 里当天那份渲染每日清单，勾一下自动保存，全部勾完有惊喜；右上角「时光机」能翻历史。",
+      "href": "/class/homework.html",
       "icon": "clipboardCheck",
       "kind": "tool",
       "order": 10
@@ -16,7 +16,7 @@
       "id": "classtable",
       "title": "课程表",
       "desc": "基础版与缩略版两套看法，能切完整课表和今日课程，还认得出「现在上哪节」。",
-      "href": "/811/classtable.html",
+      "href": "/class/classtable.html",
       "icon": "calendar",
       "kind": "demo",
       "order": 20
@@ -25,7 +25,7 @@
       "id": "english",
       "title": "英语",
       "desc": "Unit 1–5 的课文录音，点开就能听，一个单元连着播。",
-      "href": "/811/english.html",
+      "href": "/class/english.html",
       "icon": "audio",
       "kind": "tool",
       "order": 30
@@ -34,7 +34,7 @@
       "id": "function",
       "title": "Plot 图像计算器",
       "desc": "瑞士风三套主题（亮 / 暗 / 绿）：画函数、隐式、极坐标、参数方程；自变量能用任意单个字母（a=54b+cos(b)），坐标轴标签随便改，手机上双指缩放、平移、轻点撤回。",
-      "href": "/811/function.html",
+      "href": "/class/function.html",
       "icon": "curve",
       "kind": "canvas",
       "order": 40

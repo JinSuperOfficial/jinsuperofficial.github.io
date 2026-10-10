@@ -477,13 +477,13 @@
     <div>
       <nav class="path" aria-label="面包屑">
         <a href="/">/</a><span class="sep">/</span>
-        <a href="/811/">811</a><span class="sep">/</span>
+        <a href="/class/">811</a><span class="sep">/</span>
         <span class="here">英语</span>
       </nav>
       <h1>英语<em>听力</em></h1>
       <p class="lede">
         Unit 1–5 的课文录音，一个单元连着播。清单读
-        <code>/811/data/english/index.json</code>，加音频只改 json，这一页不用动。
+        <code>/class/data/english/index.json</code>，加音频只改 json，这一页不用动。
       </p>
     </div>
     <p class="counter" id="counter" aria-live="polite">
@@ -524,7 +524,7 @@
       <div class="empty">
         <h3>这份清单要用 JavaScript 渲染</h3>
         <p>清单本身是一份静态 JSON，没脚本读它就什么都不显示：
-          <a href="/811/data/english/index.json">/811/data/english/index.json</a>
+          <a href="/class/data/english/index.json">/class/data/english/index.json</a>
         </p>
       </div>
     </noscript>
@@ -538,7 +538,7 @@
       <span><kbd>/</kbd> 搜索</span>
       <span><kbd>Esc</kbd> 清空搜索</span>
     </span>
-    <a href="/811/">← 回 811 工具箱</a>
+    <a href="/class/">← 回 811 工具箱</a>
   </footer>
 
 </div>
@@ -588,7 +588,7 @@
   'use strict';
 
   var M = window.JSManifest;
-  var INDEX_URL = '/811/data/english/index.json';
+  var INDEX_URL = '/class/data/english/index.json';
   var RATES = [0.75, 1, 1.25, 1.5];
 
   var unitsEl = document.getElementById('units');
@@ -615,7 +615,7 @@
   audio.preload = 'metadata';
   audio.volume = 1;
 
-  var dir = '/811/data/english/';
+  var dir = '/class/data/english/';
   var units = [];          /* [{unit,label,bytes,tracks:[track]}] */
   var playlist = [];       /* 扁平顺序，和页面上从上到下一致 */
   var current = -1;        /* playlist 下标 */
@@ -722,8 +722,8 @@
     return '' +
       '<div class="empty" id="emptyBox">' +
         '<h3>这个索引里一条音频都没有</h3>' +
-        '<p>往 <code>/811/data/english/&lt;单元&gt;/</code> 里放 mp3，' +
-        '再在 <code>/811/data/english/index.json</code> 的 <code>units[].tracks</code> 里加一行就行。</p>' +
+        '<p>往 <code>/class/data/english/&lt;单元&gt;/</code> 里放 mp3，' +
+        '再在 <code>/class/data/english/index.json</code> 的 <code>units[].tracks</code> 里加一行就行。</p>' +
       '</div>';
   }
 
@@ -733,7 +733,7 @@
         '<h3>' + title + '</h3>' +
         '<p>' + detail + '</p>' +
         '<pre>python -m http.server 8080' + '\n' +
-        'http://localhost:8080/811/english.html</pre>' +
+        'http://localhost:8080/class/english.html</pre>' +
       '</div>';
   }
 

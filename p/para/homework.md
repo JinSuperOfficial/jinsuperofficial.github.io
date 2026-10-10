@@ -8,7 +8,7 @@ summary: 本周作业清单，内嵌 811 的作业页，打开就是最新的那
 
 <div style="width:100%; height:600px;">
   <iframe
-    src="/811/homework.html"
+    src="/class/homework.html"
     title="homework.html"
     style="width:100%; height:100%; border:1px solid #ccc; border-radius:8px;"
   ></iframe>

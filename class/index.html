@@ -387,8 +387,8 @@
       <section class="grid" id="tool-grid">
         <noscript>
           <p class="grid-empty">这份清单要用 JavaScript 渲染：
-            <a href="/811/homework.html">作业</a> ·
-            <a href="/811/classtable.html">课程表</a>
+            <a href="/class/homework.html">作业</a> ·
+            <a href="/class/classtable.html">课程表</a>
           </p>
         </noscript>
       </section>
@@ -406,7 +406,7 @@
   </section>
 </main>
 
-<!-- 卡片模板 + 清单运行时：加工具只改 811/tools.json，不要动上面的 HTML（见 MANIFEST.md） -->
+<!-- 卡片模板 + 清单运行时：加工具只改 class/tools.json，不要动上面的 HTML（见 MANIFEST.md） -->
 <template id="tpl-tool-card">
   <a class="card">
     <span class="card-ico" aria-hidden="true">
@@ -438,8 +438,8 @@
     M.showEmpty(grid, text);
   }
 
-  M.loadCollection('/811/tools.json', { collection: '811' }).then(function (col){
-    M.logProblems(col.problems, '811');
+  M.loadCollection('/class/tools.json', { collection: 'class' }).then(function (col){
+    M.logProblems(col.problems, 'class');
 
     if (!col.ok){
       showEmpty('清单没加载出来，检查 tools.json 路径或用本地服务器打开。');

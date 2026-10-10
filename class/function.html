@@ -1678,7 +1678,7 @@
       </div>
 
       <div class="settings-group-label" style="margin-top:18px">别的 811 工具</div>
-      <a class="data-btn tools-index-link" href="/811/index.html" id="toolsIndexLink"
+      <a class="data-btn tools-index-link" href="/class/index.html" id="toolsIndexLink"
          target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
              stroke-linecap="round" stroke-linejoin="round">
@@ -1689,7 +1689,7 @@
       </a>
       <div class="tools-grid" id="toolsGrid"></div>
       <div class="tv-empty hidden" id="toolsEmpty">
-        清单没读到 —— 用 http 打开（<code>部署.cmd serve</code>）才能读 <code>/811/tools.json</code>。
+        清单没读到 —— 用 http 打开（<code>部署.cmd serve</code>）才能读 <code>/class/tools.json</code>。
       </div>
     </div>
   </div>
@@ -6085,7 +6085,7 @@ function load811Tools(){
     return;
   }
   toolsLoaded = true;
-  M.loadCollection('/811/tools.json', { collection: '811' }).then(col => {
+  M.loadCollection('/class/tools.json', { collection: 'class' }).then(col => {
     if (!col.ok || !col.items.length){
       if (empty) empty.classList.remove('hidden');
       return;

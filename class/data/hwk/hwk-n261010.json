@@ -1,0 +1,18 @@
+{
+	"id": "n261010",
+	"date": "2026-10-10",
+	"title": "作业-n20261010",
+	"bg": {
+		"value": "default"
+	},
+	"notesId": "hwc-4ed45c9e",
+	"eggId": null,
+	"subjects": {
+		"语文": "hwc-041c72f1",
+		"数学": "hwc-69865767",
+		"英语": "hwc-9dfcd0d1",
+		"科学": "hwc-f1a94e67",
+		"社会": "hwc-7cd30741",
+		"班务": "hwc-b13fe494"
+	}
+}
