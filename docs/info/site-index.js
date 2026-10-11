@@ -195,12 +195,18 @@ window.SITE_INDEX = {
                   "name": "2026-10-10-theme-and-scroll.json"
                 },
                 {
+                  "name": "2026-10-11-console-and-produce.json"
+                },
+                {
                   "name": "index.json"
                 }
               ]
             },
             {
               "name": "homework.json"
+            },
+            {
+              "name": "index-produce.json"
             }
           ]
         },
@@ -260,6 +266,9 @@ window.SITE_INDEX = {
         },
         {
           "name": "manifest.js"
+        },
+        {
+          "name": "theme.js"
         }
       ]
     },
@@ -619,6 +628,9 @@ window.SITE_INDEX = {
       "children": [
         {
           "name": "bak.html"
+        },
+        {
+          "name": "index-bak2.html"
         },
         {
           "name": "index.html"

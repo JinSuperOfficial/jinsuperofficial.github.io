@@ -1661,10 +1661,11 @@
   </div>
 </div>
 
-<!-- ★ 时光机：全部历史作业（class/data/hwk/）。数据三级降级，任何一级挂掉都往下走：
-       目录：GitHub Contents API（3 秒超时）→ jsDelivr 上的 index.json → 同源 data/hwk/index.json
+<!-- ★ 时光机：全部历史作业（class/data/）。数据多级降级，任何一级挂掉都往下走：
+       目录：GitHub Contents API（3 秒超时）→ jsDelivr / 同源的 index-produce.json
+             （构建时生成：目录 + 最近 5 天正文）→ jsDelivr / 同源的 index.json
        文件：raw.githubusercontent.com（3 秒超时）→ jsDelivr → 同源
-     三级都没通就只说一句「时光机暂时迷路了」，主页面（今天这份作业）完全不受影响。
+     都没通就只说一句「时光机暂时迷路了」，主页面（今天这份作业）完全不受影响。
      骨架复用更新日志那套悬浮窗（.logwin），所以两边的观感 / Esc / 焦点归还是一致的。 -->
 <div class="logwin" id="tmWin" role="dialog" aria-modal="true" aria-labelledby="tmTitle">
   <div class="logwin-card">
@@ -3159,31 +3160,41 @@
   });
 
   /* ============ 时光机（全部历史作业） ============
-     数据在 GitHub 仓库的 class/data/hwk/（部署后才有）。三级降级，哪一级挂掉都往下走：
+     数据在 GitHub 仓库的 class/data/ 里（部署后才有）。三级降级，哪一级挂掉都往下走：
 
        ① 目录：GitHub Contents API（3 秒超时；未认证只有 60 次/小时）
-              → jsDelivr 上的 index.json（国内快）
-              → 同源 ./data/hwk/index.json（本地开发 / 热铁盒那条线）
+              → jsDelivr 上的 index-produce.json（**构建时生成**：目录 + 最近 5 天正文）
+              → jsDelivr 上的 index.json（只有目录）
+              → 同源 ./data/index-produce.json → ./data/hwk/index.json（本地 / 热铁盒）
        ② 每一份作业：raw.githubusercontent.com（3 秒超时）→ jsDelivr → 同源
        ③ 全挂 → 窗口里说一句「时光机暂时迷路了」，今天这份作业完全不受影响
 
-     缓存：localStorage['hwk-index-v2']，5 分钟 TTL —— 这 5 分钟里反复开关不再打 API。
-     内容片（科目条目 / 笔记）**按需**拉：选中哪天拉哪天，不一次性拉全部历史的正文。
-     文件并发 8 个一批；列表先画 50 条，剩下的用「加载更多」。 */
+     为什么要有 index-produce.json：GitHub API 一限流 / 一超时，能兜底的只有静态文件。
+     目录**必须**落成文件（CDN 与静态托管都没法列目录），而 produce 把「最近 5 天的正文」
+     一起带上 —— 兜底那一档因此只要一个请求，常看的那几天就全在了。
+     它由构建按 class/data/hwk/*.json 生成，永远和数据一致
+     （本地：控制台「写入作业」/「重建清单」；仓库：GitHub Actions 推完自动重建）。
+
+     缓存：localStorage['hwk-index-v3']，5 分钟 TTL —— 这 5 分钟里反复开关不再打 API。
+     按需读：列表一次显示 5 天，「加载更多」每次再要 5 天（顺手把那 5 天的正文取回来）；
+            选中还没取过的那天会立刻补一次。内容片（科目条目 / 笔记）同样按需。 */
   const TM = {
     owner:'JinSuperOfficial',
     repo:'jinsuperofficial.github.io',
     branch:'main',
     path:'class/data/hwk',
+    producePath:'class/data/index-produce.json',
     timeout:3000,
     ttl:5 * 60 * 1000,
-    cacheKey:'hwk-index-v2',
+    cacheKey:'hwk-index-v3',
     concurrency:8,
-    page:50,
-    local:'./data/hwk/'
+    page:5,                       /* 一次显示 / 一次加载 5 天 */
+    local:'./data/hwk/',
+    localProduce:'./data/index-produce.json'
   };
   const TM_API = `https://api.github.com/repos/${TM.owner}/${TM.repo}/contents/${TM.path}`;
   const TM_CDN = `https://cdn.jsdelivr.net/gh/${TM.owner}/${TM.repo}@${TM.branch}/${TM.path}/`;
+  const TM_CDN_PRODUCE = `https://cdn.jsdelivr.net/gh/${TM.owner}/${TM.repo}@${TM.branch}/${TM.producePath}`;
 
   const tmWin    = document.getElementById('tmWin');
   const tmList   = document.getElementById('tmList');
@@ -3199,6 +3210,7 @@
   let tmLastFocus = null;
   let tmCacheHit  = false;
   let tmSeq       = 0;      /* 切日期的令牌：慢请求回来时如果已经不是它了，就别盖上去 */
+  const tmRecords = {};     /* 正文缓存：文件名 → 记录（produce 里带来的会预先塞进来） */
   const tmPieces  = {};     /* 内容片缓存：基准 + id → 内容 */
 
   function tmSupported(){
@@ -3232,42 +3244,84 @@
   async function tmIndexFrom(base, label){
     try{
       const json = await tmJson(base + 'index.json');
-      const list = Array.isArray(json) ? json
-                 : (json && Array.isArray(json.entries) ? json.entries : null);
-      if(!list) throw new Error('index.json 不是列表');
-      const files = list
-        .map(e => (typeof e === 'string' ? { name:e } : e))
-        .filter(e => e && isHwkName(e.name))
-        .map(e => ({
-          id: String(e.id || e.name.replace(/^hwk-/, '').replace(/\.json$/, '')),
-          name: e.name,
-          date: String(e.date || ''),
-          title: String(e.title || ''),
-          base: base
-        }));
-      if(!files.length) throw new Error('index.json 里没有 hwk-*.json');
+      const files = tmNormalizeList(json, base);
+      if(!files) throw new Error('index.json 不是列表');
       console.log(`[时光机] 目录来自${label}：${files.length} 条`);
-      return tmSort(files);
+      return files;
     }catch(err){
       console.warn(`[时光机] ${label}的目录没读通：${err.message}`);
       return null;
     }
   }
 
+  /* 目录（裸数组 / {entries:[]}）→ 排好序的文件列表 */
+  function tmNormalizeList(json, base){
+    const list = Array.isArray(json) ? json
+               : (json && Array.isArray(json.entries) ? json.entries : null);
+    if(!list) return null;
+    const files = list
+      .map(e => (typeof e === 'string' ? { name:e } : e))
+      .filter(e => e && isHwkName(e.name))
+      .map(e => ({
+        id: String(e.id || e.name.replace(/^hwk-/, '').replace(/\.json$/, '')),
+        name: e.name,
+        date: String(e.date || ''),
+        title: String(e.title || ''),
+        base: base
+      }));
+    return files.length ? tmSort(files) : null;
+  }
+
+  /* 生产清单（构建时生成）：目录 + 最近 5 天的正文一起带回来。
+     清单放在 class/data/ 下，正文在它的子目录里（清单里的 source 写着是哪个），
+     所以文件基准要按 source 的最后一段拼 —— 不然会朝「清单旁边的 hwk-xxx.json」
+     白打一次 404。认不出 source就干脆不定基准，走默认的 CDN → 同源那条链。
+     整份认不出来（老版本 / 手写坏了）就返回 null，自然降级到 index.json */
+  async function tmProduceFrom(url, label){
+    try{
+      const json = await tmJson(url);
+      const files = tmNormalizeList(json, null);
+      if(!json || !files) throw new Error('不是一份清单');
+      let seeded = 0;
+      const preview = (json.preview && typeof json.preview === 'object') ? json.preview : {};
+      Object.keys(preview).forEach(name => {
+        const rec = preview[name];
+        if(!isHwkName(name) || !rec || typeof rec !== 'object') return;
+        tmRecords[name] = Object.assign({}, rec, { __base:'', __name:name });
+        seeded++;
+      });
+      const dir = url.replace(/[^/]*$/, '');
+      const tail = String(json.source || '').split('/').filter(Boolean).pop() || '';
+      const base = tail ? dir + tail + '/' : '';
+      if(base) files.forEach(f => { f.base = base; f.download_url = base + f.name; });
+      console.log(`[时光机] 目录来自${label}（生产清单）：${files.length} 条，自带正文 ${seeded} 天`
+        + (base ? '，正文基准 ' + base : ''));
+      return tmSort(files);
+    }catch(err){
+      console.warn(`[时光机] ${label}的生产清单没读通：${err.message}`);
+      return null;
+    }
+  }
+
   async function tmListFiles(){
-    /* 0. 缓存：5 分钟内不再打 API */
+    /* 0. 缓存：5 分钟内不再打 API（目录 + 已经取回来的正文一起存） */
     try{
       const raw = localStorage.getItem(TM.cacheKey);
       const cached = raw ? JSON.parse(raw) : null;
       if(cached && cached.ts && (Date.now() - cached.ts) < TM.ttl &&
          Array.isArray(cached.data) && cached.data.length){
         tmCacheHit = true;
+        const recs = cached.records && typeof cached.records === 'object' ? cached.records : {};
+        Object.keys(recs).forEach(name => {
+          const rec = recs[name];
+          if(rec && typeof rec === 'object') tmRecords[name] = Object.assign({}, rec, { __base:'', __name:name });
+        });
         return cached.data;
       }
     }catch(e){}
 
     let data = null;
-    /* 1. GitHub Contents API（超时 3 秒） */
+    /* 1. GitHub Contents API（超时 3 秒）—— 主力：永远是最新的一份目录 */
     try{
       const items = await tmJson(TM_API, { headers:{ 'Accept':'application/vnd.github+json' } });
       if(!Array.isArray(items)) throw new Error('返回的不是目录列表');
@@ -3284,47 +3338,77 @@
             base: base || null
           };
         });
+      if(!data.length) data = null;
     }catch(err){
-      console.warn('[时光机] GitHub API 没读通（超时 / 限流 / 网络），改用 CDN 索引：' + err.message);
+      console.warn('[时光机] GitHub API 没读通（超时 / 限流 / 网络），改用 CDN 清单：' + err.message);
     }
-    /* 2. 国内 CDN 上的 index.json */
+    /* 2. CDN 上的**生产清单**（构建时生成：目录 + 最近几天正文，一个请求就够） */
+    if(!data) data = await tmProduceFrom(TM_CDN_PRODUCE, 'CDN');
+    /* 3. CDN 上的 index.json（只有目录） */
     if(!data) data = await tmIndexFrom(TM_CDN, 'CDN');
-    /* 3. 同源（本地开发 / 热铁盒） */
+    /* 4. 同源：先生产清单，再 index.json（本地开发 / 热铁盒） */
+    if(!data) data = await tmProduceFrom(TM.localProduce, '同源');
     if(!data) data = await tmIndexFrom(TM.local, '同源 data/hwk/');
-    if(!data) throw new Error('三个来源的目录都没读到');
+    if(!data) throw new Error('几个来源的目录都没读到');
 
     data = tmSort(data.map(it => Object.assign({}, it, {
       download_url: it.download_url || (it.base || TM_CDN) + it.name
     })));
-    try{ localStorage.setItem(TM.cacheKey, JSON.stringify({ ts:Date.now(), data:data })); }catch(e){}
+    tmCacheSave();
     return data;
   }
 
-  /* 并发 8 个一批把每份作业拉下来：raw → CDN → 同源；单份全挂就跳过，不拖累别的 */
-  async function tmFetchAll(){
-    const files = await tmListFiles();
-    const out = [];
+  /* 存缓存：目录 + 已经取到的正文（别存没读通的那份，免得下次开窗空着） */
+  function tmCacheSave(){
+    try{
+      if(!tmAll || !tmAll.length) return;
+      const records = {};
+      Object.keys(tmRecords).forEach(name => {
+        if(name.indexOf('__') !== 0) records[name] = tmRecords[name];
+      });
+      localStorage.setItem(TM.cacheKey, JSON.stringify({ ts:Date.now(), data:tmAll, records:records }));
+    }catch(e){ /* 存不下（配额）就算了，下次再拉 */ }
+  }
+
+  /* 单份作业：raw → CDN → 同源（同一个地址只打一次）。全挂返回 null，不拖累别的 */
+  async function tmFetchOne(f){
+    if(tmRecords[f.name]) return tmRecords[f.name];
+    const tries = [];
+    const push = (url, base) => {
+      if(url && !tries.some(t => t.url === url)) tries.push({ url:url, base:base });
+    };
+    if(f.download_url) push(f.download_url, f.base || String(f.download_url).replace(/[^/]*$/, ''));
+    push(TM_CDN + f.name, TM_CDN);
+    push(TM.local + f.name, TM.local);
+    for(const t of tries){
+      try{
+        const one = await tmJson(t.url);
+        if(one && typeof one === 'object'){
+          const rec = Object.assign({}, one, { __base:t.base, __name:f.name });
+          tmRecords[f.name] = rec;
+          if(!f.date && rec.date) f.date = String(rec.date);
+          if(!f.title && rec.title) f.title = String(rec.title);
+          return rec;
+        }
+      }catch(err){ /* 往下一档 */ }
+    }
+    console.warn('[时光机] 这一份几个来源都没读到：' + f.name);
+    return null;
+  }
+
+  /* 把「列表前 n 天」的正文补齐（并发 8 个一批）：已缓存的不再请求 */
+  async function tmEnsure(n){
+    const files = (tmAll || []).slice(0, Math.max(0, n));
+    let changed = false;
     for(let i = 0; i < files.length; i += TM.concurrency){
       const batch = files.slice(i, i + TM.concurrency);
-      const got = await Promise.all(batch.map(async f => {
-        const tries = [];
-        if(f.download_url){
-          tries.push({ url:f.download_url, base:f.base || String(f.download_url).replace(/[^/]*$/, '') });
-        }
-        tries.push({ url:TM_CDN + f.name,   base:TM_CDN });
-        tries.push({ url:TM.local + f.name, base:TM.local });
-        for(const t of tries){
-          try{
-            const one = await tmJson(t.url);
-            if(one && typeof one === 'object') return Object.assign({}, one, { __base:t.base, __name:f.name });
-          }catch(err){ /* 往下一档 */ }
-        }
-        console.warn('[时光机] 这一份三个来源都没读到：' + f.name);
-        return null;
+      await Promise.all(batch.map(async f => {
+        const before = f.date + '|' + f.title;
+        await tmFetchOne(f);
+        if(before !== f.date + '|' + f.title) changed = true;
       }));
-      got.forEach(g => { if(g) out.push(g); });
     }
-    return tmSort(out);
+    return changed;
   }
 
   /* 内容片：选中哪天拉哪天 */
@@ -3433,11 +3517,14 @@
     if(cur && cur.scrollIntoView) cur.scrollIntoView({ block:'nearest', inline:'nearest' });
 
     const token = ++tmSeq;
-    tmDetail.innerHTML = '<p class="log-state">正在翻这一天的记录…</p>';
+    const target = list[tmActive];
+    if(!tmRecords[target.name]) tmDetail.innerHTML = '<p class="log-state">正在翻这一天的记录…</p>';
     try{
-      const rec = list[tmActive];
-      const pieces = await tmPiecesFor(rec);
+      const rec = await tmFetchOne(target);          /* produce 带来的那天直接用缓存，不再请求 */
       if(token !== tmSeq) return;                    /* 用户已经翻到别的日期了 */
+      if(!rec){ tmDetail.innerHTML = '<p class="log-state">这一天的记录几个来源都没读到。</p>'; return; }
+      const pieces = await tmPiecesFor(rec);
+      if(token !== tmSeq) return;
       tmDetail.innerHTML = tmRenderDay(rec, pieces);
       tmDetail.scrollTop = 0;
     }catch(err){
@@ -3465,6 +3552,26 @@
     }
   }
 
+  /* 「加载更多」：每次只再要 TM.page 天，并顺手把这 5 天的正文取回来 */
+  async function tmMoreDays(){
+    const list = tmAll || [];
+    if(tmShown >= list.length) return;
+    const before = tmShown;
+    tmShown = Math.min(tmShown + TM.page, list.length);
+    if(tmMore) tmMore.disabled = true;
+    try{
+      await tmEnsure(tmShown);
+    }finally{
+      if(tmMore) tmMore.disabled = false;
+    }
+    tmRenderList();
+    tmCacheSave();
+    /* 新露出来的第一天先选中，省得人还要自己点一下 */
+    if(before === tmShown) return;
+    const first = tmList.children[tmActive];
+    if(first && first.scrollIntoView) first.scrollIntoView({ block:'nearest' });
+  }
+
   async function openTimeline(){
     tmLastFocus = document.activeElement;
     tmWin.classList.add('show');
@@ -3480,20 +3587,25 @@
     tmDetail.innerHTML = '<p class="log-state">正在穿越，整理过去的记录…</p>';
 
     try{
-      tmAll = await tmFetchAll();
+      tmAll = await tmListFiles();
       if(!tmAll.length){
         tmDetail.innerHTML = '<p class="log-state">时光机里空荡荡的，去丢点文件吧。</p>';
         return;
       }
       tmShown  = 0;
       tmActive = 0;
-      tmRenderList();
+      tmRenderList();                                   /* 先画出来：点开就该有东西，别让人干等 */
       tmCount.textContent = tmAll.length + ' 条' + (tmCacheHit ? ' · 来自本地缓存' : '');
+      /* 再把要显示的那 5 天正文补齐（GitHub API 那条路只给文件名，
+         取回来才有日期和标题；produce 那条路本来就自带，等于没开销），补到就重画一次 */
+      await tmEnsure(TM.page);
+      tmRenderList();
       tmSelect(0);
+      tmCacheSave();
     }catch(err){
-      /* 三种来源都挂了：这是「预料之内的降级」，不是崩溃 —— warn 一声就够，
+      /* 几个来源都挂了：这是「预料之内的降级」，不是崩溃 —— warn 一声就够，
          窗口里已经明说「迷路了」，主页面（今天这份作业）照常。 */
-      console.warn('[时光机] 三个来源都没读到：' + err.message);
+      console.warn('[时光机] 几个来源都没读到：' + err.message);
       tmList.innerHTML = '';
       tmCount.textContent = '';
       tmDetail.innerHTML = '<p class="log-state">时光机暂时迷路了，稍后再试。</p>';
@@ -3511,7 +3623,7 @@
   if(tmBtn)   tmBtn.addEventListener('click', openTimeline);
   if(tmClose) tmClose.addEventListener('click', closeTimeline);
   if(tmWin)   tmWin.addEventListener('click', e => { if(e.target === tmWin) closeTimeline(); });
-  if(tmMore)  tmMore.addEventListener('click', () => { tmShown += TM.page; tmRenderList(); });
+  if(tmMore)  tmMore.addEventListener('click', () => { tmMoreDays(); });
   if(tmList)  tmList.addEventListener('keydown', e => {
     const dir = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
     if(!dir) return;

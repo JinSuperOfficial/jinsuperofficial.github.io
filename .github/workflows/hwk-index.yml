@@ -1,0 +1,61 @@
+# 作业清单 · GitHub Actions
+# ---------------------------------------------------------------
+# 这个文件是 **build/template/github/workflows/hwk-index.yml** 的拷贝：
+# build/push-github.mjs 在推送 dist/ 之前把它写到：
+#
+#   dist/.github/workflows/hwk-index.yml
+#   dist/.github/scripts/hwk-index.mjs      ← build/lib/hwk-index.mjs 的拷贝
+#
+# 所以仓库里（jinsuperofficial.github.io）只有构建产物 + 这两个文件，
+# 热铁盒那条线上不会多出任何东西（.github/ 在 assemble 的跳过名单里）。
+#
+# 干什么：有人往 class/data/hwk/ 里加了 / 改了 hwk-*.json（不管是从控制台
+# 推上来的，还是手拷的），这里就按**同一份实现**重建两个清单并提交回去：
+#
+#   class/data/hwk/index.json          目录（页面第一条 = 今天这份）
+#   class/data/index-produce.json      生产清单：目录 + 最近 5 天的正文（CDN 兜底读）
+#
+# 为什么必须由 CI 来做：jsDelivr 这类 CDN 只能读**仓库里已提交的文件**，
+# 页面在 GitHub API 不通（限流 / 超时 / 断网）时就走 CDN 那份清单 ——
+# 它得永远和数据一致，靠人记得手动同步迟早会歪。
+#
+# 幂等：脚本不写时间戳，内容没变就不产生提交（所以不会来回刷提交）。
+# 防循环：[skip ci] 让这次自动提交不再触发本工作流。
+name: 作业清单
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'class/data/hwk/**'
+      - '.github/scripts/hwk-index.mjs'
+      - '.github/workflows/hwk-index.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hwk-index
+  cancel-in-progress: false
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 重建清单
+        run: node .github/scripts/hwk-index.mjs --root .
+
+      - name: 有变化就提交回去
+        run: |
+          if git diff --quiet -- class/data/hwk/index.json class/data/index-produce.json; then
+            echo "清单已经是最新的，不用提交"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add class/data/hwk/index.json class/data/index-produce.json
+          git commit -m "重建作业清单 [skip ci]"
+          git push

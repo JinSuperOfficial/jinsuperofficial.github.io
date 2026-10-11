@@ -5,6 +5,7 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="../lib/theme.js"></script>
 <title>811 工具箱 · 八年(11)班</title>
 <style>
   /* 圆角规范：.Skills/theme-plus/references/circle_angle.md
@@ -25,7 +26,8 @@
     --radius-card:var(--radius-lg);
     --radius-badge:var(--radius-sm);
 
-    /* ---------- 浅色模式基准 ---------- */
+    /* ---------- 亮色基准（默认主题色 = DeepSeek 蓝，见文件末尾的 [data-accent] 覆盖） ---------- */
+    color-scheme:light;
     --bg:#F8F3EC;
     --paper:#FFFCF7;
     --ink:#2E2A26;
@@ -35,9 +37,9 @@
     --clay:#D97757;
     --line:rgba(46,42,38,.12);
     --line-strong:rgba(46,42,38,.18);
-    --accent:#B0552F;
-    --accent-soft:rgba(217,119,87,.10);
-    --glow-1:hsl(28 40% 68% / .20);
+    --accent:#3964FE; --accent-rgb:57,100,254;
+    --accent-soft:rgba(57,100,254,.10);
+    --glow-1:hsl(222 76% 62% / .18);
     --glow-2:hsl(84 24% 62% / .16);
     --shadow-1:rgba(46,42,38,.05);
     --shadow-2:rgba(46,42,38,.34);
@@ -55,8 +57,9 @@
     --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
   }
 
-  @media (prefers-color-scheme: dark){
-    :root{
+  /* 暗色（theme.js 在 <html> 上写 data-appearance；没 JS 就停在亮色基准） */
+  :root[data-appearance="dark"]{
+      color-scheme:dark;
       --bg:#14120E;
       --paper:#1E1B17;
       --ink:#EDE7DF;
@@ -66,7 +69,7 @@
       --clay:#E88B6D;
       --line:rgba(237,231,223,.12);
       --line-strong:rgba(237,231,223,.20);
-      --accent:#E88B6D;
+      --accent:#E88B6D; --accent-rgb:232,139,109;
       --accent-soft:rgba(217,119,87,.16);
       --glow-1:hsl(28 44% 52% / .26);
       --glow-2:hsl(84 26% 46% / .22);
@@ -80,8 +83,22 @@
         0 22px 44px -20px rgba(0,0,0,.55),
         0 48px 84px -44px rgba(0,0,0,.65);
       --window-highlight:inset 0 1px 0 rgba(255,255,255,.06);
-    }
   }
+
+  /* ---------- 主题色：手动切「现在的颜色」时把蓝换回暖橘 ---------- */
+  :root[data-accent="amber"]{
+    --accent:#B0552F; --accent-rgb:176,85,47;
+    --accent-soft:rgba(217,119,87,.10);
+    --glow-1:hsl(28 40% 68% / .20);
+  }
+  :root[data-appearance="dark"][data-accent="amber"]{
+    --accent:#E88B6D; --accent-rgb:232,139,109;
+    --accent-soft:rgba(217,119,87,.16);
+    --glow-1:hsl(28 44% 52% / .26);
+  }
+  /* 选了蓝色时，「暖橘点缀」也一起换成蓝（--clay 是它的旧名字） */
+  :root[data-accent="blue"]{ --clay:#3964FE; }
+  :root[data-appearance="dark"][data-accent="blue"]{ --clay:#5686FE; }
 
   *{box-sizing:border-box;margin:0;padding:0}
 

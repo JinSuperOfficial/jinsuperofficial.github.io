@@ -1,0 +1,55 @@
+{
+	"id": "2026-10-11-console-and-produce",
+	"date": "2026-10-11",
+	"version": "1.5.0",
+	"title": "作业能在控制台里录了，时光机也学会一次只翻五天",
+	"tags": [
+		"作业数据",
+		"控制台",
+		"时光机",
+		"构建",
+		"GitHub Actions"
+	],
+	"summary": "发布控制台多了「作业数据」面板：表单或直接粘 JSON 源码写一天，写完自动把这条顶到 `index.json` 最前（原来那天还在，就是历史），同一天重复写会先备份旧版本。构建时另外产出一份 `class/data/index-produce.json`（目录 + 最近 5 天正文），时光机在 GitHub 读不通时就靠它兜底，并且改成一次只显示 5 天、「加载更多」每次再要 5 天。",
+	"sections": [
+		{
+			"heading": "控制台：表单 / JSON 源码，两条路写一天",
+			"items": [
+				"「作业数据」面板左边录入、右边列出现有那些天（第一条就是页面上的「今天这份」）。表单是一科一格，科目能加能删；不想填表就切到 **JSON 源码**，把一整份记录粘进去，多写的逗号也认。",
+				"写入时自动做三件事：写出 `class/data/hwk/hwk-<id>.json`；把这条顶到 `index.json` 最前（**新的在前，原来那天留在目录里就是历史**）；重建 `class/data/index-produce.json`。",
+				"**同一天写第二次**不会悄悄盖掉：旧版本先复制到控制台的状态目录（`console/` 下，不进站点、不会被上传），提示里给出备份路径。",
+				"旧的大文件 `class/data/homework.json` 里若还压着没进 `hwk/` 的一天，写入前先按 `hwk-<id>.json` 的格式**补进历史**，原文件一个字节不动。",
+				"列表里每天两个小按钮：**底稿**（填进表单接着改）、**源码**（填进 JSON 那一档）；面板上还有「重建清单」（按磁盘上的 `hwk-*.json` 重写两份清单，和 GitHub Actions 跑的是同一个脚本）。",
+				"终端里也一样：`控制台.cmd hwk`（Linux `./控制台.sh hwk`）问答式录入，`hwk --json` 粘源码，`hwk --list` 看有哪几天 —— 和网页面板共用同一份实现，Windows 与 Linux 只差一个文件名。"
+			]
+		},
+		{
+			"heading": "构建时多出一份「生产清单」，给 CDN 兜底",
+			"items": [
+				"`class/data/hwk/index.json` 仍然只是目录（新的在前）；新加的 `class/data/index-produce.json` 是**目录 + 最近 5 天的正文**：兜底那一档只要一个请求，常看的那几天就全在了。",
+				"两个文件都由 `build/lib/hwk-index.mjs` 生成，**不写时间戳**：同样的输入产出一样的字节，本地生成一次、CI 再生成一次也不会互相覆盖。",
+				"三个地方跑的是同一份实现：`node build/gen-hwk-index.mjs`（本地/构建时）、控制台保存与「重建清单」、以及仓库里的 `.github/workflows/hwk-index.yml`。",
+				"那个 workflow 跟着发布一起进 dist 仓库（`build/template/github/` → 推 GitHub 前复制进 `dist/.github/`），**热铁盒那边不会多出任何文件**。往 `class/data/hwk/` 加文件就会自动重建两个清单并提交回去（提交信息带 `[skip ci]`，不会来回刷）。"
+			]
+		},
+		{
+			"heading": "时光机：主力照旧，兜底更省，翻页更小口",
+			"items": [
+				"读取顺序：**GitHub Contents API（3 秒超时，主力，永远最新）** → CDN 的 `index-produce.json` → CDN 的 `index.json` → 同源的 `index-produce.json` → 同源的 `index.json`；每一份正文仍是 `raw.githubusercontent.com` → jsDelivr → 同源。",
+				"列表**一次显示 5 天**，「加载更多」每次再要 5 天，并顺手把这 5 天的正文取回来（不是一次性把全部历史拉下来）；点开某天若还没取过，会立刻补一次。",
+				"`index-produce.json` 里带来的 5 天连正文都是现成的：那 5 天**一个请求都不用发**，断网 / API 限流时照样能看最近这一周。",
+				"缓存键换成 `hwk-index-v3`（缓存里连取回来的正文一起存），5 分钟 TTL；拉文件不带任何认证头（raw 的 CORS 预检会被 `Authorization` 打挂）。",
+				"同一个地址只打一次：降级链会去重，源推导错了也不会朝一个不存在的路径白打 404。"
+			]
+		},
+		{
+			"heading": "没变的东西",
+			"items": [
+				"勾选键（`hw:<id>:<条目哈希>`）、科目顺序、正文一个字都没动 —— 控制台写出来的记录用的是同一套字段，换谁来写都是同一份。",
+				"旧的 `class/data/homework.json` 继续留着当备份：新结构读不到时页面自动退回读它。",
+				"`class/data/hwk/index.json` 还是「有哪几天」的唯一来源：CDN 和静态托管都没法列目录，没有它就等于把兜底那两级全砍掉。"
+			]
+		}
+	],
+	"note": "要回档：备份仓库里 `git checkout v1.4.0` 就是这次改动之前的样子（那次是 811 改名 class + 作业数据一天一文件 + 时光机）；数据文件本来就是一天一份，怎么退都不会丢作业。"
+}
