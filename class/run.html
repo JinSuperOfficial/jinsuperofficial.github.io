@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>运动会赛程 · 十月十五日</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  :root{
+    color-scheme:light dark;
+    --bg:#F8F3EC;
+    --paper:#FFFCF7;
+    --ink:#2E2A26;
+    --ink-soft:#6B635A;
+    --oak:#8D6959;
+    --olive:#8E9867;
+    --clay:#D97757;
+    --line:rgba(46,42,38,.12);
+    --line-soft:rgba(46,42,38,.07);
+    --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    --mono:"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --r-sm:6px;
+    --r-md:8px;
+    --r-lg:10px;
+    --r-xl:12px;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14120E;
+      --paper:#1E1B17;
+      --ink:#EDE7DF;
+      --ink-soft:#A29A8E;
+      --oak:#B89B85;
+      --line:rgba(237,231,223,.14);
+      --line-soft:rgba(237,231,223,.08);
+    }
+  }
+
+  /* ---------- 班级配色（01–13 班各一色） ---------- */
+  .c01{--c:#6E8B8B}
+  .c02{--c:#D97757}
+  .c03{--c:#8E9867}
+  .c04{--c:#C08A3E}
+  .c05{--c:#8D6959}
+  .c06{--c:#A47864}
+  .c07{--c:#6B7D5A}
+  .c08{--c:#3A6B8C}
+  .c09{--c:#B35A3E}
+  .c10{--c:#8E6B9E}
+  .c11{--c:#539DB6}
+  .c12{--c:#C9A84C}
+  .c13{--c:#2D4A3E}
+
+  body{
+    min-height:100vh;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(880px 520px at 12% -8%, rgba(217,119,87,.10), transparent 62%),
+      radial-gradient(760px 480px at 92% 4%, rgba(142,152,103,.10), transparent 60%);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    padding:clamp(24px,5vw,60px) clamp(14px,4vw,36px) clamp(40px,7vw,88px);
+  }
+
+  .page{max-width:940px;margin:0 auto}
+
+  /* ---------- 头部 ---------- */
+  .head{margin-bottom:clamp(22px,3.6vw,34px)}
+  .kicker{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--oak);margin-bottom:10px;
+  }
+  .kicker::before{content:"";width:26px;height:1px;background:var(--clay);flex:none}
+
+  h1{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(26px,5.2vw,40px);
+    line-height:1.25;
+    letter-spacing:-.01em;
+  }
+  .lede{
+    margin-top:10px;
+    font-size:14px;
+    color:var(--ink-soft);
+    letter-spacing:.04em;
+  }
+
+  /* ---------- 切换按钮 ---------- */
+  .toggle-wrap{
+    margin-top:16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .toggle-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 18px;
+    border:1px solid var(--line);
+    border-radius:var(--r-md);
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    letter-spacing:.04em;
+    cursor:pointer;
+    transition:background .18s ease, border-color .18s ease, box-shadow .18s ease;
+    box-shadow:0 1px 2px rgba(46,42,38,.04);
+  }
+  .toggle-btn:hover{
+    background:color-mix(in srgb, var(--oak) 6%, transparent);
+    border-color:var(--oak);
+  }
+  .toggle-btn:active{
+    transform:scale(.98);
+  }
+  .toggle-btn svg{
+    width:16px;height:16px;
+    flex:none;
+    opacity:.7;
+  }
+  .toggle-hint{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    letter-spacing:.03em;
+  }
+
+  /* ---------- 隐藏不在名单中的条目（默认） ---------- */
+  .not-in-list{
+    display:none !important;
+  }
+  /* 当 body 有 .show-all 时，取消隐藏 */
+  body.show-all .not-in-list{
+    display:flex !important;
+  }
+
+  /* ---------- 赛事卡片 ---------- */
+  .event{
+    --accent:var(--oak);
+    background:var(--paper);
+    border:1px solid var(--line-soft);
+    border-radius:var(--r-xl);
+    overflow:hidden;
+    margin-bottom:20px;
+    box-shadow:
+      0 1px 2px rgba(46,42,38,.04),
+      0 24px 48px -34px rgba(46,42,38,.45);
+  }
+
+  .ev-head{
+    display:flex;
+    align-items:center;
+    gap:13px;
+    padding:15px clamp(14px,2.6vw,22px);
+    background:color-mix(in srgb, var(--accent) 7%, transparent);
+    border-left:3px solid var(--accent);
+    border-bottom:1px solid var(--line-soft);
+  }
+
+  .ev-no{
+    flex:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:30px;
+    height:30px;
+    padding:0 8px;
+    border-radius:var(--r-sm);
+    background:var(--accent);
+    color:#FFFCF7;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.02em;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .ev-title{flex:1 1 auto;min-width:0}
+  .ev-title h2{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(16px,2.7vw,19px);
+    line-height:1.35;
+    letter-spacing:.02em;
+  }
+  .ev-sub{
+    margin-top:3px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    letter-spacing:.04em;
+  }
+  .ev-sub .hl{color:var(--accent)}
+
+  .ev-time{
+    flex:none;
+    font-family:var(--mono);
+    font-size:15px;
+    letter-spacing:.03em;
+    color:var(--accent);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- 选手名单网格（用于铅球、跳高、跳远） ---------- */
+  .roster{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(188px, 1fr));
+    gap:6px;
+    padding:12px;
+  }
+
+  .person{
+    --c:var(--oak);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 9px;
+    border:1px solid transparent;
+    border-radius:var(--r-md);
+    transition:background .18s ease, border-color .18s ease;
+  }
+  .person:hover{
+    background:color-mix(in srgb, var(--c) 8%, transparent);
+    border-color:color-mix(in srgb, var(--c) 22%, transparent);
+  }
+
+  .person .num{
+    flex:none;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--ink-soft);
+    letter-spacing:.02em;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .person .name{
+    flex:1 1 auto;
+    min-width:0;
+    font-size:14.5px;
+    letter-spacing:.04em;
+    color:var(--ink);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .person .cls{
+    flex:none;
+    font-family:var(--mono);
+    font-size:10.5px;
+    line-height:1.5;
+    padding:1px 6px;
+    border-radius:var(--r-sm);
+    color:var(--c);
+    background:color-mix(in srgb, var(--c) 12%, transparent);
+    border:1px solid color-mix(in srgb, var(--c) 26%, transparent);
+  }
+
+  /* ---------- 表格样式（用于 100米、400米） ---------- */
+  .table-wrap {
+    overflow-x: auto;
+    padding: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 700px; /* 确保在手机上也能横向滚动查看完整信息 */
+  }
+
+  th, td {
+    border: 1px solid var(--line);
+    padding: 10px 8px;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    font-weight: 500;
+    color: var(--ink-soft);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  td {
+    color: var(--ink);
+  }
+
+  .cell-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .cell-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  .cell-name {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .cell-class {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--accent);
+  }
+
+  .group-label {
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--accent) 4%, transparent);
+  }
+
+  /* ---------- 页脚 ---------- */
+  .foot{
+    margin-top:26px;
+    text-align:center;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    letter-spacing:.06em;
+  }
+
+  /* ---------- 入场动效 ---------- */
+  @media (prefers-reduced-motion: no-preference){
+    .event{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+    .event:nth-of-type(1){animation-delay:0s}
+    .event:nth-of-type(2){animation-delay:.07s}
+    .event:nth-of-type(3){animation-delay:.14s}
+    .event:nth-of-type(4){animation-delay:.21s}
+    .event:nth-of-type(5){animation-delay:.28s}
+    .event:nth-of-type(6){animation-delay:.35s}
+  }
+  @keyframes rise{
+    from{opacity:0;transform:translate3d(0,14px,0)}
+    to{opacity:1;transform:none}
+  }
+
+  /* ---------- 窄屏 ---------- */
+  @media (max-width:600px){
+    .roster{
+      grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+      gap:4px;
+      padding:10px;
+    }
+    .person{padding:7px 8px;gap:6px}
+    .person .name{font-size:14px}
+    .person .num{font-size:11px}
+
+    .ev-head{gap:10px;padding:13px 14px}
+    .ev-time{font-size:14px}
+
+    .table-wrap { padding: 8px; }
+    th, td { padding: 8px 6px; font-size: 13px; }
+    .cell-name { font-size: 13px; }
+    .cell-num, .cell-class { font-size: 10px; }
+  }
+
+  /* ---------- 打印 ---------- */
+  @media print{
+    body{background:#fff;background-image:none;padding:0;color:#000}
+    .page{max-width:none}
+    .event{
+      break-inside:avoid;
+      page-break-inside:avoid;
+      box-shadow:none;
+      border-color:#CCC;
+      margin-bottom:14px;
+    }
+    .ev-head{background:#F4F4F4}
+    .head{margin-bottom:18px}
+    .foot{display:none}
+    .table-wrap { overflow: visible; }
+    table { min-width: auto; }
+    .toggle-wrap { display: none; }
+    .not-in-list { display: flex !important; } /* 打印时默认显示全部，避免缺失信息 */
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="head">
+    <p class="kicker">Sports Meet · 赛程表</p>
+    <h1>十月十五日 · 上午</h1>
+    <p class="lede">七（11）班参赛名单 · 默认仅显示本班学生</p>
+    <div class="toggle-wrap">
+      <button class="toggle-btn" id="toggleBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="17" height="17" rx="2"/>
+          <path d="M3.5 15.5 9 10l4.5 4.5L17 11l3.5 3.5"/>
+          <circle cx="9" cy="8" r="1.4"/>
+        </svg>
+        <span id="toggleText">显示全部</span>
+      </button>
+      <span class="toggle-hint" id="toggleHint">当前仅显示本班学生</span>
+    </div>
+  </header>
+
+  <!-- ========== 1 · 八年级组男子铅球 ========== -->
+  <article class="event" style="--accent:#D97757">
+    <header class="ev-head">
+      <span class="ev-no">1</span>
+      <div class="ev-title">
+        <h2>八年级组男子铅球</h2>
+        <p class="ev-sub">决赛 · <span class="hl">19 人</span> · 取 6 名</p>
+      </div>
+      <time class="ev-time">8:30</time>
+    </header>
+    <div class="roster">
+      <div class="person c10"><span class="num">0334</span><span class="name">周锦成</span><span class="cls">10</span></div>
+      <div class="person c07"><span class="num">0286</span><span class="name">彭国轩</span><span class="cls">07</span></div>
+      <div class="person c07"><span class="num">0290</span><span class="name">陈骏杰</span><span class="cls">07</span></div>
+      <div class="person c01"><span class="num">0195</span><span class="name">张逸轩</span><span class="cls">01</span></div>
+      <div class="person c10"><span class="num">0340</span><span class="name">王陈烨</span><span class="cls">10</span></div>
+      <div class="person c13"><span class="num">0388</span><span class="name">鲁昌楠</span><span class="cls">13</span></div>
+      <div class="person c05"><span class="num">0254</span><span class="name">陈熙瑞</span><span class="cls">05</span></div>
+      <div class="person c03"><span class="num">0228</span><span class="name">周意轩</span><span class="cls">03</span></div>
+      <div class="person c06"><span class="num">0276</span><span class="name">姜和宋</span><span class="cls">06</span></div>
+      <div class="person c08"><span class="num">0306</span><span class="name">叶福轩</span><span class="cls">08</span></div>
+      <div class="person c01"><span class="num">0198</span><span class="name">梁万铖</span><span class="cls">01</span></div>
+      <div class="person c04"><span class="num">0243</span><span class="name">李敬贤</span><span class="cls">04</span></div>
+      <div class="person c13"><span class="num">0389</span><span class="name">林子亦</span><span class="cls">13</span></div>
+      <div class="person c11"><span class="num">0352</span><span class="name">张维枫</span><span class="cls">11</span></div>
+      <div class="person c12"><span class="num">0371</span><span class="name">吴华鑫</span><span class="cls">12</span></div>
+      <div class="person c02"><span class="num">0211</span><span class="name">金振都</span><span class="cls">02</span></div>
+      <div class="person c02"><span class="num">0212</span><span class="name">郑嘉盛</span><span class="cls">02</span></div>
+      <div class="person c06"><span class="num">0277</span><span class="name">谢昊扬</span><span class="cls">06</span></div>
+      <div class="person c05"><span class="num">0259</span><span class="name">周睿轩</span><span class="cls">05</span></div>
+    </div>
+  </article>
+
+  <!-- ========== 2 · 八年级组男子100米 ========== -->
+  <article class="event" style="--accent:#6E8B8B">
+    <header class="ev-head">
+      <span class="ev-no">2</span>
+      <div class="ev-title">
+        <h2>八年级组男子100米</h2>
+        <p class="ev-sub">预赛 · <span class="hl">24 人</span> · 3 组 · 取 6 名次</p>
+      </div>
+      <time class="ev-time">9:00</time>
+    </header>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>组/道</th>
+            <th>一道</th>
+            <th>二道</th>
+            <th>三道</th>
+            <th>四道</th>
+            <th>五道</th>
+            <th>六道</th>
+            <th>七道</th>
+            <th>八道</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="group-label">第 1 组</td>
+            <td><div class="cell-item"><span class="cell-num">0369</span><span class="cell-name">周睿韬</span><span class="cell-class">八年级(12)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0305</span><span class="cell-name">汤杰</span><span class="cell-class">八年级(01)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0197</span><span class="cell-name">张怡峻</span><span class="cell-class">八年级(08)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0386</span><span class="cell-name">谢得力</span><span class="cell-class">八年级(13)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0276</span><span class="cell-name">姜和宋</span><span class="cell-class">八年级(06)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0323</span><span class="cell-name">吕卓品</span><span class="cell-class">八年级(09)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0335</span><span class="cell-name">高梓婷</span><span class="cell-class">八年级(10)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0239</span><span class="cell-name">周睿</span><span class="cell-class">八年级(04)</span></div></td>
+          </tr>
+          <tr>
+            <td class="group-label">第 2 组</td>
+            <td><div class="cell-item"><span class="cell-num">0259</span><span class="cell-name">周睿轩</span><span class="cell-class">八年级(05)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0382</span><span class="cell-name">林李轩</span><span class="cell-class">八年级(13)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0356</span><span class="cell-name">贾敬睿</span><span class="cell-class">八年级(11)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0368</span><span class="cell-name">徐丁睿</span><span class="cell-class">八年级(12)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0277</span><span class="cell-name">谢昊扬</span><span class="cell-class">八年级(06)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0320</span><span class="cell-name">胡瑞枫</span><span class="cell-class">八年级(08)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0291</span><span class="cell-name">吴存鹏</span><span class="cell-class">八年级(07)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0213</span><span class="cell-name">陈昌锦</span><span class="cell-class">八年级(02)</span></div></td>
+          </tr>
+          <tr>
+            <td class="group-label">第 3 组</td>
+            <td><div class="cell-item"><span class="cell-num">0211</span><span class="cell-name">金振都</span><span class="cell-class">八年级(02)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0289</span><span class="cell-name">彭思盛</span><span class="cell-class">八年级(07)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0260</span><span class="cell-name">汤铭乐</span><span class="cell-class">八年级(06)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0303</span><span class="cell-name">陈良强</span><span class="cell-class">八年级(08)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0353</span><span class="cell-name">周胜博</span><span class="cell-class">八年级(11)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0238</span><span class="cell-name">吴帮韩</span><span class="cell-class">八年级(04)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0193</span><span class="cell-name">何永泽</span><span class="cell-class">八年级(01)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0338</span><span class="cell-name">曾庆鸿</span><span class="cell-class">八年级(10)</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <!-- ========== 3 · 八年级组女子100米 ========== -->
+  <article class="event" style="--accent:#C08A3E">
+    <header class="ev-head">
+      <span class="ev-no">3</span>
+      <div class="ev-title">
+        <h2>八年级组女子100米</h2>
+        <p class="ev-sub">预赛 · <span class="hl">19 人</span> · 3 组 · 取 6 名次</p>
+      </div>
+      <time class="ev-time">9:15</time>
+    </header>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>组/道</th>
+            <th>一道</th>
+            <th>二道</th>
+            <th>三道</th>
+            <th>四道</th>
+            <th>五道</th>
+            <th>六道</th>
+            <th>七道</th>
+            <th>八道</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="group-label">第 1 组</td>
+            <td><div class="cell-item"><span class="cell-num">0205</span><span class="cell-name">刘婧婷</span><span class="cell-class">八年级(01)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0283</span><span class="cell-name">冯怡煊</span><span class="cell-class">八年级(06)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0253</span><span class="cell-name">黄诗涵</span><span class="cell-class">八年级(04)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0358</span><span class="cell-name">许珂</span><span class="cell-class">八年级(11)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0331</span><span class="cell-name">沈艾玛</span><span class="cell-class">八年级(09)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0397</span><span class="cell-name">邱韵韵</span><span class="cell-class">八年级(13)</span></div></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td class="group-label">第 2 组</td>
+            <td><div class="cell-item"><span class="cell-num">0378</span><span class="cell-name">李倩雯</span><span class="cell-class">八年级(12)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0301</span><span class="cell-name">彭宣月</span><span class="cell-class">八年级(07)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0222</span><span class="cell-name">廖灵杲</span><span class="cell-class">八年级(02)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0200</span><span class="cell-name">张欣宁</span><span class="cell-class">八年级(01)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0348</span><span class="cell-name">戴旭宇</span><span class="cell-class">八年级(10)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0396</span><span class="cell-name">倪熙涵</span><span class="cell-class">八年级(13)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0328</span><span class="cell-name">苏思涵</span><span class="cell-class">八年级(09)</span></div></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td class="group-label">第 3 组</td>
+            <td><div class="cell-item"><span class="cell-num">0220</span><span class="cell-name">吴昌悦</span><span class="cell-class">八年级(02)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0361</span><span class="cell-name">杨梓露</span><span class="cell-class">八年级(11)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0284</span><span class="cell-name">陈浩瀚</span><span class="cell-class">八年级(08)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0247</span><span class="cell-name">林若茜</span><span class="cell-class">八年级(04)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0374</span><span class="cell-name">余沫妍</span><span class="cell-class">八年级(12)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0298</span><span class="cell-name">李金儒</span><span class="cell-class">八年级(07)</span></div></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <!-- ========== 4 · 八年级组女子跳高 ========== -->
+  <article class="event" style="--accent:#8E9867">
+    <header class="ev-head">
+      <span class="ev-no">4</span>
+      <div class="ev-title">
+        <h2>八年级组女子跳高</h2>
+        <p class="ev-sub">决赛 · <span class="hl">19 人</span> · 取 6 名</p>
+      </div>
+      <time class="ev-time">9:20</time>
+    </header>
+    <div class="roster">
+      <div class="person c09"><span class="num">0326</span><span class="name">苏悠然</span><span class="cls">09</span></div>
+      <div class="person c04"><span class="num">0252</span><span class="name">蓝雨曦</span><span class="cls">04</span></div>
+      <div class="person c11"><span class="num">0359</span><span class="name">陈思雯</span><span class="cls">11</span></div>
+      <div class="person c08"><span class="num">0311</span><span class="name">姚含</span><span class="cls">08</span></div>
+      <div class="person c03"><span class="num">0232</span><span class="name">叶乐乐</span><span class="cls">03</span></div>
+      <div class="person c05"><span class="num">0263</span><span class="name">程雨菲</span><span class="cls">05</span></div>
+      <div class="person c12"><span class="num">0374</span><span class="name">余沫妍</span><span class="cls">12</span></div>
+      <div class="person c13"><span class="num">0391</span><span class="name">林苏雯</span><span class="cls">13</span></div>
+      <div class="person c13"><span class="num">0390</span><span class="name">温暖</span><span class="cls">13</span></div>
+      <div class="person c06"><span class="num">0280</span><span class="name">叶梓佳</span><span class="cls">06</span></div>
+      <div class="person c10"><span class="num">0344</span><span class="name">周欣可</span><span class="cls">10</span></div>
+      <div class="person c03"><span class="num">0235</span><span class="name">杨若仙</span><span class="cls">03</span></div>
+      <div class="person c06"><span class="num">0279</span><span class="name">章妙冉</span><span class="cls">06</span></div>
+      <div class="person c08"><span class="num">0310</span><span class="name">陈庚昊</span><span class="cls">08</span></div>
+      <div class="person c05"><span class="num">0269</span><span class="name">傅金琪</span><span class="cls">05</span></div>
+      <div class="person c04"><span class="num">0253</span><span class="name">黄诗涵</span><span class="cls">04</span></div>
+      <div class="person c01"><span class="num">0203</span><span class="name">蔡先玉</span><span class="cls">01</span></div>
+      <div class="person c01"><span class="num">0204</span><span class="name">王芯蕾</span><span class="cls">01</span></div>
+      <div class="person c12"><span class="num">0381</span><span class="name">陈子璇</span><span class="cls">12</span></div>
+    </div>
+  </article>
+
+  <!-- ========== 5 · 八年级组男子跳远 ========== -->
+  <article class="event" style="--accent:#8D6959">
+    <header class="ev-head">
+      <span class="ev-no">5</span>
+      <div class="ev-title">
+        <h2>八年级组男子跳远</h2>
+        <p class="ev-sub">决赛 · <span class="hl">19 人</span> · 取 6 名</p>
+      </div>
+      <time class="ev-time">9:55</time>
+    </header>
+    <div class="roster">
+      <div class="person c13"><span class="num">0387</span><span class="name">王丞</span><span class="cls">13</span></div>
+      <div class="person c11"><span class="num">0350</span><span class="name">蒋宗逸</span><span class="cls">11</span></div>
+      <div class="person c02"><span class="num">0209</span><span class="name">林元铖</span><span class="cls">02</span></div>
+      <div class="person c04"><span class="num">0240</span><span class="name">林初锦</span><span class="cls">04</span></div>
+      <div class="person c03"><span class="num">0225</span><span class="name">许芳宇</span><span class="cls">03</span></div>
+      <div class="person c08"><span class="num">0241</span><span class="name">陈将浩</span><span class="cls">08</span></div>
+      <div class="person c03"><span class="num">0226</span><span class="name">黄语博</span><span class="cls">03</span></div>
+      <div class="person c09"><span class="num">0325</span><span class="name">黄锦涵</span><span class="cls">09</span></div>
+      <div class="person c12"><span class="num">0372</span><span class="name">易永军</span><span class="cls">12</span></div>
+      <div class="person c01"><span class="num">0191</span><span class="name">张泓恺</span><span class="cls">01</span></div>
+      <div class="person c09"><span class="num">0319</span><span class="name">杨在佑</span><span class="cls">09</span></div>
+      <div class="person c08"><span class="num">0270</span><span class="name">蒋嘉琪</span><span class="cls">08</span></div>
+      <div class="person c01"><span class="num">0192</span><span class="name">曾林希</span><span class="cls">01</span></div>
+      <div class="person c13"><span class="num">0396</span><span class="name">倪熙涵</span><span class="cls">13</span></div>
+      <div class="person c02"><span class="num">0207</span><span class="name">徐梓轩</span><span class="cls">02</span></div>
+      <div class="person c06"><span class="num">0273</span><span class="name">陈成轩</span><span class="cls">06</span></div>
+      <div class="person c12"><span class="num">0366</span><span class="name">黄启睿</span><span class="cls">12</span></div>
+      <div class="person c10"><span class="num">0335</span><span class="name">吕卓品</span><span class="cls">10</span></div>
+      <div class="person c05"><span class="num">0254</span><span class="name">陈熙瑞</span><span class="cls">05</span></div>
+    </div>
+  </article>
+
+  <!-- ========== 6 · 八年级组女子400米 ========== -->
+  <article class="event" style="--accent:#B35A3E">
+    <header class="ev-head">
+      <span class="ev-no">6</span>
+      <div class="ev-title">
+        <h2>八年级组女子400米</h2>
+        <p class="ev-sub">预赛 · <span class="hl">12 人</span> · 2 组 · 取 6 名次</p>
+      </div>
+      <time class="ev-time">11:05</time>
+    </header>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>组/道</th>
+            <th>一道</th>
+            <th>二道</th>
+            <th>三道</th>
+            <th>四道</th>
+            <th>五道</th>
+            <th>六道</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="group-label">第 1 组</td>
+            <td><div class="cell-item"><span class="cell-num">0221</span><span class="cell-name">陈钰涵</span><span class="cell-class">八年级(02)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0394</span><span class="cell-name">王媛媛</span><span class="cell-class">八年级(13)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0281</span><span class="cell-name">谢艾西</span><span class="cell-class">八年级(08)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0376</span><span class="cell-name">林薇</span><span class="cell-class">八年级(12)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0364</span><span class="cell-name">柯苏杭</span><span class="cell-class">八年级(01)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0205</span><span class="cell-name">刘婧婷</span><span class="cell-class">八年级(01)</span></div></td>
+          </tr>
+          <tr>
+            <td class="group-label">第 2 组</td>
+            <td><div class="cell-item"><span class="cell-num">0278</span><span class="cell-name">刘婧妍</span><span class="cell-class">八年级(06)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0396</span><span class="cell-name">倪熙涵</span><span class="cell-class">八年级(13)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0202</span><span class="cell-name">余文雅</span><span class="cell-class">八年级(01)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0246</span><span class="cell-name">卢思琪</span><span class="cell-class">八年级(04)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0379</span><span class="cell-name">陈锦欣</span><span class="cell-class">八年级(12)</span></div></td>
+            <td><div class="cell-item"><span class="cell-num">0358</span><span class="cell-name">许珂</span><span class="cell-class">八年级(11)</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <p class="foot">径赛按发令时间进行 ✦ 田赛与投掷项目在各自场地检录</p>
+
+</div>
+
+<script>
+  // 七（11）班名单（从 xls 提取）
+  const CLASS_LIST = [
+    '蔡以牧','曹高硕','曾大栩','曾慕妍','曾亚楠','陈浩铭','陈启森','陈若妍','陈思雯',
+    '陈梓祺','陈梓怡','董欣垛','杜诗琪','郭怡辰','何杭臻','黄宏博','黄敬睿','黄上',
+    '蒋宗逸','金旭','琚宇哲','柯和盛','柯苏杭','柯欣辰','李庆和','李玥欣','林辰铄',
+    '倪舒予','潘雅琪','钱佳佳','邱安烁','施克凡','宋骁畅','苏米夏','苏楠','王钧可',
+    '王俊棋','王有铮','项英姬','许珂','杨梓露','叶维豪','应叶子','张维枫','赵一诺',
+    '郑元博','周铭轩','周胜博','周斯语','周伊曈','朱昊辰'
+  ];
+
+  (function(){
+    // 遍历所有人员条目，标记不在名单中的
+    const people = document.querySelectorAll('.person');
+    people.forEach(function(el){
+      const nameEl = el.querySelector('.name');
+      if(!nameEl) return;
+      const name = nameEl.textContent.trim();
+      if(CLASS_LIST.indexOf(name) === -1){
+        el.classList.add('not-in-list');
+      }
+    });
+
+    const cells = document.querySelectorAll('.cell-item');
+    cells.forEach(function(el){
+      const nameEl = el.querySelector('.cell-name');
+      if(!nameEl) return;
+      const name = nameEl.textContent.trim();
+      if(CLASS_LIST.indexOf(name) === -1){
+        el.classList.add('not-in-list');
+      }
+    });
+
+    // 按钮切换
+    const btn = document.getElementById('toggleBtn');
+    const txt = document.getElementById('toggleText');
+    const hint = document.getElementById('toggleHint');
+    if(btn && txt && hint){
+      btn.addEventListener('click', function(){
+        const isAll = document.body.classList.toggle('show-all');
+        if(isAll){
+          txt.textContent = '仅看本班';
+          hint.textContent = '当前显示全部参赛人员';
+        }else{
+          txt.textContent = '显示全部';
+          hint.textContent = '当前仅显示本班学生';
+        }
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

@@ -226,6 +226,9 @@ window.SITE_INDEX = {
           "name": "index.html"
         },
         {
+          "name": "run.html"
+        },
+        {
           "name": "tools.json"
         }
       ]
