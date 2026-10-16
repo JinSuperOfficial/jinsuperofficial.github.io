@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="../lib/theme.js"></script>
 <title>811 工具箱 · 八年(11)班</title>
 <style>
@@ -99,6 +99,20 @@
   /* 选了蓝色时，「暖橘点缀」也一起换成蓝（--clay 是它的旧名字） */
   :root[data-accent="blue"]{ --clay:#3964FE; }
   :root[data-appearance="dark"][data-accent="blue"]{ --clay:#5686FE; }
+
+  /* ---------- 玫红：女生主题（安卓壳层用 ?theme=female… 传进来） ----------
+     --accent 和 --clay 都要换：前者是主强调色，后者是老的「暖橘点缀」，
+     页面上两套都还在用，只换一个会花。对比度：浅 5.47:1 / 暗 8.04:1。 */
+  :root[data-accent="pink"]{
+    --accent:#B0306A; --accent-rgb:176,48,106; --clay:#B0306A;
+    --accent-soft:rgba(176,48,106,.10);
+    --glow-1:hsl(330 44% 62% / .20);
+  }
+  :root[data-appearance="dark"][data-accent="pink"]{
+    --accent:#F08BB0; --accent-rgb:240,139,176; --clay:#F08BB0;
+    --accent-soft:rgba(240,139,176,.16);
+    --glow-1:hsl(330 48% 60% / .26);
+  }
 
   *{box-sizing:border-box;margin:0;padding:0}
 
@@ -363,6 +377,147 @@
     .card-ico svg{width:18px;height:18px}
     .card-go{display:none}
     .card-title{font-size:16px}
+  }
+
+  /* ============================================================
+     响应式：桌面 / 平板 / 手机
+     ============================================================
+     断点（与全站一致，只写在下面这一段里）：
+       桌面       ≥ 1024px  —— 下面一律不碰，视觉与交互和改造前逐像素一致
+       平板   768 – 1023px  —— 紧凑版
+       手机        ≤ 767px  —— 重点适配
+       手机窄屏    ≤ 400px  —— 小屏微调
+
+     规矩：
+       ① 全部 max-width 覆盖，而且都排在本页原有规则之后 —— 桌面一条都不命中。
+       ② 不写死颜色，一律走上面的 token。
+       ③ 触摸目标 ≥ 48px；触屏没有 hover，hover 与 active 成对写。
+       ④ 正文 ≥ 16px（卡片说明算正文），顺带避开 iOS 对小块文字自动放大整页。
+       ⑤ 右上角那组按钮是 /lib/theme.js 运行时注入的，它的 <style> 插在本页
+          <style> 之后 —— 同权重会被它反压。所以这里统一用 `body .theme-ctl …`
+          抬一档权重（不改 theme.js 本身），手机上再把按钮做成 48px 的方块、
+          顶部留一条安全带，别让它压在窗口标题栏上。
+       ⑥ 贴边的东西用 env(safe-area-inset-*) 让开刘海与 Home 指示条。
+       ============================================================ */
+
+  /* ---------- 平板：留白收一档，卡片两列 ----------
+     两列时卡片窄了一半，图标与内距同步收一分，说明文字才不至于一行挤两个字。 */
+  @media (max-width:1023px){
+    body{
+      padding-left:max(clamp(14px,4vw,40px), env(safe-area-inset-left), 24px);
+      padding-right:max(clamp(14px,4vw,40px), env(safe-area-inset-right), 24px);
+    }
+    html{overflow-x:hidden; overflow-x:clip}   /* 无横向滚动：不小心溢出了也不给左右拖 */
+    img,video{max-width:100%;height:auto}
+
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-empty{grid-column:1 / -1}      /* 清单没读出来时的那段提示：别只占半栏 */
+    .card{grid-template-columns:36px minmax(0,1fr) 16px; gap:12px; padding:14px}
+    .card-ico{width:36px;height:36px}
+    .card-ico svg{width:18px;height:18px}
+    .card-desc{line-height:1.6}
+  }
+
+  /* ---------- 手机 ---------- */
+  @media (max-width:767px){
+    /* 顶部安全带 = 10px 贴边 + 48px 按钮 + 8px 呼吸：窗口整体落在按钮下面，谁也不压谁 */
+    body{
+      padding:
+        calc(66px + env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        calc(40px + env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+      font-size:16px;
+    }
+
+    .window-body{
+      padding:22px max(16px, env(safe-area-inset-right)) 20px
+              max(16px, env(safe-area-inset-left));
+    }
+
+    /* 标题栏：两个触摸目标（红绿灯只是装饰，工具站按钮提到 48px），栏高跟着让一步 */
+    .titlebar{
+      height:auto;
+      min-height:56px;
+      padding:0 12px;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      gap:8px;
+    }
+    .titlebar-title{justify-self:start;margin-left:4px;font-size:13px}
+    .traffic{gap:6px}
+    .traffic .dot{width:11px;height:11px}
+    .ghost-btn{height:48px;padding:0 12px;font-size:13px}
+
+    .kicker{font-size:12px}
+    h1{font-size:clamp(25px,7.2vw,32px);line-height:1.3}
+    .subtitle{font-size:16px;line-height:1.72}
+
+    /* 卡片：一列到底。≤560 那档本来就把箭头收掉、卡片内部收成两格，这里把值一并
+       写全 —— 否则这一段（源码在后）会在 401–560px 把那档又顶回「图标 + 正文 + 箭头」。 */
+    .grid{grid-template-columns:minmax(0,1fr);gap:8px}
+    .card{
+      grid-template-columns:42px minmax(0,1fr);
+      gap:14px;
+      padding:15px 16px;
+      min-height:48px;                    /* 整张卡都是命中区，高于 48px 就行 */
+      -webkit-tap-highlight-color:transparent;
+    }
+    .card-ico{width:42px;height:42px}
+    .card-ico svg{width:20px;height:20px}
+    .card-go{display:none}
+    .card-title{font-size:17px}
+    .card-desc{font-size:16px;line-height:1.72}
+    /* 触屏没有 hover：悬停位移去掉，补偿一个按下去的反应 */
+    .card:hover{
+      transform:none;
+      border-color:var(--line);
+      background:var(--paper);
+      box-shadow:0 1px 2px var(--shadow-1);
+    }
+    .card:active{transform:scale(.992);border-color:var(--clay)}
+
+    /* 页脚链接拉成 48px 高的整行：行距交给 min-height，不留空档 */
+    .foot{gap:2px 12px;font-size:13px}
+    .foot a{display:inline-flex;align-items:center;min-height:48px}
+
+    /* ---------- theme.js 注入的右上角按钮组 ---------- */
+    body .theme-ctl{
+      top:max(10px, env(safe-area-inset-top));
+      right:max(10px, env(safe-area-inset-right));
+      flex-wrap:wrap;                     /* 真放不下就换行，别顶出屏幕 */
+      justify-content:flex-end;
+      gap:8px;
+      max-width:calc(100vw - 20px);
+    }
+    body .theme-ctl button{
+      min-width:48px;min-height:48px;     /* 触摸目标 */
+      padding:0 12px;
+      justify-content:center;
+    }
+    body .theme-ctl button span{display:none}              /* 触屏只留图形，文字会把右上角拉成一条 */
+    body .theme-ctl button span.sw{display:inline-block}   /* 但颜色样块不能跟着被藏掉 */
+    body .theme-ctl .sw{width:14px;height:14px}
+  }
+
+  /* ---------- 手机窄屏 ---------- */
+  @media (max-width:400px){
+    body{
+      padding:
+        calc(64px + env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        calc(36px + env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+    }
+    .window-body{
+      padding:18px max(14px, env(safe-area-inset-right)) 18px
+              max(14px, env(safe-area-inset-left));
+    }
+    .titlebar-title{display:none}         /* 320px 上三格挤不下：留红绿灯 + 工具站按钮就够 */
+    h1{font-size:24px}
+    .grid{gap:6px}
+    .card{padding:14px}
+    .foot{justify-content:flex-start}
+    body .theme-ctl{gap:6px}
   }
 </style>
 </head>

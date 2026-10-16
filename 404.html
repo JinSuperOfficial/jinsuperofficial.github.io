@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="apple-touch-icon" href="./apple-touch-icon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>404 · 所寻之处，一切皆空</title>
 <style>
   :root{
@@ -265,6 +265,91 @@
       transition-duration:.01ms !important;
     }
     .reveal{opacity:1}
+  }
+
+  /* ============================================================
+     响应式：桌面 / 平板 / 手机
+     ============================================================
+     断点（与全站一致，只写在下面这一段里；上面 820 那三档是既有的，一条没删）：
+       桌面       ≥ 1024px  —— 下面一律不碰，视觉与交互和改造前逐像素一致
+       平板   768 – 1023px  —— 紧凑版
+       手机        ≤ 767px  —— 重点适配
+       手机窄屏    ≤ 400px  —— 小屏微调
+
+     为什么这么写：
+       ① 全部用 max-width 覆盖，桌面端一条规则都不命中。
+       ② 颜色一律走上面的 token，新规则里一个写死的色值都没有。
+       ③ 本页 body 是三行 grid（顶栏 / 正文 / 页脚）+ min-height:100dvh，
+          版面结构小屏上本来就成立，要收的只是「行内留白」和字号。
+       ④ 既有的 820 那三档只管布局（正文从两列变一列），768–820 这段字号还是桌面值，
+          在手机上偏小；下面这一档把正文顶到 ≥16px，并把留白按屏宽收一收。
+       ⑤ 触摸目标 ≥48px：顶部品牌链接和两个按钮都给到 48px 高。
+       ⑥ 触屏没有 hover，`btn` 的悬停底色在 ≤767 撤掉，另补 `:active`。
+       ⑦ `env(safe-area-inset-*)` 在没有刘海 / 没有 home 指示条的设备上等于 0，
+          所以这些补白在老设备上不会凭空多出来。
+       ============================================================ */
+
+  @media (max-width:1023px){
+    /* 平板 / 手机横屏（横屏 iPhone 宽 844px，落的正是这一档）：让开刘海与 home 指示条 */
+    header, main, footer{
+      padding-left:max(clamp(20px,5vw,56px), env(safe-area-inset-left));
+      padding-right:max(clamp(20px,5vw,56px), env(safe-area-inset-right));
+    }
+    header{ padding-top:max(clamp(20px,3vh,32px), env(safe-area-inset-top)); }
+    footer{ padding-bottom:max(clamp(20px,3vh,32px), env(safe-area-inset-bottom)); }
+    /* 触摸目标 ≥48 × 48 */
+    .brand, .btn{ min-height:48px; }
+    img, video, canvas, iframe{ max-width:100%; height:auto; }
+    /* 兜底：算漏了也不会整页横滚。clip 不产生滚动容器，不会毁掉任何 sticky；
+       老浏览器不认这个值 → 保持原样，不制造新的回归 */
+    html{ overflow-x:clip; }
+  }
+
+  @media (max-width:767px){
+    /* ---------- 顶栏 ---------- */
+    header{ gap:12px; }
+
+    /* ---------- 正文 ---------- */
+    main{
+      gap:28px;
+      padding-top:max(24px, env(safe-area-inset-top));
+      padding-bottom:32px;
+    }
+    .big{ font-size:clamp(76px,24vw,120px); margin-bottom:18px; }
+    .big::after{ margin-top:16px; }
+    h1{ font-size:clamp(22px,6.4vw,26px); margin-bottom:14px; }
+    .lede{ font-size:16px; margin-bottom:26px; }   /* 正文 ≥16px */
+    .actions{ gap:10px; }
+    .btn{ min-height:48px; padding:12px 20px; font-size:15px; }
+    .btn:hover{ border-color:var(--line); background:var(--raised); }         /* 触屏没有 hover */
+    .btn:active{ transform:translateY(1px) scale(.99); border-color:var(--accent); }
+    .btn.primary:hover{ background:var(--accent); border-color:var(--accent); }
+
+    /* ---------- 右侧那条断了的曲线 ---------- */
+    .aside{ gap:14px; }
+    .curve{ max-width:280px; }
+    .aside-cap{ font-size:12.5px; }
+
+    /* ---------- 页脚 ---------- */
+    footer{ gap:8px; font-size:12px; }
+  }
+
+  @media (max-width:400px){
+    /* 极窄屏：只收留白与「非正文」的元信息，正文仍然守住 16px */
+    main{
+      padding-top:20px;
+      padding-bottom:26px;
+      gap:22px;
+    }
+    .big{ font-size:clamp(64px,26vw,88px); margin-bottom:14px; }
+    .big::after{ width:48px; margin-top:13px; }
+    h1{ font-size:21px; }
+    .lede{ margin-bottom:22px; }
+    .actions{ flex-direction:column; }
+    .btn{ width:100%; justify-content:center; }
+    .curve{ max-width:230px; }
+    .aside-cap{ font-size:12px; }
+    footer{ font-size:11.5px; }
   }
 </style>
 </head>

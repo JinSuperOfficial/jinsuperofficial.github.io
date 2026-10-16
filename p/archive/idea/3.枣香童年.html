@@ -385,13 +385,6 @@ a{ color:var(--accent); }
   color:var(--md-ink);
   word-wrap:break-word;
 }
-/* 阅读器里的 .md 自带 40px 左右内边距（那是它嵌在面板里的缘故）；
-   这里页面本身就是留白，所以收窄一点，窄屏不再二次缩进。 */
-@media (max-width:640px){
-  .md{ padding:28px 0 32px; font-size:14.5px }
-  .top{ padding:0 14px }
-  .wrap{ padding:0 16px 60px }
-}
 
 /* ---------- 文章头（frontmatter 元数据）用的间距微调 ---------- */
 .md .md-fm{ margin-top:0 }
@@ -497,12 +490,143 @@ html:not(.has-js) .md .cg-panel{ display:block }
   }
   .ptoc-title{ margin-bottom:8px }
 }
+/* 640–900px 这一段：顶栏挤不下六个导航项，只留图标化之后的几个主要的。
+   保留原样 —— 它管的是「顶栏放不放得下」，和下面这一段的手机版是两件事。 */
 @media (max-width:640px){
   .top-nav a.wide{ display:none }
   .pn{ grid-template-columns:1fr }
   .pn .pn-next{ text-align:left }
   .top-nav a{ padding:6px 8px }
 }
+
+/* ============================================================
+   响应式：桌面 / 平板 / 手机
+   ============================================================
+   断点（与全站统一，只写在下面这一段里）：
+     桌面       ≥ 1024px  —— 下面一律不碰，一条规则都不命中
+     平板   768 – 1023px  —— 紧凑版
+     手机        ≤ 767px  —— 重点适配
+     手机窄屏    ≤ 400px  —— 小屏微调
+
+   为什么这么写：
+     ① 全部 max-width 覆盖。桌面端（1120px 量度、212px 目录列 + 正文列、
+        顶栏 20px 边距、上下篇两列）与改造前逐像素一致。
+     ② 上面那条 900px 的「目录折到正文上方、单列」保留原样 ——
+        这一段排在源码更后面，同优先级以这里为准，层叠可预期。
+     ③ 颜色只走 token：这一段一个新色值都没有，对比度审计不受影响。
+     ④ 正文 ≥16px 是硬要求：iOS 在字号 <16px 时聚焦 / 双击会自动放大整页。
+        文章页没有字号设置，所以这里直接把 16px 作为底线。
+     ⑤ 表格 / 代码块横向滚动（细则在 docs-md.css，三个页面共用）；
+        图 / 视频 max-width:100%，永远不出容器。
+     ⑥ 触摸目标 ≥48px；触摸没有 hover，悬停位移一律撤掉换按压态。
+        顶栏是 sticky 的，左右要留出刘海安全区。
+   ============================================================ */
+
+/* ── 平板：量度收一档，顶栏别贴边 ── */
+@media (max-width:1023px){
+  .wrap{ padding-left:max(18px, env(safe-area-inset-left));
+         padding-right:max(18px, env(safe-area-inset-right)) }
+  .ptoc{padding-top:24px}
+}
+
+/* ── 手机：单列 + 触摸尺寸 + 安全区 ── */
+@media (max-width:767px){
+  /* 顶栏：导航横向能滑，不折行；纵向给足触摸高度；左右避让刘海 */
+  .top{
+    padding-left:max(12px, env(safe-area-inset-left));
+    padding-right:max(12px, env(safe-area-inset-right));
+    gap:10px;
+  }
+  .brand{min-width:0}
+  .brand-sub{display:none}          /* 副标题（路径）在手机上只会把标题挤没 */
+  .top-nav{
+    min-width:0;
+    overflow-x:auto;
+    overflow-y:hidden;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .top-nav::-webkit-scrollbar{display:none}
+  .top-nav a{min-height:44px;display:inline-flex;align-items:center;padding:8px 10px}
+  /* 品牌名可以被压缩：宁可让标题出省略号，也不许把页面顶宽 */
+  .brand{min-width:0;overflow:hidden}
+  .brand > span{overflow:hidden;text-overflow:ellipsis}
+
+  /* 页面留白：跟屏宽走 + 四边安全区 */
+  .wrap{
+    padding-left:max(16px, env(safe-area-inset-left));
+    padding-right:max(16px, env(safe-area-inset-right));
+    padding-bottom:calc(56px + env(safe-area-inset-bottom));
+  }
+
+  /* ── 正文：16px 底线，行高略收 ── */
+  .md{
+    font-size:max(16px, var(--fs-md, 15px));
+    line-height:1.72;
+    padding:22px 0 28px;
+  }
+  /* 长英文串 / URL 断行，别顶穿视口 */
+  .md p,.md li,.md dd,.md dt,.md td,.md th{overflow-wrap:break-word}
+  /* 图 / 视频 / 表格 / 代码块：不出容器、要滑就自己滑 */
+  .md img,.md figure img,.md video,.md iframe{max-width:100%;height:auto}
+  .md table{display:block;width:100%;max-width:100%;overflow-x:auto;
+            -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  .md pre{overflow-x:auto;-webkit-overflow-scrolling:touch;
+          scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+
+  /* ── 侧栏目录：折到正文上方，本身整幅宽，条目点得着 ── */
+  .ptoc{padding:22px 0 0}
+  .ptoc a{
+    min-height:44px;
+    display:flex;align-items:center;
+    padding:8px 10px;
+    white-space:normal;             /* 窄屏允许折行，别把标题截成「…」 */
+    border-radius:var(--radius-sm);
+  }
+  .ptoc .lv-2 a{padding-left:20px}
+  .ptoc .lv-3 a{padding-left:34px;font-size:12.5px}
+  .ptoc a:hover{color:var(--dim);background:transparent}
+  .ptoc a:active{color:var(--ink);background:var(--accent-soft)}
+
+  /* ── 上下篇：单列，每块都是一个整行可点的卡片 ── */
+  .pn{
+    grid-template-columns:1fr;
+    gap:10px;
+    margin-top:6px;
+    padding-top:18px;
+  }
+  .pn .pn-next{text-align:left}
+  .pn a{min-height:48px;padding:13px 14px}
+  .pn a:hover{transform:none;border-color:var(--line)}
+  .pn a:active{transform:scale(.995);border-color:var(--accent-line)}
+  .pn .pn-t{font-size:15px}
+
+  /* ── 页脚 ── */
+  .foot{padding-top:20px;font-size:12.5px;line-height:1.85}
+  .foot-row{gap:6px 14px}
+  .foot a{min-height:44px;display:inline-flex;align-items:center}
+
+  /* 代码复制按钮：触屏上没有 hover，默认就亮着，且给到 44px 命中区 */
+  .md .md-copy{
+    opacity:1;
+    min-height:36px;
+    padding:6px 10px;
+    background:var(--panel);
+  }
+}
+
+/* ── 超窄屏：再省一档 ── */
+@media (max-width:400px){
+  .wrap{padding-left:max(14px, env(safe-area-inset-left));
+        padding-right:max(14px, env(safe-area-inset-right))}
+  .md{padding-top:18px}
+  .ptoc a{padding-left:8px}
+  .ptoc .lv-2 a{padding-left:16px}
+  .ptoc .lv-3 a{padding-left:28px}
+  .pn .pn-t{font-size:14.5px}
+}
+
 @media (prefers-reduced-motion:reduce){
   *{ animation-duration:.01ms !important; transition-duration:.01ms !important }
   .pn a:hover{ transform:none }
@@ -538,6 +662,7 @@ html:not(.has-js) .md .cg-panel{ display:block }
 
 
 
+
 <header class="md-fm">
 <h1 class="md-fm-title">枣香童年</h1>
 <p class="md-fm-summary">爷爷的红枣饼干齁得恰到好处。等我明白「齁」是什么意思的时候，他已经走了很久。</p>
@@ -566,6 +691,7 @@ html:not(.has-js) .md .cg-panel{ display:block }
 </details>
 </div>
 
+  
   
   
   

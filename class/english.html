@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>英语 · 811</title>
 <meta name="description" content="Unit 1–5 的课文录音，点开就能听，一个单元连着播。">
 <style>
@@ -464,6 +464,194 @@
     .t-num{display:none}
     .t-state span.lbl{display:none}
     .head{gap:14px}
+  }
+
+  /* ============================================================
+     响应式：桌面 / 平板 / 手机
+     ============================================================
+     断点（与全站一致，只写在下面这一段里；上面 720 / 520 两档是既有的，一条没删）：
+       桌面       ≥ 1024px  —— 下面一律不碰，视觉与交互和改造前逐像素一致
+       平板   768 – 1023px  —— 紧凑版
+       手机        ≤ 767px  —— 重点适配
+       手机窄屏    ≤ 400px  —— 小屏微调
+
+     为什么这么写：
+       ① 全部用 max-width 覆盖。桌面端一条规则都不命中，改不到的就是没改。
+       ② 不写死颜色，一律走上面的 token（写死一处，以后换肤就花一处）。
+       ③ 触摸目标 ≥48px；触屏没有 hover，所以 `hover` 的效果要么在 ≤767 里撤掉、
+          要么成对补一条 `:active`，免得手机上「按下去像没反应」。
+       ④ ★ 本页的迷你播放条是 position:fixed;bottom:0。iPhone 底部那条 home
+          指示条会盖在它上面，所以播放条自己的下内边距必须是
+          `calc(… + env(safe-area-inset-bottom))`，同时正文容器按播放条的**实际**
+          高度（--bar-h）留底，滚到最底一行也不会被压住。
+       ⑤ 手机上播放条折成两行：上面「当前曲目 + 三个控制键」、下面整条进度。
+          48px 的按钮放不进原来 30px 那一格，所以 --bar-h 跟着涨。
+       ⑥ `env()` 在没有刘海 / 没有指示条的地方等于 0，所以这一档在老设备上
+          不会多出空白。
+       ============================================================ */
+
+  @media (max-width:1023px){
+    /* 平板 / 手机横屏（横屏的 iPhone 宽 844px，落的就是这一档）：让开刘海 */
+    .shell{
+      padding-left:max(clamp(16px,4.6vw,36px), env(safe-area-inset-left));
+      padding-right:max(clamp(16px,4.6vw,36px), env(safe-area-inset-right));
+    }
+    /* 播放条保持通栏（背景铺满），安全区只加在内层，避免两边露出底色 */
+    .player-in{ padding-bottom:calc(9px + env(safe-area-inset-bottom)); }
+    /* 16px 是 iOS 的分水岭：输入框小于它就聚焦时自动放大整页 */
+    .search input{ font-size:16px; }
+    /* 图片 / 视频一律不许撑破容器 */
+    img, video, canvas, iframe{ max-width:100%; height:auto; }
+    /* 兜底：确实算漏了也不会整页横滚。clip 不会变成滚动容器，
+       所以不影响 fixed 的播放条，也不会毁掉 sticky；老浏览器不认这个值 → 保持原样 */
+    html{ overflow-x:clip; }
+  }
+
+  @media (max-width:767px){
+    /* ---------- ★ 迷你播放条：贴住屏幕底部，给 home 指示条留位 ---------- */
+    :root{ --bar-h:124px; }              /* 两行（48px 控制键 + 进度），比桌面高 */
+    .player-in{
+      /* 与既有 720 档同形，这里只是把它提前到 767，并补上触摸目标与安全区 */
+      grid-template-columns:minmax(0,1fr) auto;
+      grid-template-areas:'np transport' 'seek seek';
+      gap:8px 12px;
+      min-height:var(--bar-h);
+      padding:
+        10px
+        max(clamp(14px,4.6vw,20px), env(safe-area-inset-right))
+        calc(10px + env(safe-area-inset-bottom))     /* ← home 指示条让位就在这一句 */
+        max(clamp(14px,4.6vw,20px), env(safe-area-inset-left));
+    }
+    .np{grid-area:np}
+    .transport{grid-area:transport; gap:6px}
+    .seek-wrap{grid-area:seek}
+    .np-title{font-size:15px}
+    .np-sub{font-size:11px}
+
+    .ctrl{width:48px; height:48px}       /* 触摸目标 ≥48×48 */
+    .ctrl svg{width:18px; height:18px}
+    .ctrl.primary{width:48px; height:48px}
+    .ctrl.primary svg{width:20px; height:20px}
+    .ctrl:hover{background:var(--raised); border-color:var(--line); color:var(--faint)}
+    .ctrl:active{transform:none; background:var(--line-soft); color:var(--ink); border-color:var(--line)}
+    /* 上面把 hover 撤了，但主键（播放）的强调色得留着：
+       触屏点完会粘住 hover，不补这一条它就从橙色退回灰的。
+       边框色用 color-mix 从 --accent 推，跟桌面那条 42% 的写法等价，不写死色值。 */
+    .ctrl.primary, .ctrl.primary:hover{
+      color:var(--accent);
+      border-color:color-mix(in srgb, var(--accent) 42%, transparent);
+      background:var(--accent-soft);
+    }
+
+    .rate{min-width:48px; min-height:48px; padding:0 10px; font-size:13px}
+    .rate:hover{background:var(--raised); border-color:var(--line); color:var(--faint)}
+    .rate:active{background:var(--line-soft); color:var(--ink); border-color:var(--line)}
+
+    .seek{height:48px}                   /* 滑块自己就是命中区 */
+    .seek::-webkit-slider-thumb{width:20px; height:20px; margin-top:-8px}
+    .seek::-moz-range-thumb{width:20px; height:20px}
+    .seek:hover::-webkit-slider-thumb{transform:none}   /* 触屏没有 hover */
+    .seek:active::-webkit-slider-thumb{transform:scale(1.08)}
+    .time{font-size:12px}
+
+    /* 正文底留白：按播放条实际高度 + 安全区算，滚到最底一行也不会被压住 */
+    .shell{
+      padding:
+        max(clamp(20px,5.4vw,32px), env(safe-area-inset-top))
+        max(clamp(14px,4.6vw,20px), env(safe-area-inset-right))
+        calc(var(--bar-h) + 40px + env(safe-area-inset-bottom))
+        max(clamp(14px,4.6vw,20px), env(safe-area-inset-left));
+    }
+    html{ scrollbar-gutter:auto; }       /* 触屏是 overlay 滚动条，常驻槽位只会多留一条白 */
+
+    /* ---------- 头部 ---------- */
+    .head{gap:14px; padding-bottom:16px; margin-bottom:16px}
+    h1{font-size:clamp(26px,7.6vw,32px); line-height:1.2}
+    .lede{font-size:16px; line-height:1.78}      /* 正文 ≥16px */
+    .counter{font-size:11px}
+    .counter b{font-size:22px}
+
+    /* ---------- 搜索 ---------- */
+    .bar{margin-bottom:16px}
+    .search input{font-size:16px; min-height:48px; padding:12px 36px 12px 34px}
+    .search .mag{width:15px; height:15px; left:12px}
+    .search .kbd{display:none}           /* 手指上没有键盘，这枚提示只是白占地方 */
+
+    /* ---------- 单元列表：小屏折成单列 ----------
+       桌面那一行是 [箭头 代号 名称 ── 统计]，手机上这么排会把名称挤成省略号；
+       折成两行：第一行「箭头 + 代号 + 统计靠右」，第二行整行放名称。
+       用 grid 明确摆位，不靠 flex 换行 —— 换行位置会随文案长度乱跳。 */
+    .unit-head{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      align-items:center;
+      gap:3px 10px;
+      min-height:56px;
+      padding:14px 8px 14px 6px;
+    }
+    .unit-head .caret{grid-row:1; grid-column:1; width:13px; height:13px}
+    .unit-code{grid-row:1; grid-column:2}
+    .unit-stat{grid-row:1; grid-column:3}
+    .unit-label{grid-row:2; grid-column:2 / 4}
+    .unit-head .rule{display:none}       /* 折行后这条分隔线只会把两行撑歪 */
+    .unit-head:hover{padding-left:6px; background:none}   /* 触屏没有 hover */
+    .unit-head:active{background:var(--accent-soft)}
+
+    /* ---------- 曲目行 ---------- */
+    .track{padding-top:11px; padding-bottom:11px}   /* 左右内边距沿用既有 520 档，不动 */
+    .track:hover{transform:none; background:none; box-shadow:none}
+    .track:active{background:var(--accent-soft)}
+    /* 上面把 hover 底色撤了，但「正在播的这首」必须留着高亮 ——
+       触屏点完会留一个粘住的 hover，不补这一条那行的高亮就跟着没了。
+       颜色用 --accent-soft（和桌面那条渐变是同一个值），不另写色值。 */
+    .track.playing, .track.playing:hover, .track.playing:active{
+      background:linear-gradient(90deg,var(--accent-soft),transparent 70%);
+    }
+    .track:hover::before, .track:focus-within::before{background:transparent}
+    .track.playing::before, .track.playing:hover::before,
+    .track.playing:focus-within::before{background:var(--accent)}
+    /* 播放键视觉还是 30px（列宽没变），命中区用 ::after 补到 48×48：
+       48px 的方块居中后仍有 5px 落在行内边距里，不会盖到上下相邻的行 */
+    .play{position:relative}
+    .play::after{
+      content:''; position:absolute; top:50%; left:50%;
+      width:48px; height:48px; transform:translate(-50%,-50%);
+      border-radius:var(--radius-control);
+    }
+    .play:hover{border-color:var(--line); color:var(--faint); background:var(--raised)}
+    .play:active{transform:none; border-color:var(--line); color:var(--ink); background:var(--line-soft)}
+    .t-title{font-size:16px}
+    .t-zh{font-size:14.5px}
+
+    /* ---------- 提示条 / 空态 / 页脚 ---------- */
+    .notice{font-size:16px; padding:14px 15px}
+    .empty{padding:36px 16px}
+    .empty h3{font-size:17px}
+    .empty p{font-size:16px}
+    .empty pre{font-size:12px; max-width:100%}
+    .foot{margin-top:18px; font-size:12px}
+  }
+
+  @media (max-width:400px){
+    /* 极窄屏：只收留白与「非正文」的元信息，正文仍然守住 16px */
+    :root{--bar-h:120px}
+    .shell{
+      padding:
+        max(18px, env(safe-area-inset-top))
+        max(12px, env(safe-area-inset-right))
+        calc(var(--bar-h) + 34px + env(safe-area-inset-bottom))
+        max(12px, env(safe-area-inset-left));
+    }
+    h1{font-size:24px}
+    .counter{font-size:10.5px}
+    .counter b{font-size:20px}
+    .unit-code{font-size:13px}
+    .unit-stat{font-size:10.5px}
+    .np-sub{display:none}                /* 只留曲名，别把标题挤成一串省略号 */
+    .transport{gap:4px}
+    .empty pre{font-size:11px}
+    .foot{font-size:11.5px}
+    .search input{padding-left:32px}
   }
 </style>
 </head>

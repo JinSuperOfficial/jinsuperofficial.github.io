@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>课程表 · 811班</title>
 <style>
   /* ---------- 圆角（macOS 风格：小半径 + 层级化 + 同心嵌套） ----------
@@ -543,6 +543,125 @@
       animation-duration:.01ms !important;
       transition-duration:.01ms !important;
     }
+  }
+
+  /* ============================================================
+     响应式：桌面 / 平板 / 手机
+     ============================================================
+     断点（与全站一致，只写在下面这一段里；上面 640 / 760 / 560 三档是既有的，一条没删）：
+       桌面       ≥ 1024px  —— 下面一律不碰，视觉与交互和改造前逐像素一致
+       平板   768 – 1023px  —— 紧凑版
+       手机        ≤ 767px  —— 重点适配
+       手机窄屏    ≤ 400px  —— 小屏微调
+
+     为什么这么写：
+       ① 全部用 max-width 覆盖，桌面端一条规则都不命中。
+       ② 颜色一律走上面的 token（暗 / 亮两套主题都靠它），新规则里一个写死的色值都没有。
+       ③ ★ 课表不是 <table>，是一张 `grid-template-columns:104px repeat(5,minmax(130px,1fr))`
+          的网格 —— 每列有**下限**，一行至少 104 + 5×130 = 754px。
+          768–1023px 这段本来就装不下，而原来 `.schedule{overflow:hidden}` 的后果是
+          把右边两天的课**直接裁掉**（看不见、也滑不动）。
+          所以平板起就让它「容器自己横滑」：content 不挤压、不裁切，页面本身也不横滚。
+       ④ 横滑时尽量把「第几节 / 几点」那一列钉在左边（sticky），免得滑到周四周五
+          就不知道看的是第几节 —— grid 项的 sticky 由浏览器决定要不要认，
+          认不了也只是跟着滑走，不会错位。
+       ⑤ 触摸目标 ≥48px；触屏没有 hover，所以 hover 的位移一律在 ≤767 撤掉并补 `:active`。
+       ⑥ `env(safe-area-inset-*)` 在没有刘海 / 没有 home 指示条的设备上等于 0，
+          所以这些补白在老设备上不会凭空多出来。
+       ============================================================ */
+
+  @media (max-width:1023px){
+    /* 课表：容器横滑（不裁切、不挤压），页面整体不横滚 */
+    .schedule{
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior-x:contain;
+    }
+    /* 横滑时尽量钉住时段列 + 左上角表头（grid 项能不能 sticky 由浏览器说了算；
+       钉不住也只是跟着滑走，不会错位、不会影响别的） */
+    .schedule .time-cell{ position:sticky; left:0; z-index:1; }
+    .schedule > .cell:first-child{ left:0; z-index:3; }
+    /* 触屏（iPad 也是手指）按钮一律给够高度 */
+    .switcher button{ min-height:48px; }
+    .more-btn{ min-height:48px; }
+    .theme-btn{ width:48px; height:48px; }
+    .theme-btn svg{ width:18px; height:18px; }
+    /* 让开刘海 / 圆角，并给 home 指示条留位 */
+    .wrap{
+      padding-left:max(clamp(16px,4vw,40px), env(safe-area-inset-left));
+      padding-right:max(clamp(16px,4vw,40px), env(safe-area-inset-right));
+      padding-bottom:calc(80px + env(safe-area-inset-bottom));
+    }
+    img, video, canvas, iframe{ max-width:100%; height:auto; }
+    /* 兜底：算漏了也不会整页横滚。clip 不产生滚动容器，不会毁掉上面的 sticky；
+       老浏览器不认这个值 → 保持原样，不制造新回归 */
+    html{ overflow-x:clip; }
+  }
+
+  @media (max-width:767px){
+    .wrap{
+      padding:
+        max(clamp(18px,5vw,30px), env(safe-area-inset-top))
+        max(clamp(12px,4vw,18px), env(safe-area-inset-right))
+        calc(56px + env(safe-area-inset-bottom))
+        max(clamp(12px,4vw,18px), env(safe-area-inset-left));
+    }
+
+    /* ---------- 头部：标题块一整行，按钮各自够 48px ---------- */
+    header{ gap:12px; padding-bottom:16px; margin-bottom:18px; }
+    h1{ font-size:clamp(26px,8vw,32px); }
+    .sub{ font-size:16px; }                 /* 正文 ≥16px */
+    .eyebrow{ font-size:10.5px; margin-bottom:9px; }
+    .head-right{ gap:10px; }
+    .more-btn{ min-height:48px; font-size:13px; }
+    .switcher button{ min-height:48px; padding:0 14px; font-size:13px; }
+    .theme-btn{ width:48px; height:48px; }
+    .theme-btn svg{ width:18px; height:18px; }
+    /* 触屏没有 hover：把悬停效果撤掉，改成按压反馈 */
+    .more-btn:hover{ border-color:var(--line); color:var(--dim); background:var(--raised); transform:none; }
+    .more-btn:active{ border-color:var(--accent-line); color:var(--ink); background:var(--raised-2); }
+    .theme-btn:hover{ border-color:var(--line); color:var(--dim); background:var(--raised); }
+    .theme-btn:active{ transform:none; border-color:var(--line); background:var(--raised-2); color:var(--ink); }
+    .switcher button:hover{ color:var(--dim); background:transparent; }
+    .switcher button.active:hover{ color:var(--accent); background:var(--accent-soft); }
+    .today-item:hover{ transform:none; }   /* 只撤位移：`.now` 那条强调边框不能被 hover 顶掉 */
+
+    /* ---------- 课表：字放大到能读，列保持下限让它横滑 ---------- */
+    .subject-cell .subject{ font-size:16px; }
+    .cell.full-span{ font-size:15px; }
+    .break-text{ font-size:13px; }
+
+    /* ---------- 今日视图 ---------- */
+    .today-head{ padding:0 0 14px; margin-bottom:14px; }
+    .today-day{ font-size:clamp(30px,9vw,44px); }
+    .today-teacher{ font-size:13px; }
+    .today-count{ font-size:12px; }
+    .today-item.now::after{ top:auto; bottom:12px; right:12px; }
+
+    /* ---------- 空态 / 页脚 ---------- */
+    .empty-state{ padding:44px 18px; }
+    .empty-state h3{ font-size:18px; }
+    .empty-state p{ font-size:16px; }
+    footer{ margin-top:32px; gap:10px; font-size:12px; }
+  }
+
+  @media (max-width:400px){
+    /* 极窄屏：只收留白与「非正文」的元信息，正文仍然守住 16px */
+    .wrap{
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(10px, env(safe-area-inset-right))
+        calc(48px + env(safe-area-inset-bottom))
+        max(10px, env(safe-area-inset-left));
+    }
+    h1{ font-size:24px; }
+    .more-btn{ padding:0 11px; font-size:12px; }
+    .switcher button{ padding:0 10px; font-size:12px; }
+    .today-day{ font-size:28px; }
+    .today-date{ font-size:12px; }
+    footer{ font-size:11.5px; }
+    .empty-state{ padding:34px 14px; }
   }
 </style>
 </head>

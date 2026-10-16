@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="apple-touch-icon" href="./apple-touch-icon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="./lib/theme.js"></script>
 <title>百宝箱 · JinSuper</title>
 <!-- 首页以前只有一行 <title>：没有描述、没有 canonical。搜索引擎抓得到，
@@ -552,6 +552,12 @@
   /* ─── DeepSeek 蓝：亮色模式的默认，暗色下也能手动切过来 ─── */
   :root[data-accent="blue"]{ --accent:#5686FE; --accent-rgb:86,134,254; }
 
+  /* ─── 玫红：女生主题（安卓壳层用 ?theme=female… 传进来，也能手动切） ───
+       两个值都是量过的：浅色 #B0306A 白字压它 6.04:1、它压浅底 5.47:1；
+       暗色 #F08BB0 压暗底 8.04:1。别随手换。 */
+  :root[data-accent="pink"]{ --accent:#F08BB0; --accent-rgb:240,139,176; }
+  :root[data-appearance="light"][data-accent="pink"]{ --accent:#B0306A; --accent-rgb:176,48,106; }
+
   /* ─── 亮色模式（纸白 + DeepSeek 蓝） ─── */
   :root[data-appearance="light"]{
     color-scheme:light;
@@ -570,6 +576,142 @@
   :root[data-appearance="light"][data-accent="amber"]{ --accent:#B0552F; --accent-rgb:176,85,47; }
   :root[data-appearance="light"] .card:hover{box-shadow:0 18px 40px -22px rgba(18,26,32,.20)}
   :root[data-appearance="light"] .ctx{box-shadow:0 14px 34px -12px rgba(18,26,32,.18),0 0 0 1px rgba(255,255,255,.7) inset}
+
+  /* ============================================================
+     响应式：桌面 / 平板 / 手机
+     ============================================================
+     断点（与全站一致，只写在下面这一段里）：
+       桌面       ≥ 1024px  —— 下面一律不碰，视觉与交互和改造前逐像素一致
+       平板   768 – 1023px  —— 紧凑版
+       手机        ≤ 767px  —— 重点适配
+       手机窄屏    ≤ 400px  —— 小屏微调
+
+     上面已经有 760 / 780 / 640 三档老规则，一条都不删 —— 这一段只补缺的几档，
+     并且排在它们之后：同一个属性这里若也写了，会盖住老规则，所以凡是老规则
+     调过的值（比如 ≤640 的单列）这里都照抄着再写一遍，401–640px 跟 ≤640 保持一致。
+
+     这一页的卡片网格本来就是 auto-fill(minmax(268px,1fr))，列数自己会变；
+     手机档只是把它钉死成一列，免得 320px 上还是一列 268px 的窄卡。
+
+     规矩：
+       ① 全部 max-width 覆盖，而且都排在本页原有规则之后 —— 桌面一条都不命中。
+       ② 不写死颜色，一律走上面的 token。
+       ③ 触摸目标 ≥ 48px；触屏没有 hover，hover 与 active 成对写。
+       ④ 正文 / 搜索框 ≥ 16px（iOS 对 16px 以下会自动放大整页）。
+       ⑤ 右上角那组按钮是 ./lib/theme.js 运行时注入的，它的 <style> 插在本页
+          <style> 之后 —— 同权重会被它反压。所以统一用 `body .theme-ctl …` 抬一档
+          权重（不改 theme.js 本身），手机上做成 48px 方块 + 顶部安全带。
+       ⑥ 贴边 / 贴底的浮层用 env(safe-area-inset-*) 让开刘海与 Home 指示条。
+       ============================================================ */
+
+  /* ---------- 平板：留白已经 ≥24px，这里只补安全区与一档紧凑 ---------- */
+  @media (max-width:1023px){
+    .wrap{
+      padding-left:max(clamp(20px,5vw,56px), env(safe-area-inset-left), 24px);
+      padding-right:max(clamp(20px,5vw,56px), env(safe-area-inset-right), 24px);
+    }
+    html{overflow-x:hidden; overflow-x:clip}   /* 无横向滚动 */
+    img,video{max-width:100%;height:auto}
+
+    .grid{gap:14px}
+    .card{padding:20px 20px 18px}
+  }
+
+  /* ---------- 手机 ---------- */
+  @media (max-width:767px){
+    /* 顶部安全带 = 10px 贴边 + 48px 按钮 + 8px 呼吸：正文从按钮底下开始，谁也不压谁 */
+    .wrap{
+      padding:
+        calc(66px + env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        calc(64px + env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+    }
+
+    header{gap:24px;padding-bottom:28px;margin-bottom:28px}
+    .eyebrow{margin-bottom:14px}
+    .lede{font-size:16px;line-height:1.78}     /* 正文 ≥16px */
+    .stat-num{font-size:clamp(38px,11vw,48px)}
+    .stat-meta{font-size:12.5px}
+
+    .bar{gap:8px;margin-bottom:18px}
+    .search{min-width:0}                       /* 200px 的下限会把「重新读取」顶到下一行 */
+    .search input{
+      height:48px;                             /* 触摸目标 */
+      padding:0 14px 0 35px;
+      font-size:16px;                          /* ≥16px：iOS 不放大整页 */
+    }
+    .search .kbd{display:none}                 /* 触屏没有物理键盘，斜杠提示没意义 */
+    .toggle{min-height:48px;padding:0 14px;font-size:13.5px}
+
+    /* 卡片：一列到底（≤640 那档也是这么写的，这里照抄保证 401–640px 一致） */
+    .grid{grid-template-columns:minmax(0,1fr);gap:14px}
+    .card{padding:18px 18px 16px}
+    .card h2{font-size:17px}
+    .card p{font-size:16px;line-height:1.72}   /* 正文 ≥16px */
+    /* 触屏没有 hover：悬停位移去掉，补偿一个按下去的反应 */
+    .card:hover{transform:none}
+    .card:hover::before{opacity:0}
+    .card:hover .card-icon{transform:none}
+    .card:active{transform:scale(.995)}
+    .card:active::before{opacity:1}
+    .card-foot{margin-top:16px;padding-top:12px}
+    .skeleton{height:160px}
+
+    .empty{padding:40px 18px}
+    .empty h3{font-size:17px}
+    .empty p{font-size:16px}
+    .empty pre{font-size:13px}
+
+    footer{margin-top:48px;flex-direction:column;align-items:flex-start;gap:4px;font-size:12.5px}
+    footer a{display:inline-flex;align-items:center;min-height:48px}
+    footer .keys{gap:8px 12px}
+
+    /* 长按弹出的右键菜单与吐司：窄屏不许比屏幕还宽 */
+    .ctx{max-width:min(280px, calc(100vw - 24px))}
+    .ctx-item{min-height:48px;font-size:13.5px}
+    .flash{
+      left:12px;
+      right:12px;
+      bottom:max(12px, env(safe-area-inset-bottom));
+      text-align:center;
+    }
+
+    /* ---------- theme.js 注入的右上角按钮组 ---------- */
+    body .theme-ctl{
+      top:max(10px, env(safe-area-inset-top));
+      right:max(10px, env(safe-area-inset-right));
+      flex-wrap:wrap;                     /* 真放不下就换行，别顶出屏幕 */
+      justify-content:flex-end;
+      gap:8px;
+      max-width:calc(100vw - 20px);
+    }
+    body .theme-ctl button{
+      min-width:48px;min-height:48px;     /* 触摸目标 */
+      padding:0 12px;
+      justify-content:center;
+    }
+    body .theme-ctl button span{display:none}              /* 触屏只留图形，文字会把右上角拉成一条 */
+    body .theme-ctl button span.sw{display:inline-block}   /* 但颜色样块不能跟着被藏掉 */
+    body .theme-ctl .sw{width:14px;height:14px}
+  }
+
+  /* ---------- 手机窄屏 ---------- */
+  @media (max-width:400px){
+    .wrap{
+      padding-left:max(16px, env(safe-area-inset-left));
+      padding-right:max(16px, env(safe-area-inset-right));
+    }
+    h1{font-size:30px}
+    .eyebrow{font-size:10px;letter-spacing:.12em}
+    .card{padding:16px}
+    .card-top{margin-bottom:14px}
+    .card h2{font-size:16.5px}
+    .stat-num{font-size:40px}
+    .toggle{padding:0 12px}
+    footer .keys{font-size:11.5px}
+    body .theme-ctl{gap:6px}
+  }
 </style>
 </head>
 <body>

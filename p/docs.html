@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JinSuper 奇思妙想</title>
 <meta name="description" content="JinSuper 的随笔与手稿：想到什么写什么，写完就搁在这儿。">
 <meta name="author" content="JinSuper">
@@ -1271,6 +1271,211 @@ html[data-outline="off"] .outline{display:none}
 @media (max-width:400px){
   .md{font-size:14px;padding:20px 14px 64px}
   .main-title .meta{display:none}
+}
+
+/* ============================================================
+   响应式：桌面 / 平板 / 手机
+   ============================================================
+   断点（与全站统一，只写在下面这一段里）：
+     桌面       ≥ 1024px  —— 下面一律不碰，一条规则都不命中
+     平板   768 – 1023px  —— 紧凑版
+     手机        ≤ 767px  —— 重点适配
+     手机窄屏    ≤ 400px  —— 小屏微调
+
+   为什么这么写（以及和上面几段的边界）：
+     ① 全部用 max-width 覆盖。≥1024px 的桌面端拿不到任何一条，
+        顶栏高度、侧栏 300px 栏位、正文 820px 量度、两栏间距
+        与改造前逐像素一致。
+     ② 上面已经有一组更早写的窄屏规则：720px（侧栏改成覆盖层）、
+        800px（顶栏按钮只留图标）、560px（44px 触控目标）、
+        400px（再压一档）。那些是**内容层面**的微调，保持原样不动；
+        这一段是**这一段宽度范围内的完整手机版**（安全区、字号、
+        表格 / 代码横向滚动、弹窗近全屏），源码在文件里排在最后，
+        所以同优先级的属性以这里为准 —— 层叠结果可预期。
+     ③ 颜色一律走上面对应的 token，一个新色值都不引入；
+        所以对比度审计（audit-contrast.mjs）的数字不会变。
+     ④ 触摸目标 ≥48px、触摸没有 hover（active 与 hover 成对写）；
+        固定在底部 / 边缘的元素给 env(safe-area-inset-*) 留位。
+     ⑤ 侧栏不新加任何 JS：开合状态仍然是 html.side-collapsed 一个开关，
+        手机端只多认一个**已有的**信号 —— 遮罩 .side-scrim 的 hidden 属性
+        （syncSideScrim() 在首屏、开合、Esc、跨断点 resize 时都会同步它）。
+        两者同时成立才把抽屉拉出来，于是：
+          · 首屏（JS 已把侧栏收起）：遮罩 hidden → 正文独占整屏，不闪一下抽屉；
+          · 点顶栏按钮：遮罩出现 → 抽屉滑出；
+          · 点遮罩 / 正文（走 720px 那段的 transform）→ 两者一起消失。
+        桌面端的常驻栏位仍然只认 html.side-collapsed，语义没有混。
+   ============================================================ */
+
+/* 抽屉上的抓握把手 + 手机专属形态。
+   桌面（≥1024px）上这些选择器根本不会命中，::before 也不会被生成。 */
+.sidebar::before{
+  content:"";
+  display:none;
+  flex:none;
+  width:38px;height:4px;
+  margin:0 auto 10px;
+  border-radius:var(--radius-pill);
+  background:var(--line);
+}
+
+/* ── 平板：侧栏让 20px 给正文，其余照旧 ── */
+@media (max-width:1023px){
+  :root{--sidebar-w:280px}
+  .main-bar{padding-left:16px;padding-right:14px}
+  .sidebar{padding-top:14px}
+}
+
+/* ── 手机：侧栏抽屉 / 正文独占整屏 / 安全区 / 字号 ── */
+@media (max-width:767px){
+  /* 顶部站点导航：横向能滑就不挤成两行，纵向给足触摸高度 */
+  .topnav{
+    padding-left:max(14px, env(safe-area-inset-left));
+    padding-right:max(14px, env(safe-area-inset-right));
+  }
+  .topnav .nav{
+    min-width:0;
+    overflow-x:auto;
+    overflow-y:hidden;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .topnav .nav::-webkit-scrollbar{display:none}
+  .topnav .nav a{min-height:44px;display:inline-flex;align-items:center;padding:8px 10px}
+  /* 品牌名可以被压缩：整条导航宁可让标题出省略号，也不许把页面顶宽 */
+  .topnav .brand{min-width:0;overflow:hidden}
+  .topnav .brand .brand-name{overflow:hidden;text-overflow:ellipsis}
+
+  /* 文档栏：不透明（半透明在手机的长列表上会糊成一片），
+     状态点让位给文档名（挤不下时） */
+  .main-bar{
+    padding-left:max(12px, env(safe-area-inset-left));
+    padding-right:max(12px, env(safe-area-inset-right));
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    background-image:none;
+    background-color:var(--panel);
+  }
+  .main-title .meta{display:none}
+  /* 标题区独占「栏宽 − 两侧按钮」剩下的那点位置，绝不吃到按钮上去 */
+  .main-title{max-width:100%}
+
+  /* 正文：整屏宽、内边距跟着屏宽走。
+     ★ 字号底线 16px：小于 16px 时 iOS Safari 聚焦 / 双击会自动放大页面，
+       那种放大在小屏上会直接把正文顶出视口。（用户把字号调到 16px 以上时，
+       这里尊重用户设置，只有低于 16px 才抬到 16px。） */
+  .md{
+    font-size:max(16px, var(--fs-md, 15px));
+    padding:22px max(16px, env(safe-area-inset-left)) 72px
+                max(16px, env(safe-area-inset-right));
+  }
+  /* 小屏上代码块本身也放到 13px：12.5px 在手机上是「要眯着眼看」的那一档 */
+  .md pre{padding:12px 14px;font-size:13px}
+
+  /* ── ★ 侧栏：左手抽屉 ──
+     说明见这一节开头的 ⑤。 */
+  html.side-collapsed .sidebar{
+    position:fixed;
+    top:0;left:0;bottom:0;
+    z-index:110;
+    width:min(86vw, 340px);
+    height:auto;
+    max-height:100dvh;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    padding:max(14px, env(safe-area-inset-top)) 0
+            calc(24px + env(safe-area-inset-bottom));
+    background:var(--raised);
+    border-right:1px solid var(--line);
+    border-bottom:none;
+    box-shadow:var(--shadow);
+    opacity:1;
+    transform:translateX(-101%);
+    pointer-events:none;
+    transition:transform .26s var(--ease), background-color .22s var(--ease);
+  }
+  .sidebar::before{display:block}
+  /* 抽屉真的打开了（遮罩已出现）：把已有的那个开关让过去 */
+  html.side-collapsed:has(.side-scrim:not([hidden])) .sidebar{
+    opacity:1;width:auto;
+    transform:none;
+    pointer-events:auto;
+  }
+  .sidebar > *{
+    padding-left:max(14px, env(safe-area-inset-left));
+    padding-right:14px;
+  }
+
+  /* ── 文章列表条目：整行可点，命中区 ≥48px ── */
+  .file-item{min-height:48px;padding-top:10px;padding-bottom:10px}
+  .group-head{min-height:44px;align-items:center}
+  .searchbox{padding-top:12px;padding-bottom:10px}
+  .searchbox input{
+    min-height:44px;
+    font-size:16px;              /* ≥16px：iOS 聚焦时不会给输入框放大页面 */
+  }
+
+  /* ── 本页目录：点得着（44px 行高），长标题截断不了就横滑 ── */
+  .outline a{min-height:44px;padding-top:11px;padding-bottom:11px;font-size:13.5px}
+  .outline .lv-2 a{padding-left:26px}
+  .outline .lv-3 a,.outline .lv-4 a{font-size:12.5px}
+  .outline .lv-3 a{padding-left:40px}
+  .outline .lv-4 a{padding-left:56px}
+  .outline-x{width:44px;height:44px}
+  .outline-x svg{width:14px;height:14px}
+  .side-collapse{min-height:40px;padding:0 12px;font-size:12.5px}
+
+  /* ── 表格 / 代码块：横向滚动，不挤压正文列 ──
+     （滚动条本身在 docs-md.css 里统一处理，这里只管列宽与字号） */
+  .md table{font-size:13.5px}
+  .md table th,.md table td{padding:8px 12px}
+  .md .md-toc,.md .table-of-contents{padding:12px 14px;font-size:13px}
+
+  /* 上下篇 / 返回顶部 */
+  .doc-nav{margin-top:32px;gap:10px}
+  .doc-nav a{min-height:48px;padding:13px 14px}
+  .doc-nav .ttl{white-space:normal;line-height:1.45}
+  .totop{right:max(16px, env(safe-area-inset-right));bottom:max(16px, env(safe-area-inset-bottom))}
+
+  /* ── 弹窗 / 抽屉：近全屏 ── */
+  .scrim{-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+  .drawer{
+    width:100vw;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .drawer-hd{padding-top:12px;padding-bottom:12px}
+  .drawer-hd h2{font-size:16px}
+  .drawer-bd{padding-left:max(16px, env(safe-area-inset-left));
+             padding-right:max(16px, env(safe-area-inset-right))}
+  .drawer-fd{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+
+  /* 设置抽屉里的两档按钮 / 圆点 / 滑块：
+     手指点得着（≥44px），开关与状态点保持胶囊是允许的（不是按钮圆角） */
+  .opt-btn{min-height:44px}
+  .theme-opt{min-height:44px}
+  .mbtn,.mbtn.icon-only{min-height:44px;min-width:44px}
+
+  /* 灯箱全屏看大图：四周只留安全区的呼吸位 */
+  .md-lightbox{
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+  }
+  .img-view{padding:max(16px, env(safe-area-inset-top)) 16px 16px}
+}
+
+/* ── 超窄屏：把还能再省的一档省掉 ── */
+@media (max-width:400px){
+  .md{padding-top:18px;padding-bottom:64px}
+  .topnav{padding-left:max(10px, env(safe-area-inset-left));
+          padding-right:max(10px, env(safe-area-inset-right))}
+  .topnav .nav a{padding:8px 8px}
+  .sidebar{width:min(92vw, 340px)}
+  .md pre{padding:10px 12px}
 }
 
 /* 手机端不用悬停态（点一下就跳到下一屏容易误触） */

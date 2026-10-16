@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-no-theme-ctl>
 <head>
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- 主题：读 ?theme= 参数（安卓壳层按账号性别传进来），把 data-appearance /
+     data-accent 写到 <html> 上。**必须放在样式之前** —— 晚了首屏会闪一下。
+     data-no-theme-ctl 让 theme.js 不注入右上角那组切换按钮（作业页不需要）。 -->
+<script src="../lib/theme.js"></script>
 <title>八年(11)班作业</title>
 <!-- ★ 入场动画的准备（head 里只干这一件事）：
      支持 IntersectionObserver、且用户没要求「减少动态效果」时，先把 <html> 标上 .reveal-on，
@@ -1469,7 +1473,461 @@
   @media (prefers-reduced-motion: reduce){
     .sb, .sb.on, .sb-title, .sb-fill{ transition:none; }
   }
-</style>
+
+  /* ══════════════ 主题属性驱动（安卓壳层用 ?theme= 传进来） ══════════════
+     lib/theme.js 会把 data-appearance / data-accent 写到 <html> 上。
+     下面两块让「强制暗」「强制亮」都能盖过系统的 prefers-color-scheme。
+
+     ★ 变量内容是从上面那两处（基础 :root 与暗色媒体查询）**原样复制**的 ——
+       色值一个没改，所以「指定主题」和「跟随系统」看起来完全一致。
+       改了上面那份记得回来同步这两块（或重跑生成脚本）。
+     ★ 正文/次要文字的对比度沿用原值，未新增未验的颜色。 */
+  :root[data-appearance="dark"]{
+    color-scheme:dark;
+
+      --bg:#14120E;
+      --paper:#1E1B17;
+      --ink:#EDE7DF;
+      --ink-soft:#A29A8E;
+      --oak:#B89B85;
+      --olive:#A8B57C;
+      --clay:#E88B6D;
+      --line:rgba(237,231,223,.14);
+      --line-soft:rgba(237,231,223,.08);
+      --check-mark:#1A1815;
+      --done-text:#6B635A;
+      --empty-text:#6B635A;
+      --foot-text:#7A736A;
+      --thead-bg:rgba(142,152,103,.12);
+      --skeleton-1:rgba(237,231,223,.06);
+      --skeleton-2:rgba(237,231,223,.12);
+      --overlay:rgba(0,0,0,.60);
+      --mark-bg:rgba(217,119,87,.20);
+      --mark-border:rgba(217,119,87,.45);
+      --cta-bg:#C9683D;
+      --cta-bg-hover:#B0552F;
+      --shadow-1:rgba(0,0,0,.40);
+      --shadow-2:rgba(0,0,0,.70);
+      --shadow-3:rgba(0,0,0,.80);
+
+      --glow-1: hsl(220 12% 60% / .30);
+      --glow-2: hsl(220 12% 60% / .26);
+  }
+  @media (prefers-color-scheme: dark){
+    /* 系统是暗的、但这台设备指定了亮色 —— 把浅色基准再压回来 */
+    :root[data-appearance="light"]{
+      color-scheme:light;
+
+
+    /* ---------- 浅色模式基准 ---------- */
+    --bg:#F8F3EC;
+    --paper:#FFFCF7;
+    --ink:#2E2A26;
+    --ink-soft:#6B635A;
+    --oak:#8D6959;
+    --olive:#8E9867;
+    --clay:#D97757;
+    --line:rgba(46,42,38,.12);
+    --line-soft:rgba(46,42,38,.07);
+    --check-mark:#FFFCF7;
+    --done-text:#A9A29A;
+    --empty-text:#B3ACA4;
+    --foot-text:#A9A29A;
+    --thead-bg:rgba(142,152,103,.07);
+    --skeleton-1:rgba(46,42,38,.06);
+    --skeleton-2:rgba(46,42,38,.11);
+    --overlay:rgba(46,42,38,.34);
+    --mark-bg:rgba(217,119,87,.13);
+    --mark-border:rgba(217,119,87,.30);
+    --cta-bg:#B0552F;
+    --cta-bg-hover:#98462A;
+    --shadow-1:rgba(46,42,38,.04);
+    --shadow-2:rgba(46,42,38,.45);
+    --shadow-3:rgba(46,42,38,.55);
+
+    /* 动态色调（JS 按完成度重写）0% 冷灰蓝 → 100% 陶土橙 */
+    --tint-accent: hsl(220 8% 60%);
+    --tint-text:   hsl(220 8% 34%);
+    --tint-soft:   hsl(220 8% 60% / .14);
+    --tint-line:   hsl(220 8% 60% / .30);
+    --tint-box:    hsl(220 8% 60% / .55);
+    --tint-card:   hsl(220 8% 60% / .22);
+    --tint-fill:   hsl(220 8% 60%);
+
+    /* 背景光晕 */
+    --glow-1: hsl(220 8% 60% / .16);
+    --glow-2: hsl(220 8% 60% / .14);
+
+    /* ---------- 圆角（macOS 风格：小半径 + 层级化 + 同心嵌套） ----------
+       规范：.Skills/theme-plus/references/circle_angle.md
+       默认 rounded-md / rounded-lg，窗口最多 rounded-xl，禁止 rounded-2xl / rounded-3xl
+       以及按钮/输入框/卡片的 rounded-full；只有头像、开关、状态点才用胶囊。 */
+    --radius-xs:4px;      /* 标签、徽章（≤6px） */
+    --radius-sm:6px;      /* 小控件、行内代码块 */
+    --radius-md:8px;      /* 按钮、输入框 */
+    --radius-lg:10px;     /* 卡片、便签、浮层 */
+    --radius-xl:12px;     /* 窗口、弹窗 */
+    --radius-pill:999px;  /* 仅圆点、开关、状态标记 */
+
+    --radius-control:var(--radius-md);
+    --radius-button:var(--radius-md);
+    --radius-card:var(--radius-lg);
+    --radius-modal:var(--radius-xl);
+    --radius-badge:var(--radius-sm);
+    --radius-dot:var(--radius-pill);
+
+    /* ---------- 动效令牌（时长 / 缓动，见 interaction.md §8） ---------- */
+    --ease-out:cubic-bezier(.2,.7,.2,1);   /* 进入动画用 ease-out，不用 ease-in */
+    --dur-fast:150ms;                      /* 微反馈 */
+    --dur-base:300ms;                      /* 屏上移动 / 浮层 */
+    --dur-enter:560ms;                     /* 入场（硬上限 700ms） */
+
+    /* ---------- 滚动条 / 科目刻度（任务一） ----------
+       --subject-color = 「当前正在读的科目」的颜色，由 JS 跟着滚动改（一个变量串起
+       滚动条 thumb 和轨道刻度）；这里给的是还没读到科目时的兜底色。
+       ★ 所有科目色只在 JS 的 BASE_SUBJECTS / EXTRA_COLORS 里定义，CSS 里不写死任何科目色。 */
+    --subject-color:var(--olive);
+    --rail-w:12px;          /* 悬浮轨道占的宽（不参与布局，挤不到内容） */
+    --rail-thumb:7px;       /* thumb 视觉宽 ≤8px */
+    --rail-thumb-hover:10px;/* hover / 触屏时展开到 10px */
+    --rail-gap:2px;         /* 轨道离屏幕右边留一点 */
+    --hw-gutter-comp:0px;   /* JS 量出来的「藏掉原生滚动条让出的宽」，等宽补偿给 body */
+
+    --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    }
+  }
+
+  /* 强调色：跟 class/index.html 用**同一组值**（浅 5.47:1 / 暗 8.04:1 都验过）。
+     --cta-bg 是主按钮底色、--mark-bg/--mark-border 是选中标记，
+     只换 --clay 会花，所以一起换。 */
+  :root[data-accent="blue"]{
+    --clay:#3964FE; --cta-bg:#3964FE; --cta-bg-hover:#2E52D8;
+    --mark-bg:rgba(57,100,254,.16); --mark-border:rgba(57,100,254,.40);
+  }
+  :root[data-appearance="dark"][data-accent="blue"]{
+    --clay:#5686FE; --cta-bg:#5686FE; --cta-bg-hover:#6E97FF;
+    --mark-bg:rgba(86,134,254,.20); --mark-border:rgba(86,134,254,.45);
+  }
+  :root[data-accent="pink"]{
+    --clay:#B0306A; --cta-bg:#B0306A; --cta-bg-hover:#9A2A5C;
+    --mark-bg:rgba(176,48,106,.18); --mark-border:rgba(176,48,106,.42);
+  }
+  :root[data-appearance="dark"][data-accent="pink"]{
+    --clay:#F08BB0; --cta-bg:#F08BB0; --cta-bg-hover:#E87AA2;
+    --mark-bg:rgba(240,139,176,.20); --mark-border:rgba(240,139,176,.45);
+  }
+
+  /* ============================================================
+     响应式：桌面 / 平板 / 手机
+     ============================================================
+     断点（与全站一致，只写在下面这一段里）：
+       桌面       ≥ 1024px  —— 下面一律不碰
+       平板   768 – 1023px  —— 紧凑版
+       手机        ≤ 767px  —— 重点适配
+       手机窄屏    ≤ 400px  —— 小屏微调
+
+     规矩：
+       ① 全部用 max-width 覆盖，桌面端一条规则都不命中 —— 视觉与交互和改造前逐像素一致。
+       ② 不写死颜色，一律走上面的 token。
+       ③ 触摸目标 ≥ 48px；touch 没有 hover，`active` 与 `hover` 成对写。
+       ④ 底部固定元素（底部动作面板 / 播放类）给 env(safe-area-inset-*) 留位。
+       ⑤ <768px 时「更多811工具」栏不藏、只改摆放：整条沉到底部当动作面板，
+          桌面那 4 个按钮原样搬进去（同一个 DOM，没有第二份标记、也没有 JS 生成的副本）。
+          这样 Tab 顺序天然正确，不用 CSS order 去改视觉序。
+      ============================================================ */
+
+  /* ---------- 底部动作面板的遮罩与把手（桌面不存在，只有手机用得上） ---------- */
+  .head-acts::before,      /* 面板顶部的抓握把手 */
+  .head-acts::after{       /* 整屏遮罩：面板背后那层，点了就收 */
+    content:"";
+    position:fixed;
+    pointer-events:none;
+  }
+  .head-acts::after{
+    inset:0;
+    z-index:-1;                          /* 落在面板之下、正文之上 */
+    background:var(--overlay);
+    opacity:0;
+    transition:opacity var(--dur-base) var(--ease-out);
+  }
+  /* ★ 手机上的面板开关：由 JS 插进 .head-acts，是这一栏的第一个孩子 —— 既在
+       桌面 Tab 顺序里排第一（顺序不变），打开面板后 Tab 进面板第一站也是它。 */
+  /* ★★ 手机上的面板开关。**它是 `.head-acts` 的兄弟，不是它的孩子** ——
+     原因是手机上面板用 `transform:translate3d(0, calc(100% + 14px), 0)` 滑出屏幕，
+     而**有 transform 的祖先会成为 position:fixed 后代的包含块**：
+     开关若留在面板里，即使 `position:fixed` 也会被钉在那条已经移出屏幕的坐标系里，
+     可见面积 = 0（DevTools 报「element not visible」，但源码、选择器、DOM 全都正常）。
+     这是「fixed 一定相对视口」这个直觉最容易翻车的地方，写在这儿免得以后有人又把它挪进去。
+     （也顺带避开了 `visibility` 继承：面板收起时整条是 visibility:hidden，
+       孩子会被继承到 hidden —— 挪出来就没这回事了。） */
+  .acts-toggle{
+    display:none;                        /* 桌面永不显示 */
+    cursor:pointer;
+    flex:none;
+    align-items:center;
+    justify-content:center;
+    width:44px; height:44px;
+    padding:0;
+    border:1px solid var(--tint-line);
+    border-radius:var(--radius-control);
+    background:var(--paper);
+    color:var(--tint-text);
+    -webkit-tap-highlight-color:transparent;
+    box-shadow:0 6px 18px -12px var(--shadow-2);
+    transition:background .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .acts-toggle svg{ width:18px; height:18px; }
+  .acts-toggle:active{ background:var(--tint-card); color:var(--ink); }
+  .acts-toggle:focus-visible{ outline:2px solid var(--tint-accent); outline-offset:2px; }
+
+  @media (max-width:1023px){
+    /* 平板：内容窄一点、留白收一档，其余照旧 */
+    .page{ max-width:100%; }
+    .hw-list{ gap:12px; }
+  }
+
+  @media (max-width:767px){
+    /* ---------- 版面留白与安全区 ---------- */
+    body{
+      padding:
+        max(clamp(20px,5.4vw,28px), env(safe-area-inset-top))
+        max(clamp(16px,4.6vw,20px), env(safe-area-inset-right))
+        calc(96px + env(safe-area-inset-bottom))
+        max(clamp(16px,4.6vw,20px), env(safe-area-inset-left));
+    }
+    html.hw-rail-on body{
+      /* 手机上的自绘轨道贴着屏幕右边，内容的右留白已经够，不再叠补偿 */
+      padding-right:max(clamp(16px,4.6vw,20px), env(safe-area-inset-right));
+    }
+    html{ scrollbar-gutter:auto; }        /* 触屏是 overlay 滚动条，常驻槽位只会多留一条白 */
+
+    .head{ margin-bottom:20px; }
+    .head-top{ margin-bottom:12px; }
+    h1{ font-size:clamp(25px,7.4vw,32px); line-height:1.3; }
+    .subtitle{
+      margin-top:10px;
+      padding-left:11px;
+      font-size:15px;
+      line-height:1.7;
+    }
+    .meta{ margin-top:13px; gap:9px; font-size:13px; }
+    .progress-track{ margin-top:13px; height:6px; }   /* 细进度条在手机上也有 6px，看得见 */
+
+    /* ---------- ★ 底部动作面板 ---------- */
+    .head-acts{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      z-index:55;                          /* 正文与滚动轨道之上、两个弹窗（60/70）之下 */
+      max-height:min(76vh, 560px);
+      overflow-y:auto;
+      overscroll-behavior:contain;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+      margin:0;
+      padding:20px max(clamp(16px,4.6vw,22px), env(safe-area-inset-right))
+              calc(18px + env(safe-area-inset-bottom))
+              max(clamp(16px,4.6vw,22px), env(safe-area-inset-left));
+      background:var(--paper);
+      border-top:1px solid var(--line);
+      border-radius:var(--radius-modal) var(--radius-modal) 0 0;
+      box-shadow:0 -22px 48px -30px var(--shadow-3);
+      transform:translate3d(0, calc(100% + 14px), 0);
+      visibility:hidden;
+      transition:
+        transform var(--dur-base) var(--ease-out),
+        visibility 0s linear var(--dur-base);
+    }
+    .head-acts::before{
+      position:absolute;
+      top:8px; left:50%;
+      transform:translateX(-50%);
+      width:38px; height:4px;
+      border-radius:var(--radius-pill);
+      background:var(--line);
+    }
+    .head-acts.on{
+      transform:translate3d(0,0,0);
+      visibility:visible;
+      transition:transform var(--dur-base) var(--ease-out), visibility 0s;
+    }
+    .head-acts.on::after{ opacity:1; pointer-events:auto; }
+
+    /* 面板里每一项都拉满一行：手指够得着、图标文字对齐一致 */
+    .head-acts > .more-btn{
+      width:100%;
+      min-height:50px;
+      justify-content:flex-start;
+      gap:11px;
+      padding:0 14px;
+      font-size:15px;
+      border-radius:var(--radius-control);
+      background:var(--tint-soft);
+      border-color:var(--tint-line);
+    }
+    .head-acts > .more-btn svg{ width:18px; height:18px; }
+    /* ★★ 开关的「出生地」：基础规则里是 display:none（桌面永不显示），这一档翻成 flex。
+       它**不在面板里**（见上面基础段的长注释：面板带 transform，会把它钉在屏幕外），
+       所以这里不用再跟继承下来的 visibility 打架。 */
+    .acts-toggle{
+      display:flex;
+      position:fixed;                       /* 相对视口 —— 它现在没有带 transform 的祖先了 */
+      right:max(clamp(14px,4.2vw,18px), env(safe-area-inset-right));
+      bottom:calc(16px + env(safe-area-inset-bottom));
+      z-index:56;                           /* 比面板（55）高一层，面板开着也点得到 */
+    }
+    /* 面板打开时开关变成「收起」：同一枚按钮，图形换成向下的箭头由 JS 换 */
+    .acts-toggle.on{
+      background:var(--tint-card);
+      border-color:var(--tint-accent);
+      color:var(--ink);
+    }
+    /* 触摸没有 hover：把悬停位移去掉，给按压态 */
+    .head-acts > .more-btn:hover{ transform:none; background:var(--tint-card); }
+    .head-acts > .more-btn:active{
+      transform:scale(.99);
+      background:var(--tint-card);
+      border-color:var(--tint-accent);
+    }
+
+    /* ---------- 作业表：一列到底 ---------- */
+    .card{ border-radius:var(--radius-card); }
+    thead{ display:none; }
+    table, tbody, tr, td{ display:block; width:100%; }
+    tbody tr{
+      border-bottom:1px solid var(--line);
+      padding:0 0 4px;
+    }
+    tbody tr:last-child{ border-bottom:none; }
+    tbody td{
+      border:none;
+      padding:10px max(clamp(14px,4.4vw,18px), env(safe-area-inset-left)) 10px
+              max(clamp(14px,4.4vw,18px), env(safe-area-inset-right));
+    }
+    tbody tr[data-subject] td:first-child{
+      min-height:56px;
+      padding-top:14px;
+      padding-bottom:10px;
+      border-bottom:1px solid var(--line-soft);
+    }
+    tbody tr[data-subject] td:last-child{ padding-top:12px; padding-bottom:16px; }
+    .subject{ font-size:15px; }
+    .subject .ico{ width:19px; height:19px; }
+
+    /* 条目行做成整行可点：命中区 ≥ 48px，勾选框跟着行高走 */
+    .hw-list{ gap:4px; }
+    .hw-item{
+      min-height:48px;
+      align-items:flex-start;
+      gap:12px;
+      padding:11px 6px;
+      border-radius:var(--radius-md);
+      -webkit-touch-callout:none;
+    }
+    .hw-item:active{ background:var(--tint-soft); }
+    .box{
+      width:22px; height:22px;
+      margin-top:2px;                      /* 22px 方框对准第一行文字的中线 */
+      border-width:1.8px;
+      border-radius:var(--radius-sm);
+    }
+    .box svg{ width:13px; height:13px; }
+    .text{ font-size:16px; line-height:1.72; }   /* 正文 ≥16px：iOS 不自动放大 */
+
+    /* ---------- 便签 ---------- */
+    .note{ padding:15px 16px; }
+
+    /* ---------- 页脚 ---------- */
+    .foot{ margin-top:20px; font-size:12px; line-height:1.8; }
+
+    /* ---------- 顶部收缩状态条：手机上不吃掉整行 ---------- */
+    .sb{ padding:10px max(clamp(14px,4.4vw,18px), env(safe-area-inset-left)) 10px
+                  max(clamp(14px,4.4vw,18px), env(safe-area-inset-right)); }
+    .sb-title{ font-size:13px; }
+
+    /* ---------- 滚动轨道：手指粗，刻度加大 ---------- */
+    .rail-mark{ height:22px; }
+    .rail-mark > i{ width:7px; height:7px; }
+    .rail-mark::after{ display:none; }     /* 触屏没有 hover，悬停标签不出场（省得挡住正文） */
+
+    /* ---------- 弹窗 / 抽屉：手机近全屏 ---------- */
+    .congrats,
+    .logwin{ padding:max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+    .congrats-card{
+      width:100%;
+      padding:clamp(22px,6.4vw,30px) clamp(18px,5vw,24px);
+      border-radius:var(--radius-modal);
+    }
+    .congrats-btn{ width:100%; min-height:50px; }   /* 主按钮整宽，手指好按 */
+
+    .logwin-card{
+      width:100%;
+      max-height:calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom)));
+      max-height:calc(100vh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom)));
+      border-radius:var(--radius-modal);
+    }
+    .logwin-head{
+      padding:12px 10px 12px max(14px, env(safe-area-inset-left));
+      flex-wrap:wrap;
+      row-gap:4px;
+    }
+    .logwin-title{ font-size:15px; }
+    .logwin-close{ width:48px; height:48px; }        /* 触摸目标：手指点得着（规范下限 48dp） */
+    /* 更新日志：日期列表折到顶部、横向滑，正文占满下面 */
+    .logwin-body{
+      grid-template-columns:1fr;
+      grid-template-rows:auto minmax(0,1fr);
+    }
+    .logwin-list{
+      flex-direction:row;
+      gap:7px;
+      padding:10px max(12px, env(safe-area-inset-left));
+      border-right:0;
+      border-bottom:1px solid var(--line-soft);
+      overflow-x:auto;
+      overflow-y:hidden;
+      overscroll-behavior-x:contain;
+      -webkit-overflow-scrolling:touch;
+    }
+    .log-item{
+      flex:none;
+      width:auto;
+      max-width:220px;
+      min-height:48px;                              /* 触摸目标 */
+      justify-content:center;
+      padding:9px 12px;
+      border-color:var(--tint-line);
+      background:var(--tint-soft);
+    }
+    .logwin-detail{ padding:16px max(14px, env(safe-area-inset-left)) 22px; }
+    .log-h{ font-size:17.5px; }
+    .tm-more{ min-height:48px; width:100%; }
+    .tm-items li{ min-height:32px; padding-top:3px; padding-bottom:3px; }
+
+    /* ---------- 彩蛋两侧竖排字：小屏挤不下，收窄字号与间距 ---------- */
+    .easter-text{ font-size:14.5px; letter-spacing:.22em; }
+    .easter-text.left{ left:10px; }
+    .easter-text.right{ right:10px; }
+  }
+
+  @media (max-width:400px){
+    body{
+      padding:
+        max(18px, env(safe-area-inset-top))
+        max(14px, env(safe-area-inset-right))
+        calc(92px + env(safe-area-inset-bottom))
+        max(14px, env(safe-area-inset-left));
+    }
+    h1{ font-size:24px; }
+    .kicker{ font-size:10px; letter-spacing:.16em; }
+    .text{ font-size:15.5px; }
+    .head-acts{ padding-top:18px; }
+    .head-acts > .more-btn{ min-height:48px; font-size:14.5px; }
+    .log-item{ max-width:180px; }
+    .easter-text{ display:none; }          /* ≤400px 竖排字会把正文夹得太窄，干脆不亮 */
+  }
+  </style>
 </head>
 <body>
 
@@ -1494,7 +1952,7 @@
     <div class="head-top">
       <p class="kicker">Homework · 每日清单</p>
 
-      <div class="head-acts">
+      <div class="head-acts" id="headActs" role="group" aria-label="页面动作">
         <!-- ★ 切换页面背景：默认(跟随 JSON) → 网格 → 水墨 → 地图 → 植物 → 游戏-MC → 游戏-UT → 默认
              彩蛋不在这一圈里（只有当天记录写 "bg":"egg" 才会亮） -->
         <button class="more-btn" id="bgBtn" type="button" title="点一下换一张背景">
@@ -2611,7 +3069,13 @@
   const HWK_BASES = ['./data/hwk/', '/class/data/hwk/', '/data/hwk/'];
   const PATHS = ['./data/homework.json', '/class/data/homework.json', '/data/homework.json'];
   /* 当天文件里这些键不算「科目」；其余顶层键（"语文": "…" 这种）一律当科目 */
-  const INLINE_RESERVED = ['id', 'date', 'title', 'bg', 'subjects', 'notesId', 'eggId',
+  /* ★ 这个表要和 sync/lib/hwk-schema.mjs 的 RESERVED、安卓的 HwkStore.RESERVED
+     保持**同一个集合**（build/test-android.mjs 会三处比对）。
+     这里的语义是：**不在这张表里的顶层键一律当科目画成一行** ——
+     多一个就多一行假科目，少一个就被吞掉。
+     `name` / `file` 是目录条目（index.json）里的字段，不该在记录里出现；
+     真出现了宁可当成保留字不画，也好过在作业表里多出一行叫「name」的假科目。 */
+  const INLINE_RESERVED = ['id', 'date', 'title', 'bg', 'name', 'file', 'subjects', 'notesId', 'eggId',
                            'homework', 'notes', 'egg', '彩蛋'];
   let hwkBase = null;                       /* 哪条基准读通了就记下来，后面几张片子都用它 */
 
@@ -3644,6 +4108,9 @@
 
   document.addEventListener('keydown', e => {
     if(e.key !== 'Escape') return;
+    /* ★ 手机底部动作面板也是「浮层」：它开着的时候 Esc 先收它，
+       别顺手把背后的更新日志 / 时光机一起关掉。 */
+    if(actsApi && actsApi.isOpen()){ actsApi.close(); return; }
     closeLog();
     closeTimeline();
     closeCongrats();
@@ -3668,6 +4135,84 @@
   /* ============ 启动 ============ */
   /* 时光机：不支持 fetch / Promise 的浏览器直接把按钮藏掉（主页功能一点不受影响） */
   if(tmBtn && !tmSupported()) tmBtn.hidden = true;
+
+  /* ---------- ★ 手机底部动作面板 ----------
+     桌面（≥768px）上这一段等于不存在：CSS 里 .acts-toggle 是 display:none，
+     .head-acts 就是原来那条横向按钮栏 —— 视觉与交互与改造前完全一致。
+
+     手机上「更多811工具 / 背景 / 时光机 / 更新日志」四个按钮不搬家、不复制：
+     它们仍是 .head-acts 的孩子，只是整条被定位到底部当动作面板。
+     这里只做三件事：
+       ① 往面板里插一枚开关（插在第一个，所以桌面 Tab 顺序仍是「开关 → 四个按钮」）；
+       ② 管开 / 关、遮罩点击、焦点归位；
+       ③ 视口变宽（转到桌面）时把状态收拾干净。
+     —— 这也是为什么 Tab 顺序天然正确：DOM 顺序就是视觉顺序，没有用 CSS order 去改。 */
+  const actsApi = (function initMobileActs(){
+    const acts = document.getElementById('headActs');
+    if(!acts || !document.querySelectorAll) return null;
+
+    const CHEV_UP   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>';
+    const CHEV_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'actsToggle';
+    btn.className = 'acts-toggle';
+    btn.setAttribute('aria-controls', 'headActs');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', '打开页面动作');
+    btn.innerHTML = CHEV_UP;
+    /* ★ 插到面板**前面**（兄弟节点），不是插进面板里。
+       面板在手机上带 `transform` 滑出屏幕，会把 position:fixed 的后代钉在它自己的
+       坐标系里 —— 开关留在面板里就永远没有可见面积（详见 CSS 里那段长注释）。
+       放在兄弟位仍然紧挨着面板，Tab 顺序也是「开关 → 面板里那几项」。 */
+    acts.parentNode.insertBefore(btn, acts);
+
+    let open = false;
+
+    function sync(){
+      acts.classList.toggle('on', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.setAttribute('aria-label', open ? '收起页面动作' : '打开页面动作');
+      /* 图形也换一下：打开时朝下（=「收起来」），收起时朝上（=「拉出来」） */
+      btn.innerHTML = open ? CHEV_DOWN : CHEV_UP;
+    }
+    function openPanel(){
+      if(open) return;
+      open = true; sync();
+      /* 焦点送进面板第一站（就是这枚开关）：开着的时候键盘 / 屏读都留在浮层里 */
+      btn.focus({ preventScroll: true });
+    }
+    function close(refocus){
+      if(!open) return;
+      open = false; sync();
+      const a = document.activeElement;
+      if(refocus && (a === btn || acts.contains(a))) btn.focus({ preventScroll: true });
+    }
+
+    btn.addEventListener('click', function(){ open ? close(true) : openPanel(); });
+
+    /* 遮罩（面板背后那层整屏 ::after）与面板自身的空白处都算「点外面 → 收」。
+       伪元素的命中目标就是宿主元素自己，所以判 t === acts 就够了。 */
+    document.addEventListener('click', function(e){
+      if(!open) return;
+      if(e.target === acts) close(true);
+    }, true);
+
+    /* 点了面板里的某一项（换背景 / 时光机 / 更新日志 / 跳工具页）就顺手收起面板 */
+    acts.addEventListener('click', function(e){
+      const hit = e.target && e.target.closest ? e.target.closest('.more-btn') : null;
+      if(hit && hit !== btn) close(false);
+    });
+
+    /* 视口回到桌面：状态归零，免得下次缩回手机时面板是「开着」的 */
+    function onVp(){
+      if(window.innerWidth > 767) close(false);
+    }
+    window.addEventListener('resize', onVp);
+
+    return { isOpen: function(){ return open; }, close: function(){ close(false); } };
+  })();
 
   /* 便签标签上的那枚便签图标：SVG 路径只写在 JS 一处，这里插进去，别在 HTML 里抄第二份 */
   const noteLabelEl = document.getElementById('noteLabel');

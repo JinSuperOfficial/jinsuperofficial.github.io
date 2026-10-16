@@ -1491,6 +1491,113 @@ html[data-theme="sepia"],html[data-theme="paper"],html[data-theme="moss"]{
 /* ── 表情 ── */
 .md .emoji{ font-style:normal;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",var(--sans) }
 
+/* ============================================================
+   响应式：小屏可读性（桌面 ≥1024px 一行都不改）
+   ============================================================
+   这一份被三个地方共用：阅读器 / 静态文章页 / 归档稿。所以只管
+   「正文元素本身在小屏长什么样」，页面框架（顶栏 / 侧栏 / 抽屉）
+   归各自的页面，别写进这里。
+
+   规矩：
+     ① 只用 max-width 覆盖 —— 桌面端一条都不命中。
+     ② 颜色照旧走 token，这一段一个新色值都没有，
+        对比度审计的数字不会动。
+     ③ 正文 ≥16px 的理由是硬的：iOS Safari 在字号 <16px 时，
+        聚焦或双击会自动放大整页，正文就被顶出视口了。
+        用户在阅读器里把字号调到 16px 以上时，尊重用户设置。
+     ④ 表格 / 代码块 / 公式横向滚动不换行：宁可让那一块自己滑，
+        也不把整个页面撑出横向滚动条。
+     ⑤ 图 / 视频一律 max-width:100%，永远不出容器。
+   ============================================================ */
+
+/* ── 手机 ── */
+@media (max-width:767px){
+  /* 字号底线 16px；行高略收一点，16px + 1.78 在手机上太散 */
+  .md{font-size:max(16px, var(--fs-md, 15px)); line-height:1.72}
+
+  /* 长英文串 / URL 断行：否则一行顶穿整个视口 */
+  .md p,.md li,.md dd,.md dt,.md td,.md th,.md figcaption{
+    overflow-wrap:break-word;
+  }
+
+  /* 图片：宽高都不许出容器（有些稿子写了 width= 属性或内联尺寸） */
+  .md img,.md figure img,.md video,.md svg,.md canvas,.md iframe{
+    max-width:100%;
+    height:auto;
+  }
+
+  /* ── 表格：小屏横向滚动，不挤压正文列 ──
+     阅读器的 .md 有自己的内边距，表格铺满就够；文章页 .md 是整幅宽。
+     滚动条画细一点，别在窄屏上再吃掉 15px。 */
+  .md table{
+    display:block;
+    width:100%;
+    max-width:100%;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+    scrollbar-width:thin;
+    scrollbar-color:var(--line) transparent;
+  }
+  .md table::-webkit-scrollbar{height:8px}
+  .md table::-webkit-scrollbar-thumb{background:var(--line);border-radius:var(--radius-badge)}
+  .md table th,.md table td{white-space:normal}
+
+  /* ── 代码块：横向滚动不换行（white-space:pre 由上面的 .md pre code 保住） ── */
+  .md pre{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+    scrollbar-width:thin;
+    scrollbar-color:var(--line) transparent;
+  }
+  .md pre::-webkit-scrollbar{height:8px}
+  .md pre::-webkit-scrollbar-thumb{background:var(--line);border-radius:var(--radius-badge)}
+  /* 行号那一档（```js:line-numbers）：左侧留出数字位后仍要能滑 */
+  .md pre code.with-lines.show-lines .cl{padding-left:3em}
+
+  /* 公式（KaTeX）本来就会横滑，这里只把滚动条画细 */
+  .md .katex-display{scrollbar-width:thin}
+
+  /* 告示 / 提示框：左右内边距收一档，别在窄屏上只剩一条缝 */
+  .md .markdown-alert,.md .md-box{padding:11px 13px}
+  .md .md-toc,.md .table-of-contents{padding:12px 14px}
+
+  /* 任务列表的勾选框稍微放大：14px 在触屏上是点不准的 */
+  .md .task-list-item input[type=checkbox]{width:17px;height:17px;margin-right:9px}
+  .md .task-list-item input[type=checkbox]:checked::after{
+    left:5px;top:1.5px;width:4px;height:9px;
+  }
+
+  /* 脚注字号抬到 13px：12.5px + --md-dim 在手机上读着费劲 */
+  .md .footnotes{font-size:13px}
+
+  /* 灯箱里的图：整屏都能看到，别留 32px 的大边 */
+  .md-lightbox{padding:16px}
+}
+
+/* ── 窄屏 ── */
+@media (max-width:400px){
+  /* 表头字号再收一档，让列宽尽量落到可视区里 */
+  .md table{font-size:13px}
+  .md table th,.md table td{padding:8px 10px}
+  .md .markdown-alert,.md .md-box{padding:10px 12px}
+  .md .md-toc,.md .table-of-contents{padding:10px 12px}
+}
+
+/* 触摸设备没有 hover：剧透那套「悬停显形」在手机上永远不亮。
+   这里只把按压 / 聚焦这一档补上（色值仍走 --ink，和 :hover 完全同一档），
+   点一下就能看见，不用长按选中。 */
+@media (hover:none){
+  .md .spoiler:active,
+  .md .spoiler:focus{
+    background:color-mix(in srgb,var(--ink) 8%,transparent);
+    color:var(--ink);
+    outline:none;
+  }
+}
+
 /* ─────────── 3. 新增样式 ─────────── */
 
 /* ═══════════════════════════════════════════════════

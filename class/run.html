@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>运动会赛程 · 十月十五日</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -390,6 +390,111 @@
     table { min-width: auto; }
     .toggle-wrap { display: none; }
     .not-in-list { display: flex !important; } /* 打印时默认显示全部，避免缺失信息 */
+  }
+
+  /* ============================================================
+     响应式：桌面 / 平板 / 手机
+     ============================================================
+     断点（与全站一致，只写在下面这一段里；上面 600 档是既有的，一条没删）：
+       桌面       ≥ 1024px  —— 下面一律不碰，视觉与交互和改造前逐像素一致
+       平板   768 – 1023px  —— 紧凑版
+       手机        ≤ 767px  —— 重点适配
+       手机窄屏    ≤ 400px  —— 小屏微调
+
+     为什么这么写：
+       ① 全部用 max-width 覆盖，桌面端一条规则都不命中。
+       ② 颜色一律走上面的 token（本页还有一套 prefers-color-scheme 的暗色变量），
+          新规则里一个写死的色值都没有。
+       ③ 本页有两张真表格（100 米 / 400 米，各 9 列）。`.table-wrap` 本来就是
+          `overflow-x:auto`，这里补的是「滑得动、滑得住」的细节：
+          `overscroll-behavior-x:contain` 让手指滑到头时不会顺带把整页带走，
+          `-webkit-overflow-scrolling:touch` 给 iOS 惯性滚动。
+          **`table{min-width:700px}` 一个字没动** —— 表格宁可自己横滑，也不挤压换行。
+       ④ 触摸目标 ≥48px：开关按钮、名单里的每一行都给到 48px 高。
+       ⑤ 触屏没有 hover，所以 hover 的位移一律在 ≤767 撤掉并补 `:active`。
+       ⑥ `env(safe-area-inset-*)` 在没有刘海 / 没有 home 指示条的设备上等于 0，
+          所以这些补白在老设备上不会凭空多出来。
+       ============================================================ */
+
+  @media (max-width:1023px){
+    /* 平板 / 手机横屏（横屏 iPhone 宽 844px，落的正是这一档）：让开刘海与 home 指示条 */
+    body{
+      padding-left:max(clamp(14px,4vw,36px), env(safe-area-inset-left));
+      padding-right:max(clamp(14px,4vw,36px), env(safe-area-inset-right));
+      padding-bottom:calc(clamp(40px,7vw,88px) + env(safe-area-inset-bottom));
+    }
+    /* 表格横滑的手感 */
+    .table-wrap{
+      overscroll-behavior-x:contain;
+      -webkit-overflow-scrolling:touch;
+    }
+    /* 触屏上按钮与名单行都给够手指 */
+    .toggle-btn{ min-height:48px; }
+    .person{ min-height:48px; }
+    img, video, canvas, iframe{ max-width:100%; height:auto; }
+    /* 兜底：算漏了也不会整页横滚。clip 不产生滚动容器，不会毁掉任何 sticky；
+       老浏览器不认这个值 → 保持原样，不制造新的回归 */
+    html{ overflow-x:clip; }
+  }
+
+  @media (max-width:767px){
+    body{
+      padding:
+        max(clamp(20px,5vw,36px), env(safe-area-inset-top))
+        max(clamp(12px,4vw,20px), env(safe-area-inset-right))
+        calc(clamp(32px,7vw,56px) + env(safe-area-inset-bottom))
+        max(clamp(12px,4vw,20px), env(safe-area-inset-left));
+    }
+
+    /* ---------- 头部 ---------- */
+    .head{ margin-bottom:22px; }
+    h1{ font-size:clamp(26px,7.6vw,32px); }
+    .lede{ font-size:16px; }              /* 正文 ≥16px */
+    .kicker{ font-size:10.5px; }
+
+    .toggle-wrap{ margin-top:14px; gap:10px; flex-wrap:wrap; }
+    .toggle-btn{ min-height:48px; padding:0 16px; font-size:15px; }
+    .toggle-btn:hover{ border-color:var(--line); background:var(--paper); }
+    .toggle-btn:active{ transform:scale(.99); background:color-mix(in srgb, var(--oak) 8%, transparent); }
+    .toggle-hint{ font-size:13px; }
+
+    /* ---------- 赛事卡片 ---------- */
+    .event{ margin-bottom:14px; border-radius:var(--r-lg); }
+    .ev-head{ gap:10px; padding:13px 14px; }
+    .ev-sub{ font-size:13px; }
+    .ev-time{ font-size:16px; }
+
+    /* ---------- 名单 ---------- */
+    .roster{ padding:10px; }
+    .person .name{ font-size:16px; }      /* 正文 ≥16px：名单里的名字 */
+
+    /* ---------- 表格：容器横滑，字号放大到读得清 ---------- */
+    .table-wrap{ padding:10px; }
+    th, td{ padding:9px 8px; }
+    .cell-name{ font-size:16px; }         /* 正文 ≥16px：表格里的名字 */
+    .cell-num, .cell-class{ font-size:11.5px; }
+
+    .foot{ margin-top:20px; font-size:13px; }
+  }
+
+  @media (max-width:400px){
+    /* 极窄屏：只收留白与「非正文」的元信息，正文仍然守住 16px */
+    body{
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(10px, env(safe-area-inset-right))
+        calc(28px + env(safe-area-inset-bottom))
+        max(10px, env(safe-area-inset-left));
+    }
+    h1{ font-size:24px; }
+    .toggle-btn{ padding:0 14px; font-size:14.5px; }
+    .toggle-hint{ font-size:12px; }
+    .ev-no{ min-width:28px; height:28px; font-size:12px; }
+    .ev-time{ font-size:15px; }
+    .roster{ grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
+    .table-wrap{ padding:8px; }
+    th, td{ padding:8px 6px; }
+    .foot{ font-size:12px; }
   }
 </style>
 </head>

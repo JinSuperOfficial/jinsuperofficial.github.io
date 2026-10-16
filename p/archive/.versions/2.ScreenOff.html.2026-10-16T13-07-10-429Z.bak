@@ -9,18 +9,18 @@
 <meta name="description" content="Screen off · 归档预渲染稿 · JinSuper">
 <title>Screen off, Welcome To the Real World · JinSuper 奇思妙想</title>
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="https://jinsuper.rth1.xyz/p/archive/2.ScreenOff.html">
+<link rel="canonical" href="https://www.jinsuper.cn/p/archive/2.ScreenOff.html">
 <link rel="alternate" type="application/rss+xml" title="JinSuper 奇思妙想 · RSS" href="../feed.xml">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="JinSuper 奇思妙想">
 <meta property="og:title" content="Screen off, Welcome To the Real World">
 <meta property="og:description" content="Screen off · 归档预渲染稿 · JinSuper">
-<meta property="og:url" content="https://jinsuper.rth1.xyz/p/archive/2.ScreenOff.html">
+<meta property="og:url" content="https://www.jinsuper.cn/p/archive/2.ScreenOff.html">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Screen off, Welcome To the Real World">
 <meta name="twitter:description" content="Screen off · 归档预渲染稿 · JinSuper">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Screen off, Welcome To the Real World","description":"Screen off · 归档预渲染稿 · JinSuper","url":"https://jinsuper.rth1.xyz/p/archive/2.ScreenOff.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://jinsuper.rth1.xyz/p/archive/2.ScreenOff.html"},"author":{"@type":"Person","name":"JinSuper"},"publisher":{"@type":"Organization","name":"JinSuper 奇思妙想"},"inLanguage":"zh-CN","isPartOf":{"@type":"Blog","name":"JinSuper 奇思妙想","url":"https://jinsuper.rth1.xyz/p/docs.html"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Screen off, Welcome To the Real World","description":"Screen off · 归档预渲染稿 · JinSuper","url":"https://www.jinsuper.cn/p/archive/2.ScreenOff.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.jinsuper.cn/p/archive/2.ScreenOff.html"},"author":{"@type":"Person","name":"JinSuper"},"publisher":{"@type":"Organization","name":"JinSuper 奇思妙想"},"inLanguage":"zh-CN","isPartOf":{"@type":"Blog","name":"JinSuper 奇思妙想","url":"https://www.jinsuper.cn/p/docs.html"}}</script>
 <!-- 由发布控制台预渲染：源 Markdown 在项目根 para\ 留底，这里是成品 -->
 <link rel="stylesheet" href="../docs-md.css">
 <style>
@@ -537,6 +537,8 @@ html:not(.has-js) .md .cg-panel{ display:block }
 
 
 
+
+
     <!-- 标题区 -->
     <h1 id="screen-off">Screen Off, Welcome To the Real World</h1>
     <p style="text-align: center; text-indent: 0; color: #869298; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em;">
@@ -593,6 +595,8 @@ html:not(.has-js) .md .cg-panel{ display:block }
     </section>
 
 
+  
+  
   
   
   </article>

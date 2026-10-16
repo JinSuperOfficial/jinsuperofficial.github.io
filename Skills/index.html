@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="apple-touch-icon" href="../apple-touch-icon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="../lib/theme.js"></script>
 <title>目录</title>
 <style>
@@ -396,6 +396,124 @@
   /* 亮色里手动选了「现在的颜色」——橙色要压暗才够 4.5:1 */
   :root[data-appearance="light"][data-accent="amber"]{ --accent:#B0552F; --accent-rgb:176,85,47; }
   :root[data-appearance="light"] .ctx{box-shadow:0 14px 34px -12px rgba(18,26,32,.18),0 0 0 1px rgba(255,255,255,.7) inset}
+
+  /* ============================================================
+     响应式：桌面 / 平板 / 手机
+     ============================================================
+     断点（与全站一致，只写在下面这一段里）：
+       桌面       ≥ 1024px  —— 下面一律不碰，视觉与交互和改造前逐像素一致
+       平板   768 – 1023px  —— 紧凑版
+       手机        ≤ 767px  —— 重点适配
+       手机窄屏    ≤ 400px  —— 小屏微调
+
+     这一页是「目录清单」不是卡片墙：一列到底的 .row 已经是单列，
+     列数是它在 6 格网格里的字段数，所以手机档重点是「一行读得下 + 点得着」。
+
+     规矩：
+       ① 全部 max-width 覆盖，而且都排在本页原有规则之后 —— 桌面一条都不命中。
+       ② 不写死颜色，一律走上面的 token。
+       ③ 触摸目标 ≥ 48px；触屏没有 hover，hover 与 active 成对写。
+       ④ 正文与搜索框 ≥ 16px（iOS 对 16px 以下会自动放大整页）。
+       ⑤ 右上角那组按钮是 /lib/theme.js 运行时注入的，它的 <style> 插在本页
+          <style> 之后 —— 同权重会被它反压。所以统一用 `body .theme-ctl …` 抬一档
+          权重（不改 theme.js 本身）；同时把 .head 提前收成一列，右上角让给这组按钮。
+       ⑥ 贴边 / 贴底的东西用 env(safe-area-inset-*) 让开刘海与 Home 指示条。
+       ============================================================ */
+
+  /* ---------- 平板：留白收一档，行距跟着收，字段一个不少 ---------- */
+  @media (max-width:1023px){
+    .shell{
+      padding-left:max(clamp(20px,5vw,40px), env(safe-area-inset-left), 24px);
+      padding-right:max(clamp(20px,5vw,40px), env(safe-area-inset-right), 24px);
+    }
+    html{overflow-x:hidden; overflow-x:clip}   /* 无横向滚动 */
+    img,video{max-width:100%;height:auto}
+
+    .row{gap:12px}
+  }
+
+  /* ---------- 手机 ---------- */
+  @media (max-width:767px){
+    body{font-size:16px}
+
+    /* 顶部安全带 = 10px 贴边 + 48px 按钮 + 8px 呼吸 */
+    .shell{
+      padding:
+        calc(66px + env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        calc(56px + env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+    }
+
+    /* 标题与计数不再并排：右上角已经站着主题按钮，两拨东西挤一起就会互相压 */
+    .head{flex-direction:column;align-items:flex-start;gap:12px;padding-bottom:18px;margin-bottom:18px}
+    .path{font-size:13px}
+    h1{font-size:clamp(24px,6.6vw,28px)}
+    .counter b{font-size:24px}
+
+    .bar{gap:8px;margin-bottom:12px}
+    .search input{
+      height:48px;                       /* 触摸目标 */
+      padding:0 12px 0 34px;
+      font-size:16px;                    /* ≥16px：iOS 不放大整页 */
+    }
+    .search svg{width:15px;height:15px}
+    .btn{min-height:48px;padding:0 14px;font-size:13px}
+
+    /* 列表行：整行 ≥56px，手指点得着；≤560 那档的「藏描述」保持原样 */
+    .row{min-height:56px;padding:14px 4px}
+    .row::before{left:-16px}
+    .name{font-size:16px}
+    .label{font-size:16px}
+    .kind{font-size:11px;padding:4px 8px}
+    /* 触屏没有 hover：悬停位移去掉，补偿一个按下去的反应 */
+    .row:hover{background:none;padding-left:4px}
+    .row:active{background:rgba(var(--tint-rgb),.05);padding-left:6px}
+
+    .empty{padding:40px 18px}
+    .empty h3{font-size:17px}
+    .empty p{font-size:16px}
+    .empty pre{font-size:13px;padding:12px 14px}
+
+    .foot{flex-direction:column;gap:2px;margin-top:24px;font-size:12.5px}
+    .foot a{display:inline-flex;align-items:center;min-height:48px}
+
+    /* 长按弹出的右键菜单：窄屏不许比屏幕还宽 */
+    .ctx{max-width:min(280px, calc(100vw - 24px))}
+    .ctx-item{min-height:48px;font-size:13.5px}
+
+    /* ---------- theme.js 注入的右上角按钮组 ---------- */
+    body .theme-ctl{
+      top:max(10px, env(safe-area-inset-top));
+      right:max(10px, env(safe-area-inset-right));
+      flex-wrap:wrap;                     /* 真放不下就换行，别顶出屏幕 */
+      justify-content:flex-end;
+      gap:8px;
+      max-width:calc(100vw - 20px);
+    }
+    body .theme-ctl button{
+      min-width:48px;min-height:48px;     /* 触摸目标 */
+      padding:0 12px;
+      justify-content:center;
+    }
+    body .theme-ctl button span{display:none}              /* 触屏只留图形，文字会把右上角拉成一条 */
+    body .theme-ctl button span.sw{display:inline-block}   /* 但颜色样块不能跟着被藏掉 */
+    body .theme-ctl .sw{width:14px;height:14px}
+  }
+
+  /* ---------- 手机窄屏 ---------- */
+  @media (max-width:400px){
+    .shell{
+      padding-left:max(16px, env(safe-area-inset-left));
+      padding-right:max(16px, env(safe-area-inset-right));
+    }
+    h1{font-size:23px;overflow-wrap:anywhere}   /* 「Skills/」这种长串在 320px 上要能断 */
+    .counter b{font-size:22px}
+    .row{gap:9px;padding:13px 2px}
+    .btn{padding:0 12px}
+    .foot{gap:4px}
+    body .theme-ctl{gap:6px}
+  }
 </style>
 </head>
 <body>
