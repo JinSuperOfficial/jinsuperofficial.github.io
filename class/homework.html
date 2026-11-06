@@ -23,6 +23,47 @@
       document.documentElement.classList.add('reveal-on');
     }
   }catch(e){}
+
+  /* ---------- 外观皮肤 / 布局：同样要在首屏之前落到 <html> 上 ----------
+     两个维度，和站点主题的 data-appearance / data-accent 并列、互不干扰：
+
+       data-hw-skin    缺省 = 现在的纸感外观  |  deepseek = DeepSeek 蓝色极简
+       data-hw-layout  缺省 = normal（单栏）  |  two = 一行两个科目
+
+     来源优先级：**URL 参数（这次加载有效，不写盘）> localStorage（按钮点出来的偏好）**。
+     URL 写法：?skin=deepseek|off、?layout=two|normal；另外认 ?theme=…deepseek…
+     （作业专用域名的外壳页就是这么把皮肤传进来的；theme.js 认不出 deepseek 这个 token，
+       会原样忽略，所以两边不打架）。
+
+     为什么放在 <style> 之前：晚了首屏会先亮一下纸感外观再跳成蓝色，闪。 */
+  try{
+    var de = document.documentElement;
+    var q = {};
+    (location.search || '').replace(/^\?/, '').split('&').forEach(function(kv){
+      if(!kv) return;
+      var i = kv.indexOf('=');
+      var k = i < 0 ? kv : kv.slice(0, i);
+      var v = i < 0 ? '' : kv.slice(i + 1);
+      try{ q[decodeURIComponent(k)] = decodeURIComponent(v); }
+      catch(e){ q[k] = v; }
+    });
+    var paramSkin   = String(q.skin || '').toLowerCase();
+    var paramLayout = String(q.layout || '').toLowerCase();
+    var themeTok    = String(q.theme || '').toLowerCase();
+
+    var skin = '';
+    if(paramSkin === 'deepseek' || /(^|[-_,+.\s])deepseek($|[-_,+.\s])/.test(themeTok)) skin = 'deepseek';
+    else if(paramSkin === 'off' || paramSkin === '0' || paramSkin === 'none' || paramSkin === 'now') skin = '';
+    else { try{ skin = localStorage.getItem('hw.skin') === 'deepseek' ? 'deepseek' : ''; }catch(e){} }
+
+    var layout = '';
+    if(paramLayout === 'two' || paramLayout === '2') layout = 'two';
+    else if(paramLayout === 'normal' || paramLayout === 'one' || paramLayout === 'off') layout = '';
+    else { try{ layout = localStorage.getItem('hw.layout') === 'two' ? 'two' : ''; }catch(e){} }
+
+    if(skin) de.setAttribute('data-hw-skin', skin);
+    if(layout) de.setAttribute('data-hw-layout', layout);
+  }catch(e){}
 })();
 </script>
 <style>
@@ -1619,6 +1660,282 @@
   }
 
   /* ============================================================
+     外观皮肤：DeepSeek 蓝色极简（<html data-hw-skin="deepseek">）
+     ------------------------------------------------------------
+     和上面那套「纸感 + 陶土橙」不是一路，所以**不是换一两个变量糊过去**，
+     而是整份重写色 token（亮 / 暗各一套），再补几条组件规则：
+
+       · 标题改用无衬线、字号明显放大 —— 就是需求里的「标题的大字显示」
+       · 卡片去纸边、去大阴影，只留 1px 细线：平、净、留白多
+       · 强调色统一 DeepSeek 蓝：文字级 #3D5AF1（白字压上去 5.27:1）、
+         装饰级 #4D6BFE；勾选框 / 进度条 / 提示条都跟着走
+       · 便签（.note）从明黄色改成"蓝纸"，否则整页会被一块黄拽走
+
+     对比度（都在 4.5:1 以上，`build/test-homework.mjs` 里会算一遍钉住）：
+       亮：ink 15.1:1 · ink-soft 6.0:1 · 白字/cta 5.27:1 · foot 4.86:1
+       暗：ink 15.4:1 · ink-soft 7.2:1 · 白字/cta 5.27:1
+
+     ★ 为什么只需要「亮」和「亮+强制暗」两块：
+       theme.js 一定会把解析后的 data-appearance 写到 <html> 上，
+       所以「系统暗」和「手动暗」最后都是 [data-appearance="dark"] 这一种状态，
+       不需要再跟 @media (prefers-color-scheme) 的优先级打架。
+     ★ 这一段只声明 token / 组件规则，**不放断点**；断点统一在下面「响应式」段。
+     ============================================================ */
+  :root[data-hw-skin="deepseek"]{
+    color-scheme:light;
+
+    --bg:#F4F7FE;
+    --paper:#FFFFFF;
+    --ink:#161B2E;
+    --ink-soft:#5A6478;
+    --oak:#475569;
+    --olive:#4D6BFE;
+    --clay:#3D5AF1;
+    --line:rgba(22,27,46,.10);
+    --line-soft:rgba(22,27,46,.06);
+    --check-mark:#FFFFFF;
+    --done-text:#6E7789;
+    --empty-text:#6E7789;
+    --foot-text:#646D80;
+    --thead-bg:#F7F9FF;
+    --skeleton-1:rgba(22,27,46,.06);
+    --skeleton-2:rgba(22,27,46,.11);
+    --overlay:rgba(15,23,42,.42);
+    --mark-bg:rgba(77,107,254,.12);
+    --mark-border:rgba(77,107,254,.38);
+    --cta-bg:#3D5AF1;
+    --cta-bg-hover:#2F49D6;
+    --shadow-1:rgba(15,23,42,.04);
+    --shadow-2:rgba(15,23,42,.10);
+    --shadow-3:rgba(15,23,42,.16);
+
+    /* 动态色调的起点（JS 按完成度重写，斜坡见下面「色调系统」的 RAMPS） */
+    --tint-accent:hsl(226 88% 62%);
+    --tint-text:hsl(226 62% 38%);
+    --tint-soft:hsl(226 88% 62% / .12);
+    --tint-line:hsl(226 88% 62% / .26);
+    --tint-box:hsl(226 88% 62% / .55);
+    --tint-card:hsl(226 88% 62% / .16);
+    --tint-fill:hsl(226 88% 62%);
+
+    --glow-1:hsl(226 100% 63% / .10);
+    --glow-2:hsl(226 100% 63% / .08);
+
+    --subject-color:#4D6BFE;
+  }
+  :root[data-hw-skin="deepseek"][data-appearance="dark"]{
+    color-scheme:dark;
+
+    --bg:#0B0E17;
+    --paper:#121722;
+    --ink:#E9ECF5;
+    --ink-soft:#9AA3B8;
+    --oak:#A8B4CC;
+    --olive:#7C93FF;
+    --clay:#8AA2FF;
+    --line:rgba(233,236,245,.14);
+    --line-soft:rgba(233,236,245,.08);
+    --check-mark:#0B0E17;
+    --done-text:#8A93A8;
+    --empty-text:#8A93A8;
+    --foot-text:#8A93A8;
+    --thead-bg:#161C29;
+    --skeleton-1:rgba(233,236,245,.06);
+    --skeleton-2:rgba(233,236,245,.12);
+    --overlay:rgba(0,0,0,.62);
+    --mark-bg:rgba(122,147,255,.20);
+    --mark-border:rgba(122,147,255,.46);
+    --cta-bg:#3D5AF1;
+    --cta-bg-hover:#4D6BFE;
+    --shadow-1:rgba(0,0,0,.40);
+    --shadow-2:rgba(0,0,0,.66);
+    --shadow-3:rgba(0,0,0,.78);
+
+    --tint-accent:hsl(226 92% 70%);
+    --tint-text:hsl(226 80% 78%);
+    --tint-soft:hsl(226 92% 70% / .20);
+    --tint-line:hsl(226 92% 70% / .38);
+    --tint-box:hsl(226 92% 70% / .62);
+    --tint-card:hsl(226 92% 70% / .26);
+    --tint-fill:hsl(226 92% 68%);
+
+    --glow-1:hsl(226 100% 62% / .26);
+    --glow-2:hsl(226 92% 60% / .20);
+
+    --subject-color:#7C93FF;
+  }
+  /* 组件规则：亮 / 暗共用（只引 token，没有写死的颜色） */
+  :root[data-hw-skin="deepseek"] h1{
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:clamp(32px,6.4vw,66px);
+    line-height:1.05;
+    letter-spacing:-.03em;
+  }
+  :root[data-hw-skin="deepseek"] .kicker{
+    color:var(--ink-soft);
+    font-size:11px;
+    letter-spacing:.24em;
+  }
+  :root[data-hw-skin="deepseek"] .kicker::before{
+    width:7px; height:7px;
+    border-radius:var(--radius-xs);
+    background:var(--cta-bg);
+  }
+  :root[data-hw-skin="deepseek"] .subtitle{
+    border-left-color:var(--cta-bg);
+    font-family:var(--sans);
+    font-size:clamp(15px,2.1vw,19px);
+    letter-spacing:.01em;
+  }
+  :root[data-hw-skin="deepseek"] .card{
+    border:1px solid var(--line);
+    box-shadow:0 1px 2px var(--shadow-1);
+  }
+  :root[data-hw-skin="deepseek"] thead th{
+    background:transparent;
+    color:var(--ink-soft);
+    letter-spacing:.14em;
+    border-bottom:1px solid var(--line);
+  }
+  :root[data-hw-skin="deepseek"] tbody tr:hover{
+    background:color-mix(in srgb, var(--cta-bg) 5%, transparent);
+  }
+  :root[data-hw-skin="deepseek"] .subject{
+    font-family:var(--sans);
+    letter-spacing:.02em;
+  }
+  :root[data-hw-skin="deepseek"] .progress-track{
+    background:color-mix(in srgb, var(--ink) 8%, transparent);
+  }
+  :root[data-hw-skin="deepseek"] .notice{
+    background:color-mix(in srgb, var(--cta-bg) 8%, transparent);
+    border-color:var(--mark-border);
+    color:var(--ink);
+  }
+  :root[data-hw-skin="deepseek"] .notice code{
+    background:color-mix(in srgb, var(--cta-bg) 12%, transparent);
+    color:var(--ink);
+  }
+  :root[data-hw-skin="deepseek"] .note{
+    background:color-mix(in srgb, var(--cta-bg) 5%, var(--paper));
+    border-color:var(--line);
+    box-shadow:0 1px 2px var(--shadow-1);
+  }
+  :root[data-hw-skin="deepseek"] .note::before{ background:var(--cta-bg); }
+  :root[data-hw-skin="deepseek"] .note-label{
+    color:var(--cta-bg);
+    letter-spacing:.18em;
+  }
+  :root[data-hw-skin="deepseek"] .note-text{ color:var(--ink); }
+  :root[data-hw-skin="deepseek"] .note-text th,
+  :root[data-hw-skin="deepseek"] .note-text td{
+    border-color:var(--line);
+    color:var(--ink);
+  }
+  :root[data-hw-skin="deepseek"] .note-text th{ background:var(--thead-bg); }
+
+  /* 极简 = 别让纸张底纹喧宾夺主：把底纹那层纱压到几乎不透明（还留一点点质感）。
+     「切换背景」按钮仍然有效，只是视觉权重降下来了。 */
+  :root[data-hw-skin="deepseek"] .bg::after{ --bg-veil:92%; }
+  :root[data-hw-skin="deepseek"][data-appearance="dark"] .bg::after{ --bg-veil:95%; }
+
+  /* ============================================================
+     布局系统：normal（现在的，一列到底）/ two（一行两个科目）
+     ------------------------------------------------------------
+     two 只是把 tbody 变成两列网格、每一行（科目）变成一张小卡片 ——
+     **DOM 一个节点都不动**（table > tbody > tr[data-subject] > td），所以：
+       · Tab 顺序、勾选逻辑（.hw-item）、进度、时光机、更新日志全都不受影响
+       · 滚动轨道上的科目刻度在双栏下会两两叠在一起，索性藏掉（thumb 还在）
+       · 手机上（≤767px）那段媒体查询里会把 two 再压回单栏，不硬塞
+     ============================================================ */
+  :root[data-hw-layout="two"] .card{
+    background:transparent;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+    overflow:visible;
+  }
+  :root[data-hw-layout="two"] thead{ display:none; }
+  :root[data-hw-layout="two"] tbody{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:14px;
+  }
+  :root[data-hw-layout="two"] tbody tr{
+    display:block;
+    padding:0;                       /* 内距交给两个格子：科目色带才能贴住卡片上沿 */
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+    box-shadow:0 1px 2px var(--shadow-1);
+    overflow:hidden;                 /* 让色带的直角被卡片圆角裁掉 */
+  }
+  :root[data-hw-layout="two"] tbody tr:hover{
+    background:color-mix(in srgb, var(--tint-accent) 5%, var(--paper));
+    border-color:color-mix(in srgb, var(--tint-accent) 30%, var(--line));
+  }
+  :root[data-hw-layout="two"] tbody td{
+    display:block;
+    padding:0 16px;
+    border:0;
+    transition:none;
+  }
+  :root[data-hw-layout="two"] tbody tr:last-child td{ border-bottom:0; }
+  /* 第一格 = 科目色带（底色是上面 tbody td:first-child 那层 --hw-tint，这里只调内距） */
+  :root[data-hw-layout="two"] tbody td:first-child{
+    padding:10px 16px 9px;
+    margin-bottom:0;
+  }
+  :root[data-hw-layout="two"] tbody td:last-child{ padding:11px 16px 13px; }
+  :root[data-hw-layout="two"] .rail-mark{ display:none; }
+
+  /* ============================================================
+     小提示条：截图成功 / 失败、换外观 / 换布局时的一句反馈
+     ------------------------------------------------------------
+     固定底部居中，压在两个弹窗（60/70）之上；平时 visibility:hidden 不占位、
+     不吃点击。带 env(safe-area-inset-bottom)，iPhone 的 home 条不会盖住它。
+     ============================================================ */
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+    z-index:80;
+    max-width:min(92vw, 420px);
+    padding:10px 16px;
+    border:1px solid var(--tint-line);
+    border-radius:var(--radius-control);
+    background:color-mix(in srgb, var(--paper) 92%, transparent);
+    color:var(--ink);
+    font-size:13px;
+    line-height:1.5;
+    text-align:center;
+    box-shadow:0 10px 30px -18px var(--shadow-3);
+    -webkit-backdrop-filter:blur(8px);
+    backdrop-filter:blur(8px);
+    transform:translate(-50%, 10px);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:
+      opacity var(--dur-base) var(--ease-out),
+      transform var(--dur-base) var(--ease-out),
+      visibility 0s linear var(--dur-base);
+  }
+  .toast.show{
+    opacity:1;
+    visibility:visible;
+    transform:translate(-50%, 0);
+    transition:
+      opacity var(--dur-base) var(--ease-out),
+      transform var(--dur-base) var(--ease-out),
+      visibility 0s;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .toast, .toast.show{ transition:none; }
+  }
+
+  /* ============================================================
      响应式：桌面 / 平板 / 手机
      ============================================================
      断点（与全站一致，只写在下面这一段里）：
@@ -1815,6 +2132,50 @@
     .subject{ font-size:15px; }
     .subject .ico{ width:19px; height:19px; }
 
+    /* ---------- 双栏布局在手机上压回单栏 ----------
+       手机屏幕放两列只会把字挤成竖条，所以 two 在这一档等于 normal：
+       去掉「每科一张小卡片」的外壳，恢复成上面那套一列到底。
+       （特异性要压过外面那段 :root[data-hw-layout="two"]，所以前缀照写。） */
+    :root[data-hw-layout="two"] .card{
+      background:var(--paper);
+      border:1px solid var(--tint-card);
+      border-radius:var(--radius-card);
+      box-shadow:0 1px 2px var(--shadow-1), 0 26px 52px -34px var(--shadow-2);
+      overflow:hidden;
+    }
+    :root[data-hw-layout="two"] tbody{ display:block; }
+    :root[data-hw-layout="two"] tbody tr{
+      padding:0 0 4px;
+      background:transparent;
+      border:0;
+      border-bottom:1px solid var(--line);
+      border-radius:0;
+      box-shadow:none;
+    }
+    :root[data-hw-layout="two"] tbody tr:hover{
+      background:transparent;
+      border-color:var(--line);
+    }
+    :root[data-hw-layout="two"] tbody tr:last-child{ border-bottom:none; }
+    :root[data-hw-layout="two"] tbody td{
+      padding:10px max(clamp(14px,4.4vw,18px), env(safe-area-inset-left)) 10px
+              max(clamp(14px,4.4vw,18px), env(safe-area-inset-right));
+    }
+    :root[data-hw-layout="two"] tbody td:first-child{ margin-bottom:0; }
+    :root[data-hw-layout="two"] tbody tr[data-subject] td:first-child{
+      min-height:56px;
+      padding-top:14px;
+      padding-bottom:10px;
+      border-bottom:1px solid var(--line-soft);
+    }
+    :root[data-hw-layout="two"] tbody tr[data-subject] td:last-child{
+      padding-top:12px;
+      padding-bottom:16px;
+    }
+
+    /* 小提示条：抬到底部动作开关（.acts-toggle）上面，别压住它 */
+    .toast{ bottom:calc(76px + env(safe-area-inset-bottom, 0px)); }
+
     /* 条目行做成整行可点：命中区 ≥ 48px，勾选框跟着行高走 */
     .hw-list{ gap:4px; }
     .hw-item{
@@ -1963,6 +2324,46 @@
             <circle cx="9" cy="8" r="1.4"/>
           </svg>
           <span id="bgBtnText">背景：随机</span>
+        </button>
+
+        <!-- ★ 外观：现在的纸感 / DeepSeek 蓝色极简。
+             只改这一页的观感（<html data-hw-skin>），和整站主题（data-appearance /
+             data-accent）互不干扰；偏好记在 localStorage['hw.skin']。
+             data-keep-open：手机上点了别把底部动作面板收起来，不然换两次要开两次。 -->
+        <button class="more-btn" id="skinBtn" type="button" data-keep-open
+                aria-pressed="false" title="换一套外观：纸感 / DeepSeek 蓝">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.2"/>
+            <path d="M12 3.8v16.4"/>
+            <path d="M12 3.8a8.2 8.2 0 0 1 0 16.4z" fill="currentColor" fill-opacity=".16" stroke="none"/>
+          </svg>
+          <span id="skinBtnText">外观：现在的</span>
+        </button>
+
+        <!-- ★ 布局：单栏 / 双栏（一行两个科目）。
+             只换排版（<html data-hw-layout>），DOM 不动；手机上双栏自动退回单栏。
+             偏好记在 localStorage['hw.layout']。 -->
+        <button class="more-btn" id="layoutBtn" type="button" data-keep-open
+                aria-pressed="false" title="单栏 / 双栏（一行两个科目）">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="4.5" width="17" height="15" rx="2"/>
+            <path d="M12 4.5v15"/>
+          </svg>
+          <span id="layoutBtnText">布局：单栏</span>
+        </button>
+
+        <!-- ★ 截图：把正文区（页头 + 作业表 + 笔记）存成一张 2 倍清晰度的 PNG。
+             全手写（SVG foreignObject → canvas），不引任何第三方库 / CDN。 -->
+        <button class="more-btn" id="shotBtn" type="button"
+                title="把这份作业存成一张 2 倍清晰度的 PNG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 8.6h3l1.3-2.1h7.4l1.3 2.1h3v10.4H4z"/>
+            <circle cx="12" cy="13.4" r="3.4"/>
+          </svg>
+          <span>截图</span>
         </button>
 
         <!-- ★ 时光机：读 GitHub 上的 class/data/hwk/（全部历史作业），按天翻旧账 -->
@@ -2151,6 +2552,11 @@
     <button class="tm-more" id="tmMore" type="button" hidden>加载更多</button>
   </div>
 </div>
+
+<!-- ★ 一句小反馈（截图成功 / 失败、换外观 / 换布局）。
+     aria-live 让屏读也听得见；平时 visibility:hidden，不占位、不吃点击。
+     它刻意放在 <main> 外面 —— 截图只截正文区，不会把它带进图里。 -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function(){
@@ -2483,15 +2889,32 @@
 
   /* ============ 色调系统 ============ */
   const STEPS = 15;
-  const H0 = 220, H1 = 14;
-  const S0 = 8,   S1 = 65;
-  const L0 = 60,  L1 = 58;
+
+  /* 两套色相斜坡：
+       ''（纸感）  冷灰蓝 → 陶土橙 —— 原来那套，一个数都没改
+       deepseek    一路蓝（H 226→222），只动饱和度 / 明度，勾选框和进度条都跟着走
+     换皮肤时把 lastStep 置 -1，下一次 applyTint 就会按新斜坡重算一遍。 */
+  const RAMPS = {
+    '':       { H0:220, H1:14,  S0:8,  S1:65, L0:60, L1:58 },
+    deepseek: { H0:226, H1:222, S0:34, S1:86, L0:58, L1:52 }
+  };
+  const skinOf = () => (document.documentElement.getAttribute('data-hw-skin') === 'deepseek' ? 'deepseek' : '');
+  const rampOf = () => RAMPS[skinOf()] || RAMPS[''];
 
   const lerp = (a, b, t) => a + (b - a) * t;
   const r0   = n => Math.round(n);
 
   const darkQuery = matchMedia('(prefers-color-scheme: dark)');
   let lastStep = -1;
+
+  /* 「现在是不是暗色」：优先看 theme.js 解析后写到 <html> 上的 data-appearance
+     （它能反映"手动强制暗 / 亮"，颜色才对得上），拿不到再退回系统偏好。 */
+  function isDarkNow(){
+    const ap = document.documentElement.getAttribute('data-appearance');
+    if(ap === 'dark') return true;
+    if(ap === 'light') return false;
+    return !!darkQuery.matches;
+  }
 
   function computeStep(done, total){
     if(total <= 0) return 0;
@@ -2509,8 +2932,9 @@
     if(step === lastStep) return;
     lastStep = step;
 
+    const { H0, H1, S0, S1, L0, L1 } = rampOf();
     const t    = step / STEPS;
-    const dark = darkQuery.matches;
+    const dark = isDarkNow();
     const root = document.documentElement.style;
 
     const h = lerp(H0, H1, t);
@@ -2566,6 +2990,534 @@
   let currentId     = '';
   let hasCelebrated = false;
   let isDemoMode    = false;
+
+  /* ============================================================
+     外观皮肤 / 布局（按钮 + 记忆 + 反馈）
+     ------------------------------------------------------------
+     两个都是"只影响这一页"的观感开关，和整站主题分开：
+       皮肤 = <html data-hw-skin>      （纸感 / DeepSeek 蓝）
+       布局 = <html data-hw-layout>    （单栏 / 双栏）
+     首屏的初始值已经在 <head> 那段小脚本里落好了（URL 参数 > localStorage）；
+     这里只负责：按钮文案同步、点一下切换、记住偏好、切完重算色调 / 滚动布局。
+     ============================================================ */
+  const SKIN_KEY = 'hw.skin';
+  const LAYOUT_KEY = 'hw.layout';
+  const skinBtn = document.getElementById('skinBtn');
+  const skinBtnText = document.getElementById('skinBtnText');
+  const layoutBtn = document.getElementById('layoutBtn');
+  const layoutBtnText = document.getElementById('layoutBtnText');
+  const shotBtn = document.getElementById('shotBtn');
+  const toastEl = document.getElementById('toast');
+
+  function lsSet(key, val){
+    try{
+      if(val) localStorage.setItem(key, val);
+      else localStorage.removeItem(key);
+    }catch(e){}
+  }
+
+  let toastTimer = 0;
+  function toast(msg, ms){
+    if(!toastEl) return;
+    toastEl.textContent = msg || '';
+    toastEl.classList.toggle('show', !!msg);
+    clearTimeout(toastTimer);
+    if(msg) toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms || 3200);
+  }
+
+  function syncSkinBtn(){
+    const on = skinOf() === 'deepseek';
+    if(skinBtnText) skinBtnText.textContent = on ? '外观：DeepSeek' : '外观：现在的';
+    if(skinBtn) skinBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  function syncLayoutBtn(){
+    const two = document.documentElement.getAttribute('data-hw-layout') === 'two';
+    if(layoutBtnText) layoutBtnText.textContent = two ? '布局：双栏' : '布局：单栏';
+    if(layoutBtn) layoutBtn.setAttribute('aria-pressed', two ? 'true' : 'false');
+  }
+
+  /* 换皮肤之后要把色调重算一遍（进度条 / 勾选框 / 顶栏都吃 --tint-*） */
+  function repaintTint(){
+    lastStep = -1;
+    const items = tbody.querySelectorAll('.hw-item');
+    applyTint(tbody.querySelectorAll('.hw-item.done').length, items.length || 1);
+  }
+
+  function setSkin(v){
+    const on = v === 'deepseek';
+    const el = document.documentElement;
+    if(on) el.setAttribute('data-hw-skin', 'deepseek');
+    else el.removeAttribute('data-hw-skin');
+    lsSet(SKIN_KEY, on ? 'deepseek' : '');
+    syncSkinBtn();
+    repaintTint();
+    scheduleLayout();
+    toast(on ? '外观：DeepSeek 极简' : '外观：纸感（原来的）');
+  }
+
+  function setLayout(v){
+    const two = v === 'two';
+    const el = document.documentElement;
+    if(two) el.setAttribute('data-hw-layout', 'two');
+    else el.removeAttribute('data-hw-layout');
+    lsSet(LAYOUT_KEY, two ? 'two' : '');
+    syncLayoutBtn();
+    scheduleLayout();
+    toast(two ? '布局：双栏（一行两个科目）' : '布局：单栏');
+  }
+
+  if(skinBtn){
+    skinBtn.addEventListener('click', () => setSkin(skinOf() === 'deepseek' ? '' : 'deepseek'));
+  }
+  if(layoutBtn){
+    layoutBtn.addEventListener('click', () => {
+      const two = document.documentElement.getAttribute('data-hw-layout') === 'two';
+      setLayout(two ? 'normal' : 'two');
+    });
+  }
+
+  /* ============================================================
+     一键截图：把正文画成一张 2 倍 PNG
+     ------------------------------------------------------------
+     ★ 为什么不是"像素级拷屏"（如实说明，别以为偷懒）：
+       Chromium 现在把**任何含 <foreignObject> 的 SVG** 都判成"不是同源干净"，
+       画进 canvas 再导出就抛 `Tainted canvases may not be exported`
+       （Chrome 140 实测：连 100×50 的空壳 SVG 都会失败）。
+       所以这里改用 **Canvas 2D 现画**：数据从当前 DOM 现读 —— 科目、勾选状态、
+       笔记、单栏/双栏、当前皮肤和明暗的颜色全都跟着页面走。
+       画出来是一张干净的分享图：不是像素级截图，但正文一个字不少、颜色一致、
+       2 倍清晰（默认 1440px 宽），发到群里正合适。
+
+     图上有：kicker / 大标题 / 副标题 / 日期与完成度 / 进度条 /
+             每个科目的色带 + 勾选清单（双栏布局就画两列）/ 笔记 / 页脚。
+     不引第三方库、不塞 base64；失败一律给一句话（toast），不往控制台扔异常。
+     ============================================================ */
+  const SHOT_W = 720;          /* 输出图 CSS 宽（2 倍 = 1440px） */
+  const SHOT_PAD = 36;
+  const SHOT_DPR = 2;
+
+  function shotName(){
+    return '作业-' + (currentDate || todayStr()) + '.png';
+  }
+
+  /** 当前页面在用的颜色（皮肤 / 明暗都自动跟着走） */
+  function shotColors(){
+    const cs = getComputedStyle(document.documentElement);
+    const v = (n, fb) => String(cs.getPropertyValue(n) || '').trim() || fb;
+    return {
+      bg:     v('--bg', '#F8F3EC'),
+      paper:  v('--paper', '#FFFCF7'),
+      ink:    v('--ink', '#2E2A26'),
+      soft:   v('--ink-soft', '#6B635A'),
+      line:   v('--line', 'rgba(46,42,38,.12)'),
+      accent: v('--cta-bg', '#B0552F'),
+      tint:   v('--tint-fill', '#D97757'),
+      tintText: v('--tint-text', '#6B635A'),
+      check:  v('--check-mark', '#FFFFFF'),
+    };
+  }
+
+  let shotFontMctx = null;
+  /** 量文字用的离屏 2D 上下文（jsdom 里 getContext() 给 null —— 直接报"不支持"） */
+  function shotMeasureCtx(){
+    if(shotFontMctx) return shotFontMctx;
+    const cv = document.createElement('canvas');
+    const ctx = cv.getContext('2d');
+    if(!ctx) throw new Error('canvas 不可用');
+    shotFontMctx = ctx;
+    return ctx;
+  }
+
+  function shotFont(size, weight, family){
+    return (weight ? weight + ' ' : '') + size + 'px ' + family;
+  }
+
+  /** 圆角矩形（自己画路径，不依赖 ctx.roundRect） */
+  function rr(ctx, x, y, w, h, r){
+    const rad = Math.max(0, Math.min(r, w / 2, h / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + rad, y);
+    ctx.lineTo(x + w - rad, y);
+    ctx.arcTo(x + w, y, x + w, y + rad, rad);
+    ctx.lineTo(x + w, y + h - rad);
+    ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+    ctx.lineTo(x + rad, y + h);
+    ctx.arcTo(x, y + h, x, y + h - rad, rad);
+    ctx.lineTo(x, y + rad);
+    ctx.arcTo(x, y, x + rad, y, rad);
+    ctx.closePath();
+  }
+
+  function setLetterSpacing(ctx, v){
+    try{ if('letterSpacing' in ctx) ctx.letterSpacing = v; }catch(e){}
+  }
+
+  /**
+   * 按宽度折行：ASCII 单词整块不拆（除非自己就超宽），中文按字断。
+   * 返回行数组；空行保留（笔记里的分段）。
+   */
+  function shotWrap(ctx, text, maxW){
+    const out = [];
+    String(text == null ? '' : text).split(/\r?\n/).forEach(para => {
+      if(!para.trim()){ out.push(''); return; }
+      let line = '';
+      const flush = () => { if(line) out.push(line); line = ''; };
+      const pieces = para.match(/[!-~]+|\s+|[^!-~]/g) || [para];
+      for(const piece of pieces){
+        if(ctx.measureText(line + piece).width <= maxW){ line += piece; continue; }
+        flush();
+        if(!piece.trim()) continue;
+        if(ctx.measureText(piece).width <= maxW){ line = piece; continue; }
+        for(const ch of Array.from(piece)){
+          if(ctx.measureText(line + ch).width <= maxW) line += ch;
+          else { flush(); line = ch; }
+        }
+      }
+      flush();
+    });
+    return out;
+  }
+
+  /** 读一遍页面 → 一张"画什么、画多高"的计划（先量后排，才能一次成型） */
+  function buildShotPlan(colors, m){
+    const W = SHOT_W, pad = SHOT_PAD, inner = W - pad * 2;
+    const h1 = document.querySelector('h1');
+    const h1s = h1 ? getComputedStyle(h1) : null;
+    const titleSize = Math.min(56, Math.max(30, Math.round(parseFloat((h1s && h1s.fontSize) || '42') || 42)));
+    const titleWeight = (h1s && h1s.fontWeight) || '700';
+    const titleFamily = (h1s && h1s.fontFamily) || 'sans-serif';
+    const sans = (() => { try{ return getComputedStyle(document.body).fontFamily; }catch(e){ return 'sans-serif'; } })();
+
+    /* 手机上就算选着双栏，页面也是单栏 —— 图跟着屏幕上的样子走 */
+    const isMobile = !!(window.matchMedia && window.matchMedia('(max-width:767px)').matches);
+    const two = document.documentElement.getAttribute('data-hw-layout') === 'two' && !isMobile;
+    const cols = two ? 2 : 1;
+    const blockGap = 14;
+    const colW = Math.floor((inner - blockGap * (cols - 1)) / cols);
+
+    const noteTextEl = document.getElementById('noteText');
+    const notesText = (noteTextEl && noteEl && !noteEl.hidden)
+      ? String((() => { try{ return noteTextEl.innerText; }catch(e){ return noteTextEl.textContent; } })() || '').trim()
+      : '';
+
+    const plan = {
+      W, pad, inner, cols, colW, blockGap, colors, sans,
+      title: h1 ? String(h1.textContent || '').trim() : '八年(11)班作业',
+      titleSize, titleWeight, titleFamily,
+      kicker: String((document.querySelector('.kicker') || {}).textContent || '').trim(),
+      subtitle: (subtitleEl && !subtitleEl.hidden) ? String(subtitleEl.textContent || '').trim() : '',
+      date: String(dateText.textContent || '').trim(),
+      progress: String(progressText.textContent || '').trim(),
+      notes: notesText,
+      subjects: [],
+      H: 0,
+    };
+
+    m.font = shotFont(12, 500, sans);
+    plan.kickerH = plan.kicker ? 26 : 0;
+
+    m.font = shotFont(titleSize, titleWeight, titleFamily);
+    plan.titleLines = shotWrap(m, plan.title, inner);
+    plan.titleLH = Math.round(titleSize * 1.15);
+
+    m.font = shotFont(15, 400, sans);
+    plan.subLines = plan.subtitle ? shotWrap(m, plan.subtitle, inner - 16) : [];
+    plan.subLH = 26;
+
+    /* 科目块：色带 + 勾选清单，每块高度先量出来 */
+    const bandH = 30, cardPad = 12, itemLH = 24, itemGap = 8, boxW = 16;
+    m.font = shotFont(15, 400, sans);
+    const rows = [].slice.call(tbody.querySelectorAll('tr[data-subject]'));
+    for(const tr of rows){
+      const name = String(tr.getAttribute('data-subject') || '');
+      const color = String(tr.style.getPropertyValue('--c') || '').trim() || colors.accent;
+      const items = [].slice.call(tr.querySelectorAll('.hw-item')).map(el => ({
+        text: String((el.querySelector('.text') || {}).textContent || ''),
+        done: el.classList.contains('done'),
+      }));
+      const lines = items.map(it => shotWrap(m, it.text, colW - cardPad * 2 - boxW - 10));
+      const contentH = lines.reduce((h, ls) => h + Math.max(1, ls.length) * itemLH + itemGap, 0);
+      plan.subjects.push({
+        name, color, items, lines, itemLH, itemGap, boxW,
+        h: bandH + cardPad + Math.max(0, contentH - itemGap) + cardPad,
+        col: 0, y: 0,
+      });
+    }
+    /* 排成一行行：双栏就是「一行两个科目」，行高取这一对里高的那张 ——
+       和页面上 tbody 的 grid 一个样子，图里不会出现一列拖得老长、另一列空一大块。 */
+    plan.rows = [];
+    for(let i = 0; i < plan.subjects.length; i += cols){
+      const group = plan.subjects.slice(i, i + cols);
+      group.forEach((s, ci) => { s.col = ci; });
+      plan.rows.push({ h: group.reduce((h, s) => Math.max(h, s.h), 0), group });
+    }
+    plan.subjectsH = plan.rows.reduce((h, r) => h + r.h + blockGap, 0) - (plan.rows.length ? blockGap : 0);
+
+    if(plan.notes){
+      m.font = shotFont(14, 400, sans);
+      /* innerText 在每段之间会留空行：图上用不着那么大空隙，直接把空行丢掉 */
+      plan.noteLines = shotWrap(m, plan.notes, inner - 40).filter(ln => ln.trim() !== '');
+      plan.noteLH = 24;
+      plan.noteH = 28 + plan.noteLines.length * plan.noteLH + 14;
+    }else{
+      plan.noteLines = [];
+      plan.noteH = 0;
+    }
+
+    /* 逐段累加总高 */
+    let y = pad;
+    y += plan.kickerH;
+    y += plan.titleLines.length * plan.titleLH;
+    if(plan.subLines.length) y += 10 + plan.subLines.length * plan.subLH;
+    y += 16;                                   /* meta 行前留白 */
+    y += 26;                                   /* 日期 + 完成度徽章 */
+    y += 16;                                   /* 进度条 */
+    y += 20;
+    y += plan.subjectsH;
+    if(plan.noteH) y += 18 + plan.noteH;
+    y += 30 + 20;                              /* 页脚 */
+    y += pad;
+    plan.H = Math.round(y);
+    return plan;
+  }
+
+  /** 把计划画到 2 倍 canvas 上（坐标全是 CSS px，外面已经 scale 过） */
+  function paintShot(ctx, plan){
+    const { pad, inner, colors, sans } = plan;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, plan.W, plan.H);
+
+    let y = pad;
+
+    /* kicker：小方块 + 大写小字距 */
+    if(plan.kicker){
+      ctx.fillStyle = colors.accent;
+      rr(ctx, pad, y + 4, 7, 7, 2);
+      ctx.fill();
+      ctx.fillStyle = colors.soft;
+      ctx.font = shotFont(12, 500, sans);
+      setLetterSpacing(ctx, '0.2em');
+      ctx.fillText(plan.kicker.toUpperCase(), pad + 14, y);
+      setLetterSpacing(ctx, '0px');
+      y += plan.kickerH;
+    }
+
+    /* 大标题 */
+    ctx.fillStyle = colors.ink;
+    ctx.font = shotFont(plan.titleSize, plan.titleWeight, plan.titleFamily);
+    plan.titleLines.forEach((ln, i) => ctx.fillText(ln, pad, y + i * plan.titleLH));
+    y += plan.titleLines.length * plan.titleLH;
+
+    /* 副标题：左边一条强调色竖线 */
+    if(plan.subLines.length){
+      y += 10;
+      ctx.fillStyle = colors.accent;
+      ctx.fillRect(pad, y + 2, 2, plan.subLines.length * plan.subLH - 8);
+      ctx.fillStyle = colors.soft;
+      ctx.font = shotFont(15, 400, sans);
+      plan.subLines.forEach((ln, i) => ctx.fillText(ln, pad + 16, y + i * plan.subLH));
+      y += plan.subLines.length * plan.subLH;
+    }
+
+    /* 日期 + 完成度徽章 */
+    y += 16;
+    ctx.font = shotFont(13, 400, sans);
+    const dateW = ctx.measureText(plan.date).width;
+    ctx.fillStyle = colors.soft;
+    ctx.fillText(plan.date, pad, y + 4);
+    if(plan.progress){
+      ctx.font = shotFont(12.5, 500, sans);
+      const tw = ctx.measureText(plan.progress).width;
+      const bw = Math.ceil(tw) + 26, bh = 26;
+      const bx = pad + dateW + 20;
+      ctx.save();
+      ctx.globalAlpha = 0.13;
+      ctx.fillStyle = colors.tint;
+      rr(ctx, bx, y, bw, bh, 7);
+      ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = colors.tintText;
+      ctx.fillText(plan.progress, bx + 13, y + 6);
+    }
+
+    /* 进度条 */
+    y += 26 + 16;
+    ctx.save();
+    ctx.globalAlpha = 0.10;
+    ctx.fillStyle = colors.ink;
+    rr(ctx, pad, y, inner, 6, 3);
+    ctx.fill();
+    ctx.restore();
+    const ratio = (() => {
+      const m = /(\d+)\s*\/\s*(\d+)/.exec(plan.progress);
+      if(!m) return 0;
+      const done = Number(m[1]), total = Number(m[2]);
+      return total > 0 ? Math.min(1, Math.max(0, done / total)) : 0;
+    })();
+    if(ratio > 0){
+      ctx.fillStyle = colors.tint;
+      rr(ctx, pad, y, Math.max(8, inner * ratio), 6, 3);
+      ctx.fill();
+    }
+    y += 6 + 20;
+
+    /* 科目块 */
+    let rowY = y;
+    for(const row of plan.rows){
+      for(const s of row.group){
+      const x = pad + s.col * (plan.colW + plan.blockGap);
+      const by = rowY;
+
+      /* 卡片底 + 细线 */
+      ctx.fillStyle = colors.paper;
+      rr(ctx, x, by, plan.colW, s.h, 10);
+      ctx.fill();
+      ctx.strokeStyle = colors.line;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      /* 科目色带（和页面上那层 --hw-tint 一个思路：13% 透明度） */
+      ctx.save();
+      ctx.beginPath();
+      rr(ctx, x, by, plan.colW, 30, 10);
+      ctx.clip();
+      ctx.globalAlpha = 0.13;
+      ctx.fillStyle = s.color;
+      ctx.fillRect(x, by, plan.colW, 30);
+      ctx.restore();
+
+      /* 科目名 */
+      ctx.fillStyle = colors.ink;
+      ctx.font = shotFont(15, 600, sans);
+      ctx.fillText(s.name, x + 16, by + 7);
+
+      /* 勾选清单 */
+      let iy = by + 30 + 12;
+      s.items.forEach((it, i) => {
+        const lines = s.lines[i];
+        const bx = x + 16, bTop = iy + 3;
+        ctx.save();
+        if(it.done){
+          ctx.fillStyle = s.color;
+          rr(ctx, bx, bTop, s.boxW, s.boxW, 4);
+          ctx.fill();
+          ctx.strokeStyle = colors.check;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(bx + 4, bTop + 8.6);
+          ctx.lineTo(bx + 6.8, bTop + 11.4);
+          ctx.lineTo(bx + 12, bTop + 5.4);
+          ctx.stroke();
+        }else{
+          ctx.strokeStyle = colors.soft;
+          ctx.lineWidth = 1.4;
+          rr(ctx, bx + 0.7, bTop + 0.7, s.boxW - 1.4, s.boxW - 1.4, 3.6);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.font = shotFont(15, 400, sans);
+        ctx.fillStyle = it.done ? colors.soft : colors.ink;
+        const tx = bx + s.boxW + 10;
+        lines.forEach((ln, li) => ctx.fillText(ln, tx, iy + li * s.itemLH));
+        if(it.done){
+          const w = lines.reduce((mx, ln) => Math.max(mx, ctx.measureText(ln).width), 0);
+          ctx.save();
+          ctx.globalAlpha = 0.5;
+          ctx.strokeStyle = colors.soft;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          const mid = iy + s.itemLH * 0.55;
+          ctx.moveTo(tx, mid);
+          ctx.lineTo(tx + w, mid);
+          ctx.stroke();
+          ctx.restore();
+        }
+        iy += Math.max(1, lines.length) * s.itemLH + s.itemGap;
+      });
+      }
+      rowY += row.h + plan.blockGap;
+    }
+    y += plan.subjectsH;
+
+    /* 笔记 */
+    if(plan.noteH){
+      y += 18;
+      const nh = plan.noteH;
+      ctx.fillStyle = colors.paper;
+      rr(ctx, pad, y, inner, nh, 10);
+      ctx.fill();
+      ctx.strokeStyle = colors.line;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      /* 左边一条强调色 */
+      ctx.fillStyle = colors.accent;
+      ctx.fillRect(pad + 1, y + 12, 3, nh - 24);
+      /* NOTES 标签 */
+      ctx.fillStyle = colors.accent;
+      ctx.font = shotFont(10, 600, sans);
+      setLetterSpacing(ctx, '0.2em');
+      ctx.fillText('NOTES', pad + 22, y + 14);
+      setLetterSpacing(ctx, '0px');
+      ctx.fillStyle = colors.ink;
+      ctx.font = shotFont(14, 400, sans);
+      plan.noteLines.forEach((ln, i) => ctx.fillText(ln, pad + 22, y + 28 + i * plan.noteLH));
+      y += nh;
+    }
+
+    /* 页脚：站点地址，扫一眼就知道这份作业从哪来 */
+    y += 30;
+    ctx.fillStyle = colors.soft;
+    ctx.font = shotFont(12, 400, sans);
+    ctx.textAlign = 'right';
+    ctx.fillText('八年(11)班 · www.jinsuper.cn', plan.W - pad, y);
+    ctx.textAlign = 'left';
+  }
+
+  function downloadBlob(blob, name){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+
+  async function captureShot(){
+    if(!shotBtn || shotBtn.disabled) return;
+    const label = shotBtn.querySelector('span');
+    shotBtn.disabled = true;
+    if(label) label.textContent = '生成中…';
+    toast('正在生成截图…', 8000);
+    try{
+      const plan = buildShotPlan(shotColors(), shotMeasureCtx());
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(plan.W * SHOT_DPR);
+      canvas.height = Math.round(plan.H * SHOT_DPR);
+      const ctx = canvas.getContext('2d');
+      if(!ctx) throw new Error('canvas 不可用');
+      ctx.scale(SHOT_DPR, SHOT_DPR);
+      paintShot(ctx, plan);
+      if(!canvas.toBlob) throw new Error('浏览器不支持导出图片');
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(b => (b ? resolve(b) : reject(new Error('导出图片失败'))), 'image/png');
+      });
+      downloadBlob(blob, shotName());
+      toast('已生成 ' + shotName() + '（' + canvas.width + '×' + canvas.height + '）', 3800);
+    }catch(err){
+      toast('截图失败：' + ((err && err.message) || '未知原因'), 5200);
+    }finally{
+      shotBtn.disabled = false;
+      if(label) label.textContent = '截图';
+    }
+  }
+  if(shotBtn) shotBtn.addEventListener('click', captureShot);
 
   /* ============================================================
      任务一 · 自绘滚动条
@@ -4199,10 +5151,14 @@
       if(e.target === acts) close(true);
     }, true);
 
-    /* 点了面板里的某一项（换背景 / 时光机 / 更新日志 / 跳工具页）就顺手收起面板 */
+    /* 点了面板里的某一项（换背景 / 时光机 / 更新日志 / 跳工具页）就顺手收起面板。
+       ★ 但「外观 / 布局」这类开关例外（带 data-keep-open）：它们要连点着看效果，
+         点一次就收起会变成"开两次关两次"，手机上特别别扭。 */
     acts.addEventListener('click', function(e){
       const hit = e.target && e.target.closest ? e.target.closest('.more-btn') : null;
-      if(hit && hit !== btn) close(false);
+      if(!hit || hit === btn) return;
+      if(hit.hasAttribute('data-keep-open')) return;
+      close(false);
     });
 
     /* 视口回到桌面：状态归零，免得下次缩回手机时面板是「开着」的 */
@@ -4219,6 +5175,8 @@
   if(noteLabelEl) noteLabelEl.insertAdjacentHTML('afterbegin', subjectIcon('笔记'));
 
   applyBg();                                       /* 按记忆的档位先铺好底纹（含彩蛋层），别等数据 */
+  syncSkinBtn();                                   /* 按钮文案对齐 <head> 里已经落好的皮肤 / 布局 */
+  syncLayoutBtn();
   initReveal();                                    /* 首屏那几块（head / card / foot）先排队入场 */
   sbLayout();                                      /* 顶栏从哪冒出来：按头部的实际高度算 */
   railLayout();                                    /* 首帧先算一次滚动条（数据还没到，刻度是空的） */
