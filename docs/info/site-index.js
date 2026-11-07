@@ -215,6 +215,9 @@ window.SITE_INDEX = {
               ]
             },
             {
+              "name": "account-api.php"
+            },
+            {
               "name": "homework.json"
             },
             {
@@ -291,6 +294,12 @@ window.SITE_INDEX = {
       "name": "lib/",
       "dir": true,
       "children": [
+        {
+          "name": "account.css"
+        },
+        {
+          "name": "account.js"
+        },
         {
           "name": "icons.js"
         },
