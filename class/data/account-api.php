@@ -159,6 +159,15 @@ if ($action === 'save') {
         $json = '';
     }
     if (!is_string($json) || $json === '') { fail('data 是空的', 'noshape'); }
+
+    /* ★ 热铁盒会把请求里的引号再转义一层（等于 magic_quotes）：
+         客户端发 {"a":1}，这里拿到的是 {\"a\":1}。
+         只有「原文解析不了、反转义后能解析」才反转义 —— 别无条件 stripslashes，
+         正文里真有反斜杠时会被吃掉。 */
+    if (!is_array(json_decode($json, true))) {
+        $un = stripslashes($json);
+        if (is_array(json_decode($un, true))) { $json = $un; }
+    }
     if ($json[0] !== '{') { fail('data 要是一个 JSON 对象', 'noshape'); }
     if (!is_array(json_decode($json, true))) { fail('data 解析不了', 'badjson'); }
     if (strlen($json) > MAX_BYTES) {
