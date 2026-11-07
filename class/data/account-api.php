@@ -140,16 +140,6 @@ if ($action === 'ping') {
     ));
 }
 
-function auth($input){
-    $name  = clip(pick('name', $input), 12);
-    $token = clip(pick('token', $input), 32);
-    if ($name === '')            { fail('先填名字', 'noname'); }
-    if ($name !== ACCOUNT)       { fail('只有「' . ACCOUNT . '」的号能登录', 'forbidden'); }
-    if ($token === '')           { fail('token 还没填', 'notoken'); }
-    if ($token !== ADMIN_TOKEN)  { fail('token 不对 —— 在微信找金旭要', 'badtoken'); }
-    return $name;
-}
-
 if ($action === 'login' || $action === 'load') {
     $name = auth($input);
     $st = loadState($db, $name);
