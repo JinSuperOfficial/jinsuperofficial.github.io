@@ -3,8 +3,10 @@
  * 金旭的账号 / 跨设备同步云函数（热铁盒 PHP 云函数 + KV 数据库）
  * ---------------------------------------------------------------------------
  * 页面：/class/*（`lib/account.js` 在左上角挂一个头像，点开就是这个接口）
- * 存储：KV 数据库 hw_acc —— 一个人一个键（名字是中文，键里一律用短哈希）：
- *       a-<10 位哈希>  →  {"n":"金旭","at":"ISO 时间","rev":7,"d":{...}}
+ * 存储：KV 数据库 hw_acc —— 一个人一串键（名字是中文，键里一律用短哈希）：
+ *       a-<10 位哈希>  →  客户端那份状态的 **JSON 原文**（原样存、原样吐，见下）
+ *       r-<10 位哈希>  →  rev（每存一次 +1）
+ *       t-<10 位哈希>  →  存进去的时间 ISO
  *       w-<10 位哈希>  →  上次写入的秒级时间戳（节流用）
  *
  * 动作（POST + JSON body；GET 也认，排障时方便）：
@@ -23,6 +25,11 @@
  *
  * ★ 值上限 65535 字符：客户端只传「近 60 天的打勾 + 界面偏好」，
  *   这里再兜一层 60000 字节的上限，超了就拒（让客户端先收敛）。
+ *
+ * ★ 状态**原样存、原样吐**（存字符串、回包时把原文拼进 data 里），不是 decode 再 encode：
+ *   PHP 的 json_decode(..., true) 会把 `{}` 变成空数组，再 json_encode 就成了 `[]` ——
+ *   客户端的 `{"done":{},"prefs":{}}` 会在往返一次之后变成 `{"done":[],"prefs":[]}`。
+ *   这种「形状悄悄漂移」最难查，所以干脆不碰原文。
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -86,18 +93,6 @@ function pick($key, $input){
 $action = (string)pick('action', $input);
 $db = new Database(DB_NAME);
 
-/* ── ping ────────────────────────────────────────────────────────────── */
-if ($action === 'ping') {
-    out(array(
-        'ok'       => true,
-        'service'  => 'hw-account',
-        'version'  => 1,
-        'account'  => ACCOUNT,
-        'maxBytes' => MAX_BYTES,
-        'at'       => date('c')
-    ));
-}
-
 /* ── 校验：姓名 + token ──────────────────────────────────────────────── */
 function auth($input){
     $name  = clip(pick('name', $input), 12);
@@ -109,60 +104,81 @@ function auth($input){
     return $name;
 }
 
-/* 把存着的那份解出来；没有就是空的 */
+/* 把存着的那串读出来；没有 / 坏了都当 {}（客户端自己会归一） */
 function loadState($db, $name){
-    $raw = $db->get('a-' . h($name));
-    if (!is_string($raw) || $raw === '') {
-        return array('n' => $name, 'at' => '', 'rev' => 0, 'd' => new stdClass());
-    }
-    $o = json_decode($raw, true);
-    if (!is_array($o)) {
-        return array('n' => $name, 'at' => '', 'rev' => 0, 'd' => new stdClass());
-    }
-    $d = isset($o['d']) ? $o['d'] : new stdClass();
-    if (!is_array($d)) { $d = new stdClass(); }
-    return array(
-        'n'   => isset($o['n']) ? (string)$o['n'] : $name,
-        'at'  => isset($o['at']) ? (string)$o['at'] : '',
-        'rev' => isset($o['rev']) ? (int)$o['rev'] : 0,
-        'd'   => $d
-    );
+    $h = h($name);
+    $raw = $db->get('a-' . $h);
+    $revRaw = $db->get('r-' . $h);
+    $atRaw  = $db->get('t-' . $h);
+    $rev = (is_string($revRaw) && $revRaw !== '') ? (int)$revRaw : 0;
+    $at  = is_string($atRaw) ? $atRaw : '';
+    if (!is_string($raw) || $raw === '') { $raw = '{}'; }
+    $probe = json_decode($raw, true);
+    if (!is_array($probe)) { $raw = '{}'; }
+    return array('rev' => $rev, 'at' => $at, 'json' => $raw);
 }
 
-function packState($st){
-    return array(
-        'ok'   => true,
-        'name' => $st['n'],
-        'rev'  => $st['rev'],
-        'at'   => $st['at'],
-        'data' => $st['d']
-    );
+/* 回包：data 那一截直接用存着的原文（见文件头的「原样吐」） */
+function respondState($name, $st, $fresh){
+    echo '{"ok":true,"name":' . json_encode($name, JSON_UNESCAPED_UNICODE)
+       . ',"rev":' . (int)$st['rev']
+       . ',"at":' . json_encode($st['at'], JSON_UNESCAPED_UNICODE)
+       . ',"fresh":' . ($fresh ? 'true' : 'false')
+       . ',"data":' . $st['json'] . '}';
+    exit;
 }
 
-/* ── login / load ────────────────────────────────────────────────────── */
+/* ── ping / login / load ─────────────────────────────────────────────── */
+if ($action === 'ping') {
+    out(array(
+        'ok'       => true,
+        'service'  => 'hw-account',
+        'version'  => 2,
+        'account'  => ACCOUNT,
+        'maxBytes' => MAX_BYTES,
+        'at'       => date('c')
+    ));
+}
+
+function auth($input){
+    $name  = clip(pick('name', $input), 12);
+    $token = clip(pick('token', $input), 32);
+    if ($name === '')            { fail('先填名字', 'noname'); }
+    if ($name !== ACCOUNT)       { fail('只有「' . ACCOUNT . '」的号能登录', 'forbidden'); }
+    if ($token === '')           { fail('token 还没填', 'notoken'); }
+    if ($token !== ADMIN_TOKEN)  { fail('token 不对 —— 在微信找金旭要', 'badtoken'); }
+    return $name;
+}
+
 if ($action === 'login' || $action === 'load') {
     $name = auth($input);
     $st = loadState($db, $name);
-    $pack = packState($st);
-    $pack['fresh'] = ($st['rev'] === 0);   /* 第一次登录 = 注册 */
-    out($pack);
+    respondState($name, $st, $st['rev'] === 0);   /* rev 0 = 还没存过 = 第一次登录（注册） */
 }
 
-/* ── save ────────────────────────────────────────────────────────────── */
+/* ── save：data 可以是 JSON 字符串，也可以是对象 ─────────────────────── */
 if ($action === 'save') {
     $name = auth($input);
 
     $data = pick('data', $input);
-    if (!is_array($data)) { fail('data 要是一个对象', 'noshape'); }
-    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    if (!is_string($json)) { fail('data 编不成 JSON', 'badjson'); }
+    if (is_array($data)) {
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    } elseif (is_string($data)) {
+        $json = trim($data);
+    } else {
+        $json = '';
+    }
+    if (!is_string($json) || $json === '') { fail('data 是空的', 'noshape'); }
+    if ($json[0] !== '{') { fail('data 要是一个 JSON 对象', 'noshape'); }
+    if (!is_array(json_decode($json, true))) { fail('data 解析不了', 'badjson'); }
     if (strlen($json) > MAX_BYTES) {
         fail('状态太大了（' . strlen($json) . ' 字节，上限 ' . MAX_BYTES . '）', 'toolarge');
     }
 
     /* 节流：同一个号 3 秒内只让写一次（客户端本来也会防抖，这里兜底） */
     $now = time();
-    $wKey = 'w-' . h($name);
+    $h = h($name);
+    $wKey = 'w-' . $h;
     $lastRaw = $db->get($wKey);
     if (is_string($lastRaw) && $lastRaw !== '') {
         $last = (int)$lastRaw;
@@ -176,10 +192,9 @@ if ($action === 'save') {
     if ($rev > KEEP_REV) { $rev = 1; }
     $at = date('c');
 
-    $db->set('a-' . h($name), json_encode(
-        array('n' => $name, 'at' => $at, 'rev' => $rev, 'd' => $data),
-        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-    ));
+    $db->set('a-' . $h, $json);
+    $db->set('r-' . $h, (string)$rev);
+    $db->set('t-' . $h, $at);
     $db->set($wKey, (string)$now);
 
     out(array('ok' => true, 'name' => $name, 'rev' => $rev, 'at' => $at, 'bytes' => strlen($json)));
