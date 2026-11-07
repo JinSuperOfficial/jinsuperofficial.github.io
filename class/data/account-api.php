@@ -26,10 +26,15 @@
  * ★ 值上限 65535 字符：客户端只传「近 60 天的打勾 + 界面偏好」，
  *   这里再兜一层 60000 字节的上限，超了就拒（让客户端先收敛）。
  *
- * ★ 状态**原样存、原样吐**（存字符串、回包时把原文拼进 data 里），不是 decode 再 encode：
- *   PHP 的 json_decode(..., true) 会把 `{}` 变成空数组，再 json_encode 就成了 `[]` ——
- *   客户端的 `{"done":{},"prefs":{}}` 会在往返一次之后变成 `{"done":[],"prefs":[]}`。
- *   这种「形状悄悄漂移」最难查，所以干脆不碰原文。
+ * ★ data 只收**对象**，不收字符串。为什么：
+ *   热铁盒会在请求上再转义一层引号（等于 magic_quotes），客户端发 `{"a":1}` 这种
+ *   字符串字段，到这里就变成 `{\"a\":1}`，怎么 stripslashes 都不敢保证只掉一层；
+ *   而发对象时是我们自己 json_encode 的，跟平台的转义无关。代价是 `{}` 会被 PHP 认成
+ *   空数组（json_encode 成 `[]`），所以下面把 done / prefs 的空数组补回 stdClass 再存 ——
+ *   形状跟客户端发的一致，客户端也就不用猜。
+ *
+ * ★ 回包时 data 那一截直接拼存着的 JSON 原文（`respondState`），不做 decode → encode，
+ *   免得还没凉的一层形状漂移又冒出来。
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -151,25 +156,17 @@ if ($action === 'save') {
     $name = auth($input);
 
     $data = pick('data', $input);
-    if (is_array($data)) {
-        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    } elseif (is_string($data)) {
-        $json = trim($data);
-    } else {
-        $json = '';
-    }
-    if (!is_string($json) || $json === '') { fail('data 是空的', 'noshape'); }
+    if (!is_array($data)) { fail('data 要是一个 JSON 对象（别传字符串）', 'noshape'); }
 
-    /* ★ 热铁盒会把请求里的引号再转义一层（等于 magic_quotes）：
-         客户端发 {"a":1}，这里拿到的是 {\"a\":1}。
-         只有「原文解析不了、反转义后能解析」才反转义 —— 别无条件 stripslashes，
-         正文里真有反斜杠时会被吃掉。 */
-    if (!is_array(json_decode($json, true))) {
-        $un = stripslashes($json);
-        if (is_array(json_decode($un, true))) { $json = $un; }
+    /* `{}` 到 PHP 就是空数组，json_encode 回去会变 `[]`；这两处本来是对象，补回 stdClass */
+    foreach (array('done', 'prefs') as $k) {
+        if (isset($data[$k]) && is_array($data[$k]) && count($data[$k]) === 0) {
+            $data[$k] = new stdClass();
+        }
     }
-    if ($json[0] !== '{') { fail('data 要是一个 JSON 对象', 'noshape'); }
-    if (!is_array(json_decode($json, true))) { fail('data 解析不了', 'badjson'); }
+
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if (!is_string($json) || $json === '') { fail('data 编不成 JSON', 'badjson'); }
     if (strlen($json) > MAX_BYTES) {
         fail('状态太大了（' . strlen($json) . ' 字节，上限 ' . MAX_BYTES . '）', 'toolarge');
     }
