@@ -317,14 +317,17 @@
         安装包（<b>811 套装</b>）：班级百宝箱、作业编辑器，装完桌面两个图标。
       </p>
       <div class="meta">
-        <span class="chip ok">v1.2.0</span>
+        <span class="chip ok">v1.2.1</span>
         <span class="chip">Windows 10 / 11 · x64</span>
+        <span class="chip">98 MB（不含听力音频）</span>
         <span class="chip">只装给当前用户（免管理员）</span>
         <span class="chip">含智慧悬浮窗</span>
       </div>
       <p class="note" style="margin-top:8px">
-        这一版把下面两个小工具也装进来了：装完桌面多一条「智慧悬浮窗」快捷方式
-        （<code>resources\bin\smart_dock.exe</code>），不想装也能从下面单独拿。
+        这一版把两个小工具也装进来了：装完桌面多一条「智慧悬浮窗」快捷方式
+        （<code>resources\bin\smart_dock.exe</code>），不想装也能从下面单独拿。<br>
+        <b>听力音频不在安装包里</b>（36MB 的 mp3 会把安装包顶过网盘 100MB 的单文件上限），
+        要离线听听力，装完这个再装下面的「音频包」。
       </p>
       <div class="links">
         <a class="dl" href="https://1825844605.share.123pan.cn/123pan/WO3Njv-J7T5"
@@ -339,7 +342,53 @@
     </div>
   </section>
 
-  <!-- ── 2. 免安装小工具 ─────────────────────────────────────── -->
+  <!-- ── 2. 英语听力音频包 ───────────────────────────────────── -->
+  <section class="card" aria-labelledby="audioTitle">
+    <span class="ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 9.8h3.1L12 6.2v11.6L7.1 14.2H4a1 1 0 0 1-1-1v-2.4a1 1 0 0 1 1-1Z"/>
+        <path d="M15.6 9.6a3.5 3.5 0 0 1 0 4.8"/>
+        <path d="M18.2 7.2a7 7 0 0 1 0 9.6"/>
+      </svg>
+    </span>
+    <div class="body">
+      <h2 id="audioTitle">英语听力音频包</h2>
+      <p class="note" style="margin-top:2px">
+        Unit 1–5 的课文录音，装进安装目录的
+        <code>resources\site\class\data\english\</code> —— 学校没网也能听。
+        单独发是为了让安装包留在 100MB 以内；以后音频更新，重装这个包就行，
+        不用重下整个客户端。
+      </p>
+      <div class="meta">
+        <span class="chip ok">v1.0.0</span>
+        <span class="chip">28 MB</span>
+        <span class="chip">先装套装，再装它</span>
+      </div>
+      <div class="links">
+        <a class="dl" href="https://1825844605.share.123pan.cn/123pan/WO3Njv-J7T5"
+           target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 4v10"/><path d="m8 11 4 4 4-4"/><path d="M4 18.5h16"/>
+          </svg>
+          123 云盘
+        </a>
+        <a class="dl ghost" href="https://jinsuper.lanzn.com/b00g4mpy2f"
+           target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 4h9a2 2 0 0 1 2 2v9"/>
+            <rect x="4" y="9" width="11" height="11" rx="2"/>
+          </svg>
+          蓝奏云盘
+        </a>
+        <span class="pw">密码 <b>1234</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. 免安装小工具 ─────────────────────────────────────── -->
   <section class="card" aria-labelledby="toolTitle">
     <span class="ico" aria-hidden="true">
       <!-- 悬浮窗：一张小卡片 + 时钟 -->
@@ -386,7 +435,7 @@
     </div>
   </section>
 
-  <!-- ── 3. 网页版 ───────────────────────────────────────────── -->
+  <!-- ── 4. 网页版 ───────────────────────────────────────────── -->
   <h2 class="sec">懒得装？网页版直接开</h2>
   <ul class="web">
     <li>
@@ -410,6 +459,8 @@
     三个 exe 都是 MinGW-w64 编译的 <b>C++ 静态链接</b>程序：<code>-static</code> +
     <code>-static-libgcc</code> + <code>-static-libstdc++</code>，除了 Windows 自带的 DLL 以外
     不依赖任何运行库，拷到别的机器上双击就能跑。<br>
+    安装包的「离线副本」就是 <code>resources\site</code>：学校连不上站点时，桌面版直接读它；
+    听力音频由上面那个扩展包装进同一个目录。<br>
     源码在仓库的 <code>dock/</code>（<code>build.cmd</code> 一条命令重新编译），
     课程表与名单是编译期从站点数据生成的 —— 课表换了就重新编译一次。
   </p>
