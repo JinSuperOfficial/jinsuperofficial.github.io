@@ -1891,6 +1891,254 @@
   :root[data-hw-layout="two"] .rail-mark{ display:none; }
 
   /* ============================================================
+     留言板（只在这一页）
+     ------------------------------------------------------------
+     数据：`class/data/msg-api.php`（热铁盒 = PHP 云函数 + KV 数据库），
+     按**今天这份作业的日期**归档，所以每天各一块，旧留言不会挤在新作业下面。
+
+     降级（这是重点，别改成「拿不到就报错」）：
+       热铁盒        .php 真执行 → 云端留言
+       GitHub Pages  .php 被当源码返回（text/plain）→ 解析不出 JSON → 本机留言
+       桌面 / 安卓离线副本  .php 一律 404        → 本机留言
+     页面只认「有没有拿到合法 JSON」，拿不到就把这一块切成「本机」，
+     存在 localStorage['hw.msg.local.<date>']，并说明它只在这台设备上。
+
+     颜色全走 token：纸感 / DeepSeek 两套皮肤、亮 / 暗两种外观都不用另写规则。
+     ★ 类名不叫 .card：双栏布局（data-hw-layout=two）会把 .card 拆掉，
+       留言板跟排版无关，不想被拆。
+     ============================================================ */
+  .msg{
+    margin-top:18px;
+    padding:clamp(15px,2.4vw,22px) clamp(15px,2.6vw,24px);
+    background:var(--paper);
+    border:1px solid var(--tint-card);
+    border-radius:var(--radius-card);
+    box-shadow:
+      0 1px 2px var(--shadow-1),
+      0 22px 46px -36px var(--shadow-2);
+    transition:border-color .5s ease, background .3s ease, box-shadow .3s ease;
+  }
+  .msg-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .msg-head h2{
+    margin:0;
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:19px;
+    letter-spacing:.01em;
+    color:var(--ink);
+  }
+  .msg-state{
+    margin-left:auto;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:2px 9px;
+    border:1px solid var(--tint-line);
+    border-radius:var(--radius-badge);
+    background:var(--tint-soft);
+    color:var(--tint-text);
+    font-size:11.5px;
+    letter-spacing:.04em;
+    white-space:nowrap;
+  }
+  .msg-state::before{
+    content:"";
+    flex:none;
+    width:5px;height:5px;
+    border-radius:var(--radius-dot);
+    background:currentColor;
+    opacity:.8;
+  }
+  .msg-state[data-mode="local"]{ color:var(--oak); }
+  .msg-state[data-mode="error"]{ color:var(--clay); }
+
+  .msg-hint{
+    margin:6px 0 12px;
+    font-size:12.5px;
+    line-height:1.7;
+    color:var(--ink-soft);
+  }
+
+  .msg-form{ display:grid; gap:9px; }
+  .msg-row{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    flex-wrap:wrap;
+  }
+  .msg-label{
+    font-size:11.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--oak);
+  }
+  .msg select,
+  .msg input[type="password"]{
+    min-height:36px;
+    padding:0 10px;
+    border:1px solid var(--tint-line);
+    border-radius:var(--radius-control);
+    background:var(--tint-soft);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+    transition:border-color .18s ease, background .18s ease;
+  }
+  .msg input[type="password"]{ width:132px; letter-spacing:.18em; }
+  .msg select:hover,
+  .msg input[type="password"]:hover{ border-color:var(--tint-accent); }
+  .msg select:focus-visible,
+  .msg input[type="password"]:focus-visible,
+  .msg textarea:focus-visible{
+    outline:2px solid var(--tint-accent);
+    outline-offset:2px;
+  }
+  .msg textarea{
+    width:100%;
+    min-height:62px;
+    padding:10px 12px;
+    border:1px solid var(--tint-line);
+    border-radius:var(--radius-control);
+    background:var(--paper);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14.5px;
+    line-height:1.65;
+    resize:vertical;
+    transition:border-color .18s ease;
+  }
+  .msg textarea::placeholder{ color:var(--empty-text); }
+
+  .msg-btn{
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    min-height:36px;
+    padding:0 14px;
+    border:1px solid var(--tint-line);
+    border-radius:var(--radius-control);
+    background:var(--tint-soft);
+    color:var(--tint-text);
+    font-family:inherit;
+    font-size:13px;
+    letter-spacing:.03em;
+    transition:background .18s ease, border-color .18s ease, color .18s ease;
+  }
+  .msg-btn:hover{ background:var(--tint-card); border-color:var(--tint-accent); }
+  .msg-btn:focus-visible{ outline:2px solid var(--tint-accent); outline-offset:3px; }
+  .msg-btn.primary{
+    background:var(--cta-bg);
+    border-color:transparent;
+    color:#FFFCF7;
+  }
+  .msg-btn.primary:hover{ background:var(--cta-bg-hover); }
+  .msg-btn[disabled]{
+    cursor:not-allowed;
+    background:var(--tint-soft);
+    border-color:var(--tint-line);
+    color:var(--empty-text);
+  }
+  .msg-btn[disabled]:hover{
+    background:var(--tint-soft);
+    border-color:var(--tint-line);
+    color:var(--empty-text);
+  }
+  .msg-btn.primary[disabled]{
+    background:var(--tint-soft);
+    border-color:var(--tint-line);
+    color:var(--empty-text);
+  }
+  .msg-btn.primary[disabled]:hover{
+    background:var(--tint-soft);
+    border-color:var(--tint-line);
+  }
+
+  .msg-count{
+    margin-left:auto;
+    font-size:11.5px;
+    color:var(--foot-text);
+    font-variant-numeric:tabular-nums;
+  }
+
+  .msg-list{
+    margin:14px 0 0;
+    padding:0;
+    list-style:none;
+  }
+  .msg-item{
+    display:grid;
+    grid-template-columns:28px minmax(0,1fr) auto;
+    gap:10px;
+    align-items:start;
+    padding:11px 2px;
+    border-top:1px solid var(--line-soft);
+  }
+  .msg-item:first-child{ border-top:0; }
+  .msg-av{
+    width:28px;height:28px;
+    display:grid;place-items:center;
+    border-radius:var(--radius-dot);
+    background:var(--tint-soft);
+    color:var(--tint-text);
+    font-size:12.5px;
+    font-weight:600;
+    line-height:1;
+  }
+  .msg-body{ min-width:0; }
+  .msg-meta{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .msg-nm{
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .msg-tm{
+    font-size:11.5px;
+    color:var(--foot-text);
+    font-variant-numeric:tabular-nums;
+  }
+  .msg-tx{
+    margin:3px 0 0;
+    font-size:14.5px;
+    line-height:1.7;
+    color:var(--ink);
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .msg-del{
+    cursor:pointer;
+    min-height:30px;
+    padding:0 9px;
+    border:1px solid var(--tint-line);
+    border-radius:var(--radius-sm);
+    background:transparent;
+    color:var(--oak);
+    font-family:inherit;
+    font-size:11.5px;
+    transition:background .16s ease, border-color .16s ease, color .16s ease;
+  }
+  .msg-del:hover{ background:var(--tint-soft); border-color:var(--clay); color:var(--clay); }
+  .msg-del:focus-visible{ outline:2px solid var(--tint-accent); outline-offset:2px; }
+
+  .msg-empty{
+    margin:14px 0 0;
+    font-size:13px;
+    color:var(--foot-text);
+  }
+  .msg-empty[hidden]{ display:none; }
+
+  /* ============================================================
      小提示条：截图成功 / 失败、换外观 / 换布局时的一句反馈
      ------------------------------------------------------------
      固定底部居中，压在两个弹窗（60/70）之上；平时 visibility:hidden 不占位、
@@ -2270,6 +2518,20 @@
     .easter-text{ font-size:14.5px; letter-spacing:.22em; }
     .easter-text.left{ left:10px; }
     .easter-text.right{ right:10px; }
+
+    /* ---------- 留言板：触摸目标 ≥ 48px，名字选择器整行宽 ---------- */
+    .msg{ padding:15px 14px; margin-top:16px; }
+    .msg-head h2{ font-size:17.5px; }
+    .msg-state{ margin-left:0; }
+    .msg select{ width:100%; min-height:48px; font-size:15px; }
+    .msg input[type="password"]{ width:100%; min-height:48px; font-size:15px; }
+    .msg textarea{ min-height:88px; font-size:15.5px; }
+    .msg-btn{ min-height:48px; font-size:14px; }
+    .msg-btn.primary{ flex:1; }
+    .msg-count{ margin-left:0; width:100%; text-align:right; }
+    .msg-item{ grid-template-columns:26px minmax(0,1fr); row-gap:6px; }
+    .msg-del{ grid-column:2; justify-self:start; min-height:38px; }
+    .msg-tx{ font-size:15px; }
   }
 
   @media (max-width:400px){
@@ -2388,6 +2650,16 @@
           <span>更新日志</span>
         </button>
 
+        <!-- ★ 留言板：滚到下面那一块，并把光标放进输入框（手机上顺手收起底部面板） -->
+        <button class="more-btn" id="msgBtn" type="button" title="给这一天留句话">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 5.5h16v11H9.5L4 20.4z"/>
+            <path d="M8.4 11h7.2"/>
+          </svg>
+          <span>留言</span>
+        </button>
+
         <!-- ★ 更多 811 工具 → /class/index.html -->
         <a class="more-btn" href="/class/index.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -2451,6 +2723,43 @@
     <span class="note-label" id="noteLabel">Notes</span>
     <div class="note-text" id="noteText"></div>
   </div>
+
+  <!-- ★ 留言板：选名字 → 写一句 → 按这一天归档。
+       热铁盒上是真的（class/data/msg-api.php + KV 数据库）；GitHub Pages / 桌面与安卓的
+       离线副本上 .php 拿不到合法 JSON，自动降级成「本机留言」（localStorage，只在这台设备）。
+       名单来自 class/data/roster.json —— 和随机抽选页共用同一份。
+       这一段整体可降级：脚本挂了只是列表不出现，作业表 / 勾选 / 截图一点不受影响。 -->
+  <section class="msg rv" id="msgCard" aria-labelledby="msgTitle">
+    <div class="msg-head">
+      <h2 id="msgTitle">留言板</h2>
+      <span class="msg-state" id="msgState" data-mode="idle" role="status" aria-live="polite">连接中…</span>
+    </div>
+    <p class="msg-hint" id="msgHint">选一下你是哪位同学，给这一天留句话（120 字以内）。</p>
+
+    <form class="msg-form" id="msgForm" novalidate>
+      <div class="msg-row">
+        <label class="msg-label" for="msgName">我是</label>
+        <select id="msgName" name="name" required>
+          <option value="">选择名字</option>
+        </select>
+        <!-- 只有选中「金旭」才现身：删留言要口令 -->
+        <input class="msg-token" id="msgToken" name="token" type="password" inputmode="numeric"
+               autocomplete="off" placeholder="管理口令" aria-label="管理口令" hidden>
+        <span class="msg-count" id="msgCount">0 / 120</span>
+      </div>
+      <textarea id="msgText" name="text" rows="2" maxlength="120"
+                aria-label="留言内容"
+                placeholder="比如：数学第 3 题我也不会 / 明天记得带《组合》 / 这页又变好看了"></textarea>
+      <div class="msg-row">
+        <button class="msg-btn primary" type="submit" id="msgSend" disabled>发表留言</button>
+        <button class="msg-btn" type="button" id="msgReload">刷新</button>
+        <span class="msg-count" id="msgFoot" aria-live="polite"></span>
+      </div>
+    </form>
+
+    <ul class="msg-list" id="msgList"></ul>
+    <p class="msg-empty" id="msgEmpty" hidden>还没有人留言，来写第一条。</p>
+  </section>
 
   <p class="foot rv">点一下前面的方框，就能打勾 ✦ 勾完自动保存</p>
 
@@ -4282,6 +4591,9 @@
 
     lastStep = -1;
     updateProgress(false);
+
+    /* 留言板按「这一天的作业」分块：换一天就换一块（同一份只挂一次） */
+    try{ MsgBoard.sync(currentId, currentDate); }catch(e){ console.warn('[留言板] ' + e.message); }
   }
 
   /* ============ 打勾状态 ============ */
@@ -5083,6 +5395,434 @@
   }else if(darkQuery.addListener){
     darkQuery.addListener(onSchemeChange);
   }
+
+  /* ============================================================
+     留言板（class/data/msg-api.php · class/data/roster.json）
+     ------------------------------------------------------------
+     三种活法，靠「能不能拿到一段合法 JSON」自动选，页面不弹错：
+
+       ① 云端（热铁盒）      POST .php → {ok:true,...}，留言进 KV 数据库
+       ② 本机（GitHub Pages / 桌面 / 安卓离线副本 / 断网）
+                            .php 被当源码返回或直接 404 → 解析失败 → 存
+                            localStorage['hw.msg.local.<日期>']
+       ③ 只读缓存            上面两种情况都会把「上次拉到的云端留言」留在
+                            localStorage['hw.msg.cache.<日期>']，本机模式里一起显示
+
+     口径：
+       · 留言按**这一天作业的日期**分（currentDate），换一天就换一块，不会串
+       · 名字只能从 class/data/roster.json 里选（服务端也按它校验），记住上次选的人
+       · 删留言 = 选中「金旭」+ 口令（用户指定：不做别的防护）
+       · 字符上限 120（页面上），PHP 那边收 160
+       · 全程 textContent，不拼 innerHTML —— 留言是别人写的东西
+     ============================================================ */
+  const MsgBoard = (function(){
+    const NAME_KEY  = 'hw.who';
+    const LOCAL_DIR = 'hw.msg.local.';
+    const CACHE_DIR = 'hw.msg.cache.';
+    const ADMIN     = '金旭';
+    const MAX_TEXT  = 120;
+    const ROSTER_PATHS = ['./data/roster.json', '/class/data/roster.json', '/data/roster.json'];
+    const API_PATHS    = ['./data/msg-api.php', '/class/data/msg-api.php', '/data/msg-api.php'];
+
+    const card      = document.getElementById('msgCard');
+    const stateEl   = document.getElementById('msgState');
+    const hintEl    = document.getElementById('msgHint');
+    const form      = document.getElementById('msgForm');
+    const nameSel   = document.getElementById('msgName');
+    const tokenEl   = document.getElementById('msgToken');
+    const textEl    = document.getElementById('msgText');
+    const countEl   = document.getElementById('msgCount');
+    const footEl    = document.getElementById('msgFoot');
+    const sendBtn   = document.getElementById('msgSend');
+    const reloadBtn = document.getElementById('msgReload');
+    const listEl    = document.getElementById('msgList');
+    const emptyEl   = document.getElementById('msgEmpty');
+    const msgBtn    = document.getElementById('msgBtn');
+
+    const TIPS = {
+      idle:  '选一下你是哪位同学，给这一天留句话（120 字以内）。',
+      cloud: '选一下你是哪位同学，给这一天留句话（120 字以内）。发出去的大家都看得到。',
+      local: '这台设备上没连到云端（GitHub Pages / 离线副本 / 断网都算），留言只存在这个浏览器里，别人看不到。',
+      error: '留言板这会儿没连上，作业本身一点不受影响。'
+    };
+    const LABEL = { idle: '连接中…', cloud: '云端 · 热铁盒', local: '本机 · 仅这台设备', error: '没连上' };
+
+    let api = null;            /* 探测成功的接口地址，之后直接用 */
+    let mode = 'idle';         /* idle / cloud / local / error */
+    let roster = [];
+    let items = [];
+    let date = '';
+    let busy = false;
+    let mountedFor = '';
+
+    function readLS(key){
+      try{ return localStorage.getItem(key); }catch(e){ return null; }
+    }
+    function readJSON(key, fallback){
+      const raw = readLS(key);
+      if(!raw) return fallback;
+      try{
+        const v = JSON.parse(raw);
+        return v == null ? fallback : v;
+      }catch(e){ return fallback; }
+    }
+    function writeJSON(key, val){
+      try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){ /* 满了就算了 */ }
+    }
+
+    /* ── 名单 ── */
+    async function fetchRoster(){
+      for(let i = 0; i < ROSTER_PATHS.length; i++){
+        const url = ROSTER_PATHS[i];
+        try{
+          const res = await fetch(url, { cache:'no-store' });
+          if(!res || !res.ok) continue;
+          const txt = String(await res.text()).replace(/,\s*([}\]])/g, '$1');
+          const json = JSON.parse(txt);
+          const names = Array.isArray(json) ? json
+                      : (json && Array.isArray(json.names) ? json.names : null);
+          if(names && names.length){
+            return names.filter(function(n){ return typeof n === 'string' && n.trim(); });
+          }
+        }catch(e){ /* 下一个来源 */ }
+      }
+      return [];
+    }
+
+    function fillNames(){
+      if(!nameSel || nameSel.dataset.filled === '1') return;
+      if(!roster.length) return;
+      const frag = document.createDocumentFragment();
+      roster.forEach(function(n){
+        const o = document.createElement('option');
+        o.value = n;
+        o.textContent = n;
+        frag.appendChild(o);
+      });
+      nameSel.appendChild(frag);
+      const saved = readLS(NAME_KEY) || '';
+      if(saved && roster.indexOf(saved) !== -1) nameSel.value = saved;
+      nameSel.dataset.filled = '1';
+    }
+
+    /* ── 云端调用：6 秒超时，失败换下一个地址 ── */
+    function apiPost(url, body){
+      return new Promise(function(resolve, reject){
+        let settled = false;
+        let ctl = null;
+        try{ if(typeof AbortController === 'function') ctl = new AbortController(); }catch(e){}
+        const timer = setTimeout(function(){
+          if(settled) return;
+          settled = true;
+          try{ if(ctl) ctl.abort(); }catch(e){}
+          reject(new Error('超时'));
+        }, 6000);
+        const opt = {
+          method: 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        };
+        if(ctl) opt.signal = ctl.signal;
+        fetch(url, opt).then(function(res){
+          if(settled || !res) return null;
+          return res.text().then(function(txt){ return { res: res, txt: txt }; });
+        }).then(function(hit){
+          if(settled || !hit) return;
+          settled = true;
+          clearTimeout(timer);
+          if(!hit.res.ok){ reject(new Error('HTTP ' + hit.res.status)); return; }
+          resolve(hit.txt);
+        }).catch(function(err){
+          if(settled) return;
+          settled = true;
+          clearTimeout(timer);
+          reject(err);
+        });
+      });
+    }
+
+    async function callCloud(body, fresh){
+      const urls = (api && !fresh) ? [api] : API_PATHS;
+      let lastErr = null;
+      for(let i = 0; i < urls.length; i++){
+        const url = urls[i];
+        try{
+          const txt = await apiPost(url, body);
+          /* GitHub Pages 会把 .php 源码当 text/plain 返回：不是 JSON 就换下一个 */
+          if(typeof txt !== 'string' || txt.indexOf('{') === -1) throw new Error('不是 JSON');
+          const json = JSON.parse(txt);
+          if(!json || typeof json !== 'object') throw new Error('JSON 形状不对');
+          api = url;
+          return json;
+        }catch(err){
+          if(api === url) api = null;    /* 上次通的这次不通：下次重新探 */
+          lastErr = err;
+        }
+      }
+      throw lastErr || new Error('云端不可用');
+    }
+
+    /* ── 画 ── */
+    function setMode(next){
+      mode = next;
+      if(stateEl){
+        stateEl.dataset.mode = next;
+        stateEl.textContent = LABEL[next] || LABEL.idle;
+      }
+      if(hintEl) hintEl.textContent = TIPS[next] || TIPS.idle;
+    }
+
+    function fmtTime(iso){
+      const d = new Date(iso);
+      if(isNaN(d.getTime())) return '';
+      const two = function(n){ return (n < 10 ? '0' : '') + n; };
+      const hm = two(d.getHours()) + ':' + two(d.getMinutes());
+      const now = new Date();
+      if(d.toDateString() === now.toDateString()) return hm;
+      return two(d.getMonth() + 1) + '-' + two(d.getDate()) + ' ' + hm;
+    }
+
+    function renderItems(){
+      if(!listEl) return;
+      listEl.textContent = '';
+      const adminOn = !!nameSel && nameSel.value === ADMIN;
+
+      items.forEach(function(m){
+        const li = document.createElement('li');
+        li.className = 'msg-item';
+
+        const av = document.createElement('span');
+        av.className = 'msg-av';
+        av.setAttribute('aria-hidden', 'true');
+        av.textContent = String(m.n || '?').slice(0, 1);
+
+        const body = document.createElement('div');
+        body.className = 'msg-body';
+
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+        const nm = document.createElement('span');
+        nm.className = 'msg-nm';
+        nm.textContent = m.n || '（没名字）';
+        const tm = document.createElement('span');
+        tm.className = 'msg-tm';
+        tm.textContent = fmtTime(m.at);
+        meta.appendChild(nm);
+        meta.appendChild(tm);
+
+        const tx = document.createElement('p');
+        tx.className = 'msg-tx';
+        tx.textContent = m.t || '';
+
+        body.appendChild(meta);
+        body.appendChild(tx);
+        li.appendChild(av);
+        li.appendChild(body);
+
+        if(adminOn){
+          const del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'msg-del';
+          del.textContent = '删除';
+          del.setAttribute('aria-label', '删除 ' + (m.n || '') + ' 的这条留言');
+          del.addEventListener('click', function(){ removeOne(m); });
+          li.appendChild(del);
+        }
+
+        listEl.appendChild(li);
+      });
+
+      if(emptyEl) emptyEl.hidden = items.length > 0;
+      renderFoot();
+    }
+
+    function renderFoot(){
+      if(!footEl) return;
+      if(!items.length){ footEl.textContent = ''; return; }
+      footEl.textContent = items.length + ' 条' + (mode === 'local' ? ' · 只在本机' : '');
+    }
+
+    function syncSend(){
+      const n = nameSel ? nameSel.value : '';
+      const t = textEl ? textEl.value.trim() : '';
+      if(countEl && textEl) countEl.textContent = textEl.value.length + ' / ' + MAX_TEXT;
+      if(tokenEl) tokenEl.hidden = (n !== ADMIN);
+      if(sendBtn) sendBtn.disabled = busy || !n || !t || !roster.length;
+    }
+
+    /* ── 本机存 / 读 ── */
+    function localList(){
+      const arr = readJSON(LOCAL_DIR + date, []);
+      return Array.isArray(arr) ? arr.filter(function(m){ return m && typeof m === 'object'; }) : [];
+    }
+    function cachedList(){
+      const arr = readJSON(CACHE_DIR + date, []);
+      return Array.isArray(arr) ? arr.filter(function(m){ return m && typeof m === 'object'; }) : [];
+    }
+    function saveLocal(item){
+      const list = localList();
+      list.unshift(item);
+      writeJSON(LOCAL_DIR + date, list.slice(0, 200));
+    }
+
+    /* ── 拉列表 ── */
+    async function refresh(fresh){
+      if(!date) return;
+      setMode('idle');
+      if(!roster.length) roster = await fetchRoster();
+      fillNames();
+      if(!roster.length){
+        setMode('error');
+        if(hintEl) hintEl.textContent = '名单（data/roster.json）没读到，留言板先放着，作业照常看。';
+        if(sendBtn) sendBtn.disabled = true;
+        return;
+      }
+      try{
+        const json = await callCloud({ action: 'list', date: date }, fresh);
+        if(!json.ok) throw new Error(json.error || '拿不到列表');
+        items = Array.isArray(json.items) ? json.items : [];
+        writeJSON(CACHE_DIR + date, items);
+        setMode('cloud');
+      }catch(err){
+        items = localList().concat(cachedList());
+        setMode('local');
+      }
+      renderItems();
+      syncSend();
+    }
+
+    /* ── 发一条 ── */
+    async function submit(ev){
+      if(ev) ev.preventDefault();
+      if(busy) return;
+      const n = nameSel ? nameSel.value : '';
+      const t = textEl ? textEl.value.trim() : '';
+      if(!n || !t) return;
+
+      busy = true;
+      syncSend();
+      const at = new Date().toISOString();
+      let saved = false;
+
+      if(mode === 'cloud'){
+        try{
+          const json = await callCloud({ action: 'post', date: date, name: n, text: t });
+          if(!json.ok){
+            /* 服务端有话说（冷却 / 上限 / 名单）：照原话提示，不吞掉 */
+            toast(json.error || '没发出去');
+            busy = false;
+            syncSend();
+            return;
+          }
+          items = Array.isArray(json.items) ? json.items : items;
+          writeJSON(CACHE_DIR + date, items);
+          setMode('cloud');
+          saved = true;
+        }catch(err){
+          /* 正在发的时候网断了：这条不能丢，落本机并说清楚 */
+          saveLocal({ n: n, t: t, at: at });
+          items = localList().concat(cachedList());
+          setMode('local');
+          saved = true;
+          toast('云端没回话，这条先存在本机');
+        }
+      }else{
+        saveLocal({ n: n, t: t, at: at });
+        items = localList().concat(cachedList());
+        saved = true;
+      }
+
+      busy = false;
+      if(saved){
+        if(textEl){
+          textEl.value = '';
+          try{ textEl.focus({ preventScroll: true }); }catch(e){ textEl.focus(); }
+        }
+        renderItems();
+        syncSend();
+        toast(mode === 'cloud' ? '留言发出去了' : '已存到本机');
+      }else{
+        syncSend();
+      }
+    }
+
+    /* ── 删一条：金旭 + 口令 ── */
+    async function removeOne(m){
+      if(!nameSel || nameSel.value !== ADMIN){ toast('只有 ' + ADMIN + ' 能删留言'); return; }
+      const token = tokenEl ? tokenEl.value.trim() : '';
+      if(!token){
+        toast('先填管理口令');
+        if(tokenEl) try{ tokenEl.focus(); }catch(e){}
+        return;
+      }
+      if(!window.confirm('删掉「' + (m.n || '') + '」这条留言？')) return;
+
+      if(mode !== 'cloud'){
+        const list = localList().filter(function(x){
+          return !(x && x.at === m.at && x.n === m.n && x.t === m.t);
+        });
+        writeJSON(LOCAL_DIR + date, list);
+        items = list.concat(cachedList());
+        renderItems();
+        toast('本机这条删掉了');
+        return;
+      }
+
+      try{
+        const json = await callCloud({ action: 'del', date: date, name: ADMIN, token: token, id: m.id });
+        if(!json.ok){ toast(json.error || '没删掉'); return; }
+        items = Array.isArray(json.items) ? json.items : items;
+        writeJSON(CACHE_DIR + date, items);
+        renderItems();
+        toast('删掉了');
+      }catch(err){
+        toast('删不掉：' + (err.message || '连不上'));
+      }
+    }
+
+    /* ── 对外：渲染完一份作业后叫一次 ── */
+    function sync(nextId, nextDate){
+      const stamp = String(nextId || nextDate || '');
+      if(!stamp || stamp === mountedFor) return;
+      mountedFor = stamp;
+      const d = String(nextDate || '');
+      date = /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : todayStr();
+      items = [];
+      renderItems();
+      refresh(false).catch(function(){ setMode('error'); });
+    }
+
+    /* ── 接线 ── */
+    if(form) form.addEventListener('submit', submit);
+    if(textEl) textEl.addEventListener('input', syncSend);
+    if(nameSel){
+      nameSel.addEventListener('change', function(){
+        lsSet(NAME_KEY, nameSel.value);
+        syncSend();
+        renderItems();          /* 选中「金旭」→ 每条冒出一个「删除」 */
+      });
+    }
+    if(reloadBtn){
+      reloadBtn.addEventListener('click', function(){
+        refresh(true).catch(function(){ setMode('error'); });
+      });
+    }
+    if(msgBtn && card){
+      msgBtn.addEventListener('click', function(){
+        const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        try{ card.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); }
+        catch(e){ card.scrollIntoView(); }
+        if(textEl){
+          setTimeout(function(){
+            try{ textEl.focus({ preventScroll: true }); }catch(e){ try{ textEl.focus(); }catch(e2){} }
+          }, reduce ? 0 : 340);
+        }
+      });
+    }
+
+    return { sync: sync, refresh: function(){ return refresh(true); } };
+  })();
 
   /* ============ 启动 ============ */
   /* 时光机：不支持 fetch / Promise 的浏览器直接把按钮藏掉（主页功能一点不受影响） */

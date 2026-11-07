@@ -25,21 +25,74 @@
     "/p/post/"
   ],
   "extraUrls": [
-    { "loc": "/Skills/", "priority": 0.9 },
-    { "loc": "/p/", "priority": 0.9 },
-    { "loc": "/p/docs.html", "priority": 0.8 },
-    { "loc": "/Skills/index.html", "priority": 0.8 },
-    { "loc": "/docs/info/", "priority": 0.7 },
-    { "loc": "/public", "priority": 0.7 },
-    { "loc": "/Skills/viewer.html", "priority": 0.6 },
-    { "loc": "/Skills/idea/tihu.html", "priority": 0.6 },
-    { "loc": "/Skills/idea/PelicanTest.html", "priority": 0.6 },
-    { "loc": "/p/para/First.md", "priority": 0.5 },
-    { "loc": "/p/SKILL.md", "priority": 0.4 },
-    { "loc": "/p/color-theme.md", "priority": 0.4 },
-    { "loc": "/asset/SKILL.md", "priority": 0.4 },
-    { "loc": "/asset/color-theme.md", "priority": 0.4 },
-    { "loc": "/asset/功能.md", "priority": 0.4 }
+    {
+      "loc": "/download.html",
+      "priority": 0.9
+    },
+    {
+      "loc": "/class/pick.html",
+      "priority": 0.7
+    },
+    {
+      "loc": "/Skills/",
+      "priority": 0.9
+    },
+    {
+      "loc": "/p/",
+      "priority": 0.9
+    },
+    {
+      "loc": "/p/docs.html",
+      "priority": 0.8
+    },
+    {
+      "loc": "/Skills/index.html",
+      "priority": 0.8
+    },
+    {
+      "loc": "/docs/info/",
+      "priority": 0.7
+    },
+    {
+      "loc": "/public",
+      "priority": 0.7
+    },
+    {
+      "loc": "/Skills/viewer.html",
+      "priority": 0.6
+    },
+    {
+      "loc": "/Skills/idea/tihu.html",
+      "priority": 0.6
+    },
+    {
+      "loc": "/Skills/idea/PelicanTest.html",
+      "priority": 0.6
+    },
+    {
+      "loc": "/p/para/First.md",
+      "priority": 0.5
+    },
+    {
+      "loc": "/p/SKILL.md",
+      "priority": 0.4
+    },
+    {
+      "loc": "/p/color-theme.md",
+      "priority": 0.4
+    },
+    {
+      "loc": "/asset/SKILL.md",
+      "priority": 0.4
+    },
+    {
+      "loc": "/asset/color-theme.md",
+      "priority": 0.4
+    },
+    {
+      "loc": "/asset/功能.md",
+      "priority": 0.4
+    }
   ],
   "note": "站点级目录：有哪些 collection、博客身份（blog：标题/简介/主域名）、sitemap 里手工维护的额外条目、校验时要忽略的页面。字段说明见 MANIFEST.md。"
 }

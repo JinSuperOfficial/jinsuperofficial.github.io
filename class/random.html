@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="../lib/theme.js"></script>
+<title>随机抽选 · 八年(11)班</title>
+<!--
+  随机抽选 /class/random.html
+  ---------------------------------------------------------------------------
+  从 class/data/roster.json 那份名单里抽（和作业页留言板同一份，51 人）。
+  · 随机源用 crypto.getRandomValues（拒绝采样，避免取模偏差）；没有 crypto 才回落 Math.random
+  · 抽 n 个不重复的人：Fisher–Yates 取前 n 个
+  · 「不重复」勾上时，本轮抽过的人不再进池子；存在 localStorage['pick.drawn']，刷新还在
+  · 签筒那张图是手画的 inline SVG（签筒 + 四支散签 + 一支被抽出的签），零外部资源
+  没有后端：热铁盒 / GitHub Pages / 桌面与安卓的离线副本行为完全一样。
+-->
+<style>
+  :root{
+    color-scheme:light;
+
+    --radius-xs:4px;
+    --radius-sm:6px;
+    --radius-md:8px;
+    --radius-lg:10px;
+    --radius-xl:12px;
+    --radius-pill:999px;
+    --radius-control:var(--radius-md);
+    --radius-card:var(--radius-lg);
+    --radius-badge:var(--radius-sm);
+    --radius-dot:var(--radius-pill);
+
+    --bg:#F8F3EC;
+    --paper:#FFFCF7;
+    --paper-2:#FBF6EE;
+    --ink:#2E2A26;
+    --ink-soft:#6B635A;
+    --oak:#8D6959;
+    --olive:#8E9867;
+    --clay:#D97757;
+    --line:rgba(46,42,38,.12);
+    --line-soft:rgba(46,42,38,.07);
+    --cta-bg:#B0552F;
+    --cta-bg-hover:#98462A;
+    --accent:#C08A3E;
+    --shadow-1:rgba(46,42,38,.05);
+    --shadow-2:rgba(46,42,38,.40);
+
+    --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  }
+  :root[data-appearance="dark"]{
+    color-scheme:dark;
+    --bg:#14120E;
+    --paper:#1E1B17;
+    --paper-2:#221F1A;
+    --ink:#EDE7DF;
+    --ink-soft:#A29A8E;
+    --oak:#B89B85;
+    --olive:#A8B57C;
+    --clay:#E88B6D;
+    --line:rgba(237,231,223,.14);
+    --line-soft:rgba(237,231,223,.08);
+    --cta-bg:#C9683D;
+    --cta-bg-hover:#B0552F;
+    --accent:#E0A963;
+    --shadow-1:rgba(0,0,0,.30);
+    --shadow-2:rgba(0,0,0,.60);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0;
+    min-height:100dvh;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    background:
+      radial-gradient(900px 520px at 14% -8%, rgba(192,138,62,.13), transparent 62%),
+      radial-gradient(760px 440px at 88% 4%, rgba(142,152,103,.10), transparent 60%);
+  }
+  a{ color:var(--oak); }
+  :focus-visible{ outline:2px solid var(--cta-bg); outline-offset:3px; border-radius:var(--radius-xs); }
+
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:clamp(20px,4vw,44px) clamp(16px,4vw,30px) clamp(40px,7vw,70px);
+  }
+
+  .back{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:16px;
+    font-size:13px;
+    color:var(--ink-soft);
+    text-decoration:none;
+  }
+  .back:hover{ color:var(--ink); }
+  .back svg{ width:14px;height:14px; }
+
+  .kicker{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    margin:0 0 8px;
+    font-size:11px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--oak);
+  }
+  .kicker::before{ content:""; width:26px;height:1px;background:var(--clay); flex:none; }
+
+  h1{
+    margin:0 0 6px;
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(26px,5vw,38px);
+    line-height:1.2;
+    letter-spacing:-.01em;
+  }
+  .sub{ margin:0; color:var(--ink-soft); font-size:14px; max-width:56ch; }
+
+  /* ---------- 台面：签筒 + 结果 ---------- */
+  .stage{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    gap:clamp(14px,3vw,26px);
+    align-items:center;
+    margin-top:22px;
+    padding:clamp(16px,3vw,24px);
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+    background:var(--paper);
+    box-shadow:0 1px 2px var(--shadow-1), 0 26px 54px -40px var(--shadow-2);
+  }
+  .art{
+    width:clamp(104px,24vw,190px);
+    height:auto;
+    color:var(--ink);
+    overflow:visible;
+  }
+  .art .sign{ color:var(--accent); }
+
+  .result{ min-width:0; }
+  .result-hint{
+    margin:0;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .names{
+    margin:6px 0 0;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 12px;
+    align-items:baseline;
+  }
+  .names b{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(30px,6.4vw,52px);
+    line-height:1.16;
+    letter-spacing:.01em;
+    color:var(--ink);
+  }
+  .names.multi b{ font-size:clamp(22px,4.4vw,34px); }
+  .names.empty b{
+    font-size:clamp(19px,3.6vw,26px);
+    color:var(--ink-soft);
+    font-family:var(--sans);
+    font-weight:400;
+  }
+  .roll{
+    margin:6px 0 0;
+    font-family:var(--serif);
+    font-size:clamp(30px,6.4vw,52px);
+    line-height:1.16;
+    color:var(--oak);
+    opacity:.55;
+  }
+  .roll[hidden]{ display:none; }
+
+  /* ---------- 控制条 ---------- */
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+    padding:13px 15px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+    background:var(--paper);
+  }
+  .field{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .field select{
+    min-height:36px;
+    padding:0 9px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-control);
+    background:var(--paper-2);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+  }
+  .chk{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .chk input{
+    width:16px;height:16px;
+    accent-color:var(--cta-bg);
+    cursor:pointer;
+  }
+  .btn{
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    min-height:38px;
+    padding:0 16px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-control);
+    background:var(--paper-2);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+    transition:background .16s ease, border-color .16s ease, color .16s ease, transform .1s ease;
+  }
+  .btn:hover{ border-color:var(--oak); }
+  .btn:active{ transform:translateY(1px); }
+  .btn.primary{
+    background:var(--cta-bg);
+    border-color:transparent;
+    color:#FFFCF7;
+    font-weight:500;
+  }
+  .btn.primary:hover{ background:var(--cta-bg-hover); }
+  .btn[disabled]{ cursor:not-allowed; border-color:var(--line); background:var(--paper-2); color:var(--ink-soft); }
+  .btn.primary[disabled]{ background:var(--paper-2); color:var(--ink-soft); }
+  .btn.primary{ margin-left:auto; }
+  .stat{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- 本轮抽到的人 ---------- */
+  .pool{
+    margin-top:18px;
+    padding:14px 16px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+    background:var(--paper);
+  }
+  .pool h2{
+    margin:0 0 8px;
+    font-size:11.5px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin:0;
+    padding:0;
+    list-style:none;
+  }
+  .chips li{
+    padding:2px 9px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-badge);
+    background:var(--paper-2);
+    font-size:13px;
+    color:var(--ink);
+  }
+  .chips li.empty{
+    border:0;
+    background:transparent;
+    padding:0;
+    color:var(--ink-soft);
+    font-size:13px;
+  }
+
+  .state{
+    margin:12px 0 0;
+    font-size:13px;
+    color:var(--clay);
+    min-height:1.4em;
+  }
+
+  .foot{
+    margin:24px 0 0;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+    line-height:1.9;
+    color:var(--ink-soft);
+  }
+  .foot code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:11.5px;
+    padding:1px 5px;
+    border-radius:var(--radius-xs);
+    background:var(--paper-2);
+    border:1px solid var(--line-soft);
+  }
+
+  @media (max-width:560px){
+    .stage{ grid-template-columns:1fr; }
+    .art{ width:96px; margin:0 auto; }
+    .result{ text-align:center; }
+    .names{ justify-content:center; }
+    .controls{ gap:8px; }
+    .field, .chk{ flex:1 1 auto; }
+    .stat{ flex:1 1 100%; }
+    .btn{ min-height:46px; flex:1 1 0; }   /* 抽一次 / 重置 同一行，主按钮宽一点 */
+    .btn.primary{ margin-left:0; flex:2 1 0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="/class/index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M15 5l-7 7 7 7"/>
+    </svg>
+    回 811 工具箱
+  </a>
+
+  <header>
+    <p class="kicker">Class 8-11 · Draw</p>
+    <h1>随机抽选</h1>
+    <p class="sub">摇一下签筒，抽今天回答问题 / 上台 / 领卷子的人。名单就是班里那 51 个人。</p>
+  </header>
+
+  <!-- ★ 签筒：这一页的「脸」。手画的 inline SVG，没有外部图片。
+       签筒 / 散签用 currentColor（跟着明暗走），抽出来的那支和星星用 --accent。 -->
+  <section class="stage" aria-label="抽签">
+    <svg class="art" viewBox="0 0 220 200" role="img" aria-label="签筒里插着一把签，一支被抽了出来">
+      <ellipse cx="110" cy="188" rx="56" ry="7.5" fill="currentColor" opacity=".08"/>
+
+      <!-- 藏在筒里的四支签：长短错开，镜头才不呆 -->
+      <g stroke="currentColor" stroke-width="2.8" stroke-linecap="round" fill="none" opacity=".6">
+        <path d="M88 80 78 34"/>
+        <path d="M100 78 96 24"/>
+        <path d="M120 78 126 27"/>
+        <path d="M132 80 146 38"/>
+      </g>
+      <!-- 签头的朱砂点 -->
+      <g stroke="var(--clay)" stroke-width="4" stroke-linecap="round" fill="none" opacity=".92">
+        <path d="M77.4 39.6 78.6 33.4"/>
+        <path d="M95.2 29.6 96.4 23.4"/>
+        <path d="M125.4 32.6 126.6 26.4"/>
+        <path d="M144.2 43.4 146.2 37.2"/>
+      </g>
+
+      <!-- 筒身 -->
+      <path d="M68 78h84v88a12 12 0 0 1-12 12H80a12 12 0 0 1-12-12z"
+            fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <!-- 筒口 -->
+      <ellipse cx="110" cy="78" rx="42" ry="9" fill="var(--paper)" stroke="currentColor" stroke-width="3"/>
+      <!-- 两道束带 + 一点竹节 -->
+      <path d="M68 108h84" stroke="currentColor" stroke-width="2.4" opacity=".4"/>
+      <path d="M68 146h84" stroke="currentColor" stroke-width="2.4" opacity=".4"/>
+      <!-- 筒身上的印：811 -->
+      <text x="104" y="135" fill="currentColor" opacity=".4" font-family="Georgia, serif"
+            font-size="21" letter-spacing="2" text-anchor="middle">811</text>
+
+      <!-- 被抽出来的那支签 -->
+      <g class="sign" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none">
+        <path d="M150 74 188 22"/>
+      </g>
+      <circle class="sign" cx="188" cy="22" r="3.2" fill="currentColor"/>
+      <!-- 星星 -->
+      <path class="sign" fill="currentColor" opacity=".92"
+            d="M196 6.5l2.3 4.6 5.1.7-3.7 3.6.9 5.1-4.6-2.4-4.6 2.4.9-5.1-3.7-3.6 5.1-.7z"/>
+    </svg>
+
+    <div class="result">
+      <p class="result-hint" id="hint">按「抽一次」，签筒自己摇。</p>
+      <p class="roll" id="roll" hidden aria-hidden="true"></p>
+      <p class="names empty" id="names" aria-live="polite">
+        <b>还没抽</b>
+      </p>
+    </div>
+  </section>
+
+  <div class="controls">
+    <label class="field" for="count">抽几个
+      <select id="count">
+        <option value="1" selected>1 个</option>
+        <option value="2">2 个</option>
+        <option value="3">3 个</option>
+        <option value="4">4 个</option>
+        <option value="6">6 个</option>
+      </select>
+    </label>
+
+    <label class="chk" for="noRepeat">
+      <input type="checkbox" id="noRepeat" checked>
+      不重复
+    </label>
+
+    <span class="stat" id="stat">—</span>
+
+    <button class="btn primary" type="button" id="draw">抽一次</button>
+    <button class="btn" type="button" id="reset">重置</button>
+  </div>
+
+  <p class="state" id="state" role="status" aria-live="polite"></p>
+
+  <section class="pool" aria-labelledby="poolTitle">
+    <h2 id="poolTitle">本轮抽到的</h2>
+    <ul class="chips" id="chips">
+      <li class="empty">还没有</li>
+    </ul>
+  </section>
+
+  <p class="foot">
+    名单：<code>class/data/roster.json</code>（和作业页留言板同一份，51 人）。<br>
+    随机源：<code>crypto.getRandomValues</code> + 拒绝采样（不取模，避免偏）；抽 n 个人用 Fisher–Yates，
+    不会重复。勾了「不重复」时本轮抽到的人不再进池子，存在本机
+    <code>localStorage['pick.drawn']</code>，刷新还在 —— 想重来点「重置」。
+  </p>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  const ROSTER_PATHS = ['./data/roster.json', '/class/data/roster.json', '/data/roster.json'];
+  const DRAWN_KEY = 'pick.drawn';
+
+  const elNames = document.getElementById('names');
+  const elRoll  = document.getElementById('roll');
+  const elHint  = document.getElementById('hint');
+  const elCount = document.getElementById('count');
+  const elNoRepeat = document.getElementById('noRepeat');
+  const elDraw  = document.getElementById('draw');
+  const elReset = document.getElementById('reset');
+  const elStat  = document.getElementById('stat');
+  const elChips = document.getElementById('chips');
+  const elState = document.getElementById('state');
+
+  let names = [];
+  let drawn = [];
+  let animating = false;
+
+  const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* ---------- 随机：拒绝采样，别用 % 直接取（会偏） ---------- */
+  function randInt(n){
+    if(n <= 1) return 0;
+    const c = window.crypto || window.msCrypto;
+    if(c && c.getRandomValues){
+      const buf = new Uint32Array(1);
+      const max = Math.floor(4294967296 / n) * n;
+      let v = 0;
+      do { c.getRandomValues(buf); v = buf[0]; } while (v >= max);
+      return v % n;
+    }
+    return Math.floor(Math.random() * n);
+  }
+
+  /* Fisher–Yates 取前 k 个，天然不重复 */
+  function sample(arr, k){
+    const pool = arr.slice();
+    const take = Math.min(k, pool.length);
+    for(let i = 0; i < take; i++){
+      const j = i + randInt(pool.length - i);
+      const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+    }
+    return pool.slice(0, take);
+  }
+
+  /* ---------- 名单 ---------- */
+  async function loadRoster(){
+    for(let i = 0; i < ROSTER_PATHS.length; i++){
+      try{
+        const res = await fetch(ROSTER_PATHS[i], { cache: 'no-store' });
+        if(!res || !res.ok) continue;
+        const json = JSON.parse(String(await res.text()).replace(/,\s*([}\]])/g, '$1'));
+        const list = Array.isArray(json) ? json
+                   : (json && Array.isArray(json.names) ? json.names : null);
+        if(list && list.length){
+          return list.filter(function(n){ return typeof n === 'string' && n.trim(); });
+        }
+      }catch(e){ /* 换下一个来源 */ }
+    }
+    return [];
+  }
+
+  /* ---------- 本机记录 ---------- */
+  function readDrawn(){
+    try{
+      const raw = localStorage.getItem(DRAWN_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter(function(n){ return typeof n === 'string'; }) : [];
+    }catch(e){ return []; }
+  }
+  function saveDrawn(){
+    try{ localStorage.setItem(DRAWN_KEY, JSON.stringify(drawn)); }catch(e){}
+  }
+
+  /* ---------- 画面 ---------- */
+  function showNames(list){
+    elNames.className = 'names' + (list.length ? (list.length > 1 ? ' multi' : '') : ' empty');
+    elNames.textContent = '';
+    if(!list.length){
+      const b = document.createElement('b');
+      b.textContent = '还没抽';
+      elNames.appendChild(b);
+      return;
+    }
+    list.forEach(function(n){
+      const b = document.createElement('b');
+      b.textContent = n;
+      elNames.appendChild(b);
+    });
+  }
+
+  function renderChips(){
+    elChips.textContent = '';
+    if(!drawn.length){
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = '还没有';
+      elChips.appendChild(li);
+      return;
+    }
+    drawn.forEach(function(n){
+      const li = document.createElement('li');
+      li.textContent = n;
+      elChips.appendChild(li);
+    });
+  }
+
+  function updateStat(){
+    if(!names.length){ elStat.textContent = '—'; return; }
+    const left = elNoRepeat.checked ? names.length - drawn.length : names.length;
+    elStat.textContent = names.length + ' 人 · 剩 ' + left;
+  }
+
+  function setState(msg){
+    elState.textContent = msg || '';
+  }
+
+  /* ---------- 摇签动画：只动 elRoll（aria-hidden），结果最后才写进 elNames ---------- */
+  function roll(ms){
+    return new Promise(function(resolve){
+      if(reduceMotion){ resolve(); return; }
+      elRoll.hidden = false;
+      const started = Date.now();
+      const timer = setInterval(function(){
+        if(!names.length){ clearInterval(timer); elRoll.hidden = true; resolve(); return; }
+        elRoll.textContent = names[randInt(names.length)];
+        if(Date.now() - started >= ms){
+          clearInterval(timer);
+          elRoll.hidden = true;
+          resolve();
+        }
+      }, 62);
+    });
+  }
+
+  /* ---------- 抽 ---------- */
+  async function draw(){
+    if(animating) return;
+    setState('');
+
+    if(!names.length){
+      setState('名单没读到（data/roster.json），先回工具箱看看。');
+      return;
+    }
+
+    const k = Math.max(1, Math.min(6, parseInt(elCount.value, 10) || 1));
+    const pool = elNoRepeat.checked
+      ? names.filter(function(n){ return drawn.indexOf(n) === -1; })
+      : names.slice();
+
+    if(pool.length < k){
+      setState('剩下的人不够 ' + k + ' 个了（还剩 ' + pool.length + ' 个），先点「重置」。');
+      return;
+    }
+
+    animating = true;
+    elDraw.disabled = true;
+    if(elHint) elHint.textContent = '签筒在摇…';
+
+    const result = sample(pool, k);
+    await roll(560);
+
+    showNames(result);
+    result.forEach(function(n){ if(drawn.indexOf(n) === -1) drawn.push(n); });
+    saveDrawn();
+
+    if(elHint) elHint.textContent = k > 1 ? '抽到 ' + k + ' 位：' : '抽到：';
+    renderChips();
+    updateStat();
+
+    animating = false;
+    elDraw.disabled = false;
+  }
+
+  /* ---------- 重置 ---------- */
+  function reset(){
+    drawn = [];
+    saveDrawn();
+    renderChips();
+    showNames([]);
+    updateStat();
+    setState('');
+    if(elHint) elHint.textContent = '按「抽一次」，签筒自己摇。';
+  }
+
+  /* ---------- 接线 ---------- */
+  elDraw.addEventListener('click', function(){ draw(); });
+  elReset.addEventListener('click', reset);
+  elCount.addEventListener('change', updateStat);
+  elNoRepeat.addEventListener('change', updateStat);
+
+  /* 启动 */
+  drawn = readDrawn();
+  renderChips();
+  updateStat();
+  loadRoster().then(function(list){
+    names = list;
+    /* 名单换了（转学生 / 改名）：把不在名单里的旧记录清掉，免得住池子算错 */
+    const kept = drawn.filter(function(n){ return list.indexOf(n) !== -1; });
+    if(kept.length !== drawn.length){
+      drawn = kept;
+      saveDrawn();
+      renderChips();
+    }
+    updateStat();
+    elDraw.disabled = !list.length;
+    if(!list.length) setState('名单（data/roster.json）没读到，抽不了。');
+  }).catch(function(){
+    elDraw.disabled = true;
+    setState('名单没读到，抽不了。');
+  });
+})();
+</script>
+</body>
+</html>

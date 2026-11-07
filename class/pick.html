@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>随机抽选 · 八年(11)班</title>
+<!--
+  随机抽选（网页版）—— 一个文件，双击就能用；名单已经嵌在里面。
+  生成物，别手改：源头是 dock/gen-html.mjs（跑 node dock/gen-html.mjs 重新生成）。
+  随机源：crypto.getRandomValues + 拒绝采样（不取模，避免偏）；本次打开期间不重复。
+-->
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#F8F3EC; --paper:#FFFCF7; --ink:#2E2A26; --ink-soft:#6B635A; --ink-faint:#A9A29A;
+    --line:rgba(46,42,38,.12); --accent:#3964FE; --clay:#C05A2E; --gold:#C08A3E;
+    --btn-ink:#FFFFFF;
+    --radius-md:8px; --radius-lg:10px; --radius-xl:12px; --radius-pill:999px;
+    --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14120E; --paper:#1E1B17; --ink:#EDE7DF; --ink-soft:#A29A8E; --ink-faint:#7A736A;
+      --line:rgba(237,231,223,.14); --accent:#8CA0FF; --clay:#E88B6D; --gold:#E0A963;
+      --btn-ink:#14120E;
+    }
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100dvh; display:grid; place-items:center;
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  .card{
+    width:min(360px, calc(100vw - 32px));
+    padding:22px 22px 20px; text-align:center;
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-xl);
+    box-shadow:0 1px 2px rgba(46,42,38,.05), 0 26px 54px -40px rgba(46,42,38,.45);
+  }
+  h1{ margin:0 0 6px; font-family:var(--serif); font-weight:500; font-size:19px; }
+  .art{ width:88px; height:auto; margin:6px auto 2px; display:block; color:var(--ink); }
+  .art .sign{ color:var(--gold); }
+  .state{
+    margin:6px 0 2px; min-height:52px; display:grid; place-items:center;
+    font-family:var(--serif); font-size:clamp(26px,8vw,36px); line-height:1.2;
+  }
+  .state.wait{ font-family:var(--sans); font-size:16px; color:var(--ink-faint); }
+  .sub{ margin:0 0 14px; font-size:12px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  button{
+    width:100%; min-height:46px; border:0; border-radius:var(--radius-md);
+    background:var(--accent); color:var(--btn-ink); font-family:inherit; font-size:15px; font-weight:600;
+    cursor:pointer;
+  }
+  button:active{ transform:translateY(1px); }
+  button:disabled{ opacity:.6; cursor:default; }
+  .foot{ margin:12px 0 0; font-size:11px; color:var(--ink-faint); }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+<main class="card">
+  <h1>随机抽选</h1>
+
+  <svg class="art" viewBox="0 0 220 200" role="img" aria-label="签筒">
+    <g stroke="currentColor" stroke-width="4.4" stroke-linecap="round" fill="none" opacity=".6">
+      <path d="M88 80 78 34"/><path d="M100 78 96 24"/><path d="M120 78 126 27"/><path d="M132 80 146 38"/>
+    </g>
+    <g stroke="#C05A2E" stroke-width="6.4" stroke-linecap="round" fill="none" opacity=".92">
+      <path d="M77.4 39.6 78.6 33.4"/><path d="M95.2 29.6 96.4 23.4"/>
+      <path d="M125.4 32.6 126.6 26.4"/><path d="M144.2 43.4 146.2 37.2"/>
+    </g>
+    <path d="M68 78h84v88a12 12 0 0 1-12 12H80a12 12 0 0 1-12-12z"
+          fill="none" stroke="currentColor" stroke-width="4.6" stroke-linejoin="round"/>
+    <ellipse cx="110" cy="78" rx="42" ry="9" fill="var(--paper)" stroke="currentColor" stroke-width="4.6"/>
+    <path d="M68 108h84M68 146h84" stroke="currentColor" stroke-width="3.6" opacity=".4"/>
+    <g class="sign" stroke="currentColor" stroke-width="4.6" stroke-linecap="round" fill="none">
+      <path d="M150 74 188 22"/>
+    </g>
+    <path class="sign" fill="currentColor" opacity=".92"
+          d="M196 6.5l2.3 4.6 5.1.7-3.7 3.6.9 5.1-4.6-2.4-4.6 2.4.9-5.1-3.7-3.6 5.1-.7z"/>
+  </svg>
+
+  <p class="state wait" id="state" aria-live="polite">【等待抽选】</p>
+  <p class="sub" id="sub">共 51 人</p>
+
+  <button type="button" id="draw">抽一个人</button>
+  <p class="foot">JinSuper 智控班级 · 网页版 · 2026-11-07</p>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var NAMES = ["蔡以牧","曹高硕","曾大栩","曾慕妍","曾亚楠","陈浩铭","陈启森","陈若妍","陈思雯","陈梓祺","陈梓怡","董欣垛","杜诗琪","郭怡辰","何杭臻","黄宏博","黄敬睿","黄上","蒋宗逸","金旭","琚宇哲","柯和盛","柯苏杭","柯欣辰","李庆和","李玥欣","林辰铄","倪舒予","潘雅琪","钱佳佳","邱安烁","施克凡","宋骁畅","苏米夏","苏楠","王钧可","王俊棋","王有铮","项英姬","许珂","杨梓露","叶维豪","应叶子","张维枫","赵一诺","郑元博","周铭轩","周胜博","周斯语","周伊曈","朱昊辰"];
+  var used = [];
+  var rolling = false;
+  var stateEl = document.getElementById('state');
+  var subEl = document.getElementById('sub');
+  var btn = document.getElementById('draw');
+
+  function randomBelow(n){
+    if (n <= 1) return 0;
+    var c = window.crypto || window.msCrypto;
+    if (c && c.getRandomValues) {
+      var buf = new Uint32Array(1);
+      var max = Math.floor(4294967296 / n) * n;
+      var v = 0;
+      do { c.getRandomValues(buf); v = buf[0]; } while (v >= max);
+      return v % n;
+    }
+    return Math.floor(Math.random() * n);
+  }
+  function remaining(){ return NAMES.length - used.length; }
+  function pick(){
+    if (remaining() <= 0) { used = []; }
+    var idx;
+    var guard = 0;
+    do { idx = randomBelow(NAMES.length); guard++; } while (used.indexOf(idx) !== -1 && guard < 5000);
+    if (used.indexOf(idx) !== -1) {
+      for (var i = 0; i < NAMES.length; i++) if (used.indexOf(i) === -1) { idx = i; break; }
+    }
+    used.push(idx);
+    return NAMES[idx];
+  }
+  function sync(){
+    subEl.textContent = '剩 ' + remaining() + ' 人 · 已抽 ' + used.length;
+  }
+  function draw(){
+    if (rolling) return;
+    rolling = true;
+    btn.disabled = true;
+    stateEl.className = 'state wait';
+    var ticks = 0;
+    var timer = setInterval(function(){
+      stateEl.textContent = NAMES[randomBelow(NAMES.length)];
+      if (++ticks >= 12) {
+        clearInterval(timer);
+        var name = pick();
+        stateEl.className = 'state';
+        stateEl.textContent = name;
+        sync();
+        rolling = false;
+        btn.disabled = false;
+      }
+    }, 55);
+  }
+
+  btn.addEventListener('click', draw);
+  document.addEventListener('keydown', function(e){
+    if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); draw(); }
+  });
+  sync();
+})();
+</script>
+</body>
+</html>

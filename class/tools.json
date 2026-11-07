@@ -47,6 +47,24 @@
       "icon": "trophy",
       "kind": "doc",
       "order": 50
+    },
+    {
+      "id": "report",
+      "title": "作业报表",
+      "desc": "从开学到现在各科留过多少次作业：天数、条数、每周分布一页看完，点一科还能看它哪天留过。数字全从 data/hwk 每份记录的科目字段算出来，不用手填。",
+      "href": "/class/report.html",
+      "icon": "chart",
+      "kind": "tool",
+      "order": 60
+    },
+    {
+      "id": "random",
+      "title": "随机抽选",
+      "desc": "摇签筒抽人：一次抽 1–6 个、不重复、本轮抽过的自动排除，刷新也不丢；签筒是手画的。",
+      "href": "/class/random.html",
+      "icon": "draw",
+      "kind": "tool",
+      "order": 70
     }
   ]
 }

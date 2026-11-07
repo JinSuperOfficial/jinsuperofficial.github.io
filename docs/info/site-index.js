@@ -219,6 +219,12 @@ window.SITE_INDEX = {
             },
             {
               "name": "index-produce.json"
+            },
+            {
+              "name": "msg-api.php"
+            },
+            {
+              "name": "roster.json"
             }
           ]
         },
@@ -236,6 +242,15 @@ window.SITE_INDEX = {
         },
         {
           "name": "index.html"
+        },
+        {
+          "name": "pick.html"
+        },
+        {
+          "name": "random.html"
+        },
+        {
+          "name": "report.html"
         },
         {
           "name": "run.html"
@@ -660,6 +675,9 @@ window.SITE_INDEX = {
     },
     {
       "name": "author.png"
+    },
+    {
+      "name": "download.html"
     },
     {
       "name": "favicon.svg"

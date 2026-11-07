@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="apple-touch-icon" href="./apple-touch-icon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="./lib/theme.js"></script>
+<title>下载客户端 · JinSuper 智控班级</title>
+<!--
+  下载页 /download.html
+  ---------------------------------------------------------------------------
+  三个出口：
+    · Windows 安装版（811 套装 = 班级百宝箱 + 作业编辑器）—— 123 云盘
+    · 免安装小工具（smart_dock.exe / 随机抽选.exe / 随机抽选.html）—— 123 云盘 + 蓝奏云盘
+    · 网页版（免安装，浏览器直接用）
+  外链一律 target="_blank" + rel="noopener"。没有 CDN、没有外部字体、图标全是 inline SVG。
+-->
+<style>
+  :root{
+    color-scheme:light;
+
+    --radius-xs:4px;
+    --radius-sm:6px;
+    --radius-md:8px;
+    --radius-lg:10px;
+    --radius-xl:12px;
+    --radius-pill:999px;
+    --radius-control:var(--radius-md);
+    --radius-card:var(--radius-lg);
+    --radius-badge:var(--radius-sm);
+
+    --bg:#F8F3EC;
+    --paper:#FFFCF7;
+    --paper-2:#FBF6EE;
+    --ink:#2E2A26;
+    --ink-soft:#6B635A;
+    --ink-faint:#A9A29A;
+    --oak:#8D6959;
+    --olive:#8E9867;
+    --clay:#D97757;
+    --line:rgba(46,42,38,.12);
+    --line-soft:rgba(46,42,38,.07);
+    --accent:#3964FE;
+    --accent-soft:#ECF0FF;
+    --shadow-1:rgba(46,42,38,.05);
+    --shadow-2:rgba(46,42,38,.34);
+
+    --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  }
+  :root[data-appearance="dark"]{
+    color-scheme:dark;
+    --bg:#14120E;
+    --paper:#1E1B17;
+    --paper-2:#221F1A;
+    --ink:#EDE7DF;
+    --ink-soft:#A29A8E;
+    --ink-faint:#7A736A;
+    --oak:#B89B85;
+    --olive:#A8B57C;
+    --clay:#E88B6D;
+    --line:rgba(237,231,223,.14);
+    --line-soft:rgba(237,231,223,.08);
+    --accent:#8CA0FF;
+    --accent-soft:rgba(140,160,255,.14);
+    --shadow-1:rgba(0,0,0,.30);
+    --shadow-2:rgba(0,0,0,.60);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    background:
+      radial-gradient(980px 520px at 12% -10%, rgba(57,100,254,.10), transparent 62%),
+      radial-gradient(820px 440px at 90% 0%, rgba(192,138,62,.08), transparent 60%);
+  }
+  a{ color:var(--oak); }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:var(--radius-xs); }
+
+  .wrap{
+    max-width:880px;
+    margin:0 auto;
+    padding:clamp(20px,4vw,46px) clamp(16px,4vw,30px) clamp(40px,7vw,72px);
+  }
+
+  .back{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:16px;
+    font-size:13px;
+    color:var(--ink-soft);
+    text-decoration:none;
+  }
+  .back:hover{ color:var(--ink); }
+  .back svg{ width:14px;height:14px; }
+
+  .kicker{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    margin:0 0 8px;
+    font-size:11px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .kicker::before{ content:""; width:26px;height:1px;background:var(--clay); flex:none; }
+
+  h1{
+    margin:0 0 8px;
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(26px,5vw,38px);
+    line-height:1.2;
+    letter-spacing:-.01em;
+  }
+  .sub{ margin:0; max-width:58ch; color:var(--ink-soft); font-size:14px; }
+
+  /* ---------------- 卡片 ---------------- */
+  .card{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    gap:clamp(14px,2.6vw,20px);
+    align-items:start;
+    margin-top:clamp(16px,3vw,22px);
+    padding:clamp(16px,3vw,22px);
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+    background:var(--paper);
+    box-shadow:0 1px 2px var(--shadow-1), 0 24px 48px -40px var(--shadow-2);
+  }
+  .ico{
+    width:56px;height:56px;
+    display:grid;place-items:center;
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    background:var(--paper-2);
+    color:var(--accent);
+  }
+  .ico svg{ width:30px;height:30px; }
+  .body{ min-width:0; }
+  .body h2{
+    margin:0 0 4px;
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:19px;
+    line-height:1.3;
+  }
+  .meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin:8px 0 0;
+  }
+  .chip{
+    padding:1px 8px;
+    border:1px solid var(--line-soft);
+    border-radius:var(--radius-badge);
+    background:var(--paper-2);
+    color:var(--ink-soft);
+    font-size:11.5px;
+    line-height:1.8;
+    white-space:nowrap;
+  }
+  .chip.ok{ color:var(--olive); border-color:rgba(142,152,103,.45); }
+
+  .links{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+  }
+  .dl{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    min-height:42px;
+    padding:0 16px;
+    border:1px solid var(--accent);
+    border-radius:var(--radius-control);
+    background:var(--accent);
+    color:#FFFCF7;
+    font-size:14px;
+    font-weight:500;
+    text-decoration:none;
+    transition:filter .15s ease, transform .1s ease;
+  }
+  :root[data-appearance="dark"] .dl{ color:#14120E; }
+  .dl svg{ width:15px;height:15px; }
+  .dl:hover{ filter:brightness(.94); }
+  .dl:active{ transform:translateY(1px); }
+  .dl.ghost{
+    background:transparent;
+    border-color:var(--line);
+    color:var(--ink);
+  }
+  .dl.ghost:hover{ border-color:var(--accent); }
+  .pw{
+    font-size:12px;
+    color:var(--ink-soft);
+    align-self:center;
+  }
+  .pw b{ color:var(--ink); font-weight:600; letter-spacing:.06em; }
+
+  .note{
+    margin:12px 0 0;
+    font-size:12.5px;
+    line-height:1.75;
+    color:var(--ink-soft);
+  }
+
+  h2.sec{
+    margin:clamp(26px,4vw,34px) 0 10px;
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:17px;
+  }
+  .web{
+    display:grid;
+    gap:8px;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    margin:0;
+    padding:0;
+    list-style:none;
+  }
+  .web a{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+    background:var(--paper);
+    color:var(--ink);
+    text-decoration:none;
+    font-size:14px;
+  }
+  .web a:hover{ border-color:var(--accent); }
+  .web a span{ color:var(--ink-soft); font-size:12px; }
+  .web a b{ font-family:var(--mono, ui-monospace); font-weight:500; }
+
+  .foot{
+    margin:clamp(26px,4vw,36px) 0 0;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+    line-height:1.9;
+    color:var(--ink-soft);
+  }
+  .foot code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:11.5px;
+    padding:1px 5px;
+    border-radius:var(--radius-xs);
+    background:var(--paper-2);
+    border:1px solid var(--line-soft);
+  }
+
+  @media (max-width:520px){
+    .card{ grid-template-columns:1fr; }
+    .ico{ width:48px;height:48px; }
+    .ico svg{ width:26px;height:26px; }
+    .dl{ flex:1 1 100%; justify-content:center; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="./">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M15 5l-7 7 7 7"/>
+    </svg>
+    回百宝箱首页
+  </a>
+
+  <header>
+    <p class="kicker">Downloads · Windows</p>
+    <h1>下载客户端</h1>
+    <p class="sub">
+      811 的东西在这台电脑上装一遍就够：一个安装版（班级百宝箱 + 作业编辑器），
+      外加两个免安装的小工具（智慧悬浮窗 / 随机抽选）。
+    </p>
+  </header>
+
+  <!-- ── 1. 安装版 ───────────────────────────────────────────── -->
+  <section class="card" aria-labelledby="winTitle">
+    <span class="ico" aria-hidden="true">
+      <!-- Windows 四格 -->
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 5.6l7.4-1v6.9H3zM11.6 4.4L21 3v8.5h-9.4zM3 12.7h7.4v6.9L3 18.4zM11.6 12.7H21V21l-9.4-1.3z"/>
+      </svg>
+    </span>
+    <div class="body">
+      <h2 id="winTitle">适用于 Windows 的 JinSuper 智控班级</h2>
+      <p class="note" style="margin-top:2px">
+        安装包（<b>811 套装</b>）：班级百宝箱、作业编辑器，装完桌面两个图标。
+      </p>
+      <div class="meta">
+        <span class="chip ok">v1.2.0</span>
+        <span class="chip">Windows 10 / 11 · x64</span>
+        <span class="chip">只装给当前用户（免管理员）</span>
+      </div>
+      <div class="links">
+        <a class="dl" href="https://1825844605.share.123pan.cn/123pan/WO3Njv-J7T5"
+           target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 4v10"/><path d="m8 11 4 4 4-4"/><path d="M4 18.5h16"/>
+          </svg>
+          123 云盘
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2. 免安装小工具 ─────────────────────────────────────── -->
+  <section class="card" aria-labelledby="toolTitle">
+    <span class="ico" aria-hidden="true">
+      <!-- 悬浮窗：一张小卡片 + 时钟 -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4.5" width="13.5" height="9.5" rx="2"/>
+        <path d="M6 8h4M6 10.5h6"/>
+        <circle cx="16.6" cy="15.6" r="4.2"/>
+        <path d="M16.6 13.4v2.2l1.5 1"/>
+      </svg>
+    </span>
+    <div class="body">
+      <h2 id="toolTitle">适用于 Windows 的 JinSuper 智控班级 · 免安装</h2>
+      <p class="note" style="margin-top:2px">
+        <code>smart_dock.exe</code>（智慧悬浮窗：当前科目 / 下节课 / 北京时间，可开机自启、可置顶）·
+        <code>随机抽选.exe</code>（一个窗口抽人）· <code>随机抽选.html</code>（网页版，双击即开）。
+        三个都不写注册表（除了悬浮窗那个「开机自启」开关是你自己点的）。
+      </p>
+      <div class="meta">
+        <span class="chip ok">C++ 静态编译</span>
+        <span class="chip">不需要 .NET / VC++ 运行时</span>
+        <span class="chip">合计不到 1 MB</span>
+      </div>
+      <div class="links">
+        <a class="dl" href="https://1825844605.share.123pan.cn/123pan/WO3Njv-J7T5"
+           target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 4v10"/><path d="m8 11 4 4 4-4"/><path d="M4 18.5h16"/>
+          </svg>
+          123 云盘
+        </a>
+        <a class="dl ghost" href="https://jinsuper.lanzn.com/b00g4mpy2f"
+           target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 4h9a2 2 0 0 1 2 2v9"/>
+            <rect x="4" y="9" width="11" height="11" rx="2"/>
+          </svg>
+          蓝奏云盘
+        </a>
+        <span class="pw">密码 <b>1234</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. 网页版 ───────────────────────────────────────────── -->
+  <h2 class="sec">懒得装？网页版直接开</h2>
+  <ul class="web">
+    <li>
+      <a href="./class/pick.html">
+        <b>随机抽选</b><span>一页一个按钮，双击也能用</span>
+      </a>
+    </li>
+    <li>
+      <a href="./class/random.html">
+        <b>随机抽选 · 完整版</b><span>1–6 人、不重复、签筒</span>
+      </a>
+    </li>
+    <li>
+      <a href="./class/homework.html">
+        <b>今日作业</b><span>勾选、留言、截图</span>
+      </a>
+    </li>
+  </ul>
+
+  <p class="foot">
+    三个 exe 都是 MinGW-w64 编译的 <b>C++ 静态链接</b>程序：<code>-static</code> +
+    <code>-static-libgcc</code> + <code>-static-libstdc++</code>，除了 Windows 自带的 DLL 以外
+    不依赖任何运行库，拷到别的机器上双击就能跑。<br>
+    源码在仓库的 <code>dock/</code>（<code>build.cmd</code> 一条命令重新编译），
+    课程表与名单是编译期从站点数据生成的 —— 课表换了就重新编译一次。
+  </p>
+
+</div>
+</body>
+</html>

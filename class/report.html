@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="apple-touch-icon" href="../apple-touch-icon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="../lib/theme.js"></script>
+<title>作业报表 · 八年(11)班</title>
+<!--
+  学期报表 /class/report.html
+  ---------------------------------------------------------------------------
+  数据来源**只有一处**：class/data/hwk/*.json（作业编辑器按字段写出来的那些天）。
+  这里一位老师也不用配：打开页面 → 读 index.json → 并发取回每份记录 → 按科目聚合。
+  · 「天数」= 有多少天的记录里出现了这一科
+  · 「条」  = 这一科正文的非空行数（和作业页一行一条的拆法一致）
+  · 「查」  = 按科目名过滤；点一科展开它出现过的日期
+  不读勾选状态、不算完成率 —— 那是作业页自己（localStorage）的事，别在这儿重算一遍哈希。
+
+  纯静态：热铁盒 / GitHub Pages / 桌面与安卓的离线副本都能跑（只读 JSON，没有后端）。
+-->
+<style>
+  :root{
+    color-scheme:light;
+
+    /* ---------- 圆角 token（theme-plus 规范：≤12px，按钮 8，卡片 10） ---------- */
+    --radius-xs:4px;
+    --radius-sm:6px;
+    --radius-md:8px;
+    --radius-lg:10px;
+    --radius-xl:12px;
+    --radius-pill:999px;
+    --radius-control:var(--radius-md);
+    --radius-card:var(--radius-lg);
+    --radius-badge:var(--radius-sm);
+    --radius-dot:var(--radius-pill);
+
+    --bg:#F8F3EC;
+    --paper:#FFFCF7;
+    --paper-2:#FBF6EE;
+    --ink:#2E2A26;
+    --ink-soft:#6B635A;
+    --oak:#8D6959;
+    --olive:#8E9867;
+    --clay:#D97757;
+    --line:rgba(46,42,38,.12);
+    --line-soft:rgba(46,42,38,.07);
+    --track:rgba(46,42,38,.08);
+    --cta-bg:#B0552F;
+    --cta-bg-hover:#98462A;
+    --shadow-1:rgba(46,42,38,.05);
+    --shadow-2:rgba(46,42,38,.34);
+
+    --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  }
+  /* theme.js 会把解析后的外观写到 <html data-appearance>；皮肤只认这一个状态 */
+  :root[data-appearance="dark"]{
+    color-scheme:dark;
+    --bg:#14120E;
+    --paper:#1E1B17;
+    --paper-2:#221F1A;
+    --ink:#EDE7DF;
+    --ink-soft:#A29A8E;
+    --oak:#B89B85;
+    --olive:#A8B57C;
+    --clay:#E88B6D;
+    --line:rgba(237,231,223,.14);
+    --line-soft:rgba(237,231,223,.08);
+    --track:rgba(237,231,223,.10);
+    --cta-bg:#C9683D;
+    --cta-bg-hover:#B0552F;
+    --shadow-1:rgba(0,0,0,.30);
+    --shadow-2:rgba(0,0,0,.60);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    background:
+      radial-gradient(1000px 540px at 10% -10%, rgba(142,152,103,.12), transparent 62%),
+      radial-gradient(820px 460px at 92% 0%, rgba(176,85,47,.08), transparent 60%);
+  }
+  a{ color:var(--oak); }
+  :focus-visible{ outline:2px solid var(--cta-bg); outline-offset:3px; border-radius:var(--radius-xs); }
+
+  .wrap{
+    max-width:900px;
+    margin:0 auto;
+    padding:clamp(20px,4vw,46px) clamp(16px,4vw,30px) clamp(40px,7vw,72px);
+  }
+
+  .back{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:16px;
+    font-size:13px;
+    color:var(--ink-soft);
+    text-decoration:none;
+  }
+  .back:hover{ color:var(--ink); }
+  .back svg{ width:14px;height:14px; }
+
+  .kicker{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    margin:0 0 8px;
+    font-size:11px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--oak);
+  }
+  .kicker::before{ content:""; width:26px;height:1px;background:var(--clay); flex:none; }
+
+  h1{
+    margin:0 0 8px;
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(26px,5vw,38px);
+    line-height:1.2;
+    letter-spacing:-.01em;
+  }
+  .sub{
+    margin:0;
+    max-width:58ch;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+
+  /* ---------- 概览数字 ---------- */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:10px;
+    margin:22px 0 0;
+    padding:0;
+    list-style:none;
+  }
+  .stats li{
+    padding:13px 14px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+    background:var(--paper);
+  }
+  .stats b{
+    display:block;
+    font-family:var(--serif);
+    font-size:30px;
+    font-weight:500;
+    line-height:1.1;
+  }
+  .stats span{ font-size:12.5px; color:var(--ink-soft); }
+
+  /* ---------- 工具条 ---------- */
+  .bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:26px 0 12px;
+  }
+  .bar h2{
+    margin:0;
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:19px;
+  }
+  .bar .hint{ font-size:12.5px; color:var(--ink-soft); }
+  .search{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:0 11px;
+    min-height:38px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-control);
+    background:var(--paper);
+  }
+  .search svg{ width:15px;height:15px; color:var(--ink-soft); flex:none; }
+  .search input{
+    width:clamp(96px,26vw,190px);
+    padding:0;
+    border:0;
+    background:transparent;
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+  }
+  .search input:focus{ outline:none; }
+  .search:focus-within{ border-color:var(--cta-bg); }
+
+  /* ---------- 科目表 ---------- */
+  .card{
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+    background:var(--paper);
+    box-shadow:0 1px 2px var(--shadow-1), 0 20px 44px -36px var(--shadow-2);
+    overflow:hidden;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:minmax(64px,96px) minmax(0,1fr) auto;   /* 第三列按内容宽，别定死：中文「5 天 · 8 条」比 64px 宽 */
+    gap:12px;
+    align-items:center;
+    width:100%;
+    padding:12px 16px;
+    border:0;
+    border-top:1px solid var(--line-soft);
+    background:transparent;
+    color:inherit;
+    font-family:inherit;
+    font-size:14px;
+    text-align:left;
+    cursor:pointer;
+  }
+  .row:first-child{ border-top:0; }
+  .row:hover{ background:var(--paper-2); }
+  .row[aria-expanded="true"]{ background:var(--paper-2); }
+  .row-name{ font-weight:600; display:flex; align-items:center; gap:7px; }
+  .dot{
+    width:8px;height:8px;
+    border-radius:var(--radius-dot);
+    flex:none;
+    background:var(--c,var(--olive));
+  }
+  .track{
+    position:relative;
+    height:8px;
+    border-radius:var(--radius-xs);
+    background:var(--track);
+    overflow:hidden;
+  }
+  .fill{
+    position:absolute;
+    left:0; top:0; bottom:0;
+    border-radius:var(--radius-xs);
+    background:var(--c,var(--olive));
+    opacity:.82;
+    transition:width .5s cubic-bezier(.2,.7,.2,1);
+  }
+  .row-num{
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink-soft);
+    font-size:13px;
+    white-space:nowrap;
+  }
+  .row-num b{ color:var(--ink); font-weight:600; }
+
+  .detail{
+    padding:2px 16px 14px;
+    border-top:1px dashed var(--line);
+    background:var(--paper-2);
+  }
+  .detail[hidden]{ display:none; }
+  .detail p{ margin:8px 0 0; font-size:13px; color:var(--ink-soft); }
+  .days{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin:9px 0 0;
+    padding:0;
+    list-style:none;
+  }
+  .days li{
+    padding:3px 9px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-badge);
+    background:var(--paper);
+    font-size:12px;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- 每周分布 ---------- */
+  .weeks{
+    display:flex;
+    align-items:flex-end;
+    gap:6px;
+    margin:16px 0 0;
+    padding:14px 16px 12px;
+    min-height:96px;
+  }
+  .wk{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    gap:6px;
+  }
+  .wk-bar{
+    display:block;                 /* <i> 默认是 inline，不给 block 的话 height 不生效（踩过） */
+    width:min(100%, 34px);
+    height:var(--h,6px);
+    min-height:6px;
+    border-radius:var(--radius-xs) var(--radius-xs) 0 0;
+    background:var(--clay);
+    opacity:.7;
+  }
+  .wk-v{
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+  }
+  .wk-n{
+    font-size:10.5px;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    line-height:1;
+  }
+  .wk-empty{
+    margin:0;
+    padding:18px 16px;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+
+  .state{
+    margin:18px 0 0;
+    padding:14px 16px;
+    border:1px dashed var(--line);
+    border-radius:var(--radius-card);
+    font-size:13.5px;
+    color:var(--ink-soft);
+  }
+  .state[hidden]{ display:none; }
+
+  .foot{
+    margin:28px 0 0;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+    line-height:1.9;
+    color:var(--ink-soft);
+  }
+  .foot code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:11.5px;
+    padding:1px 5px;
+    border-radius:var(--radius-xs);
+    background:var(--paper-2);
+    border:1px solid var(--line-soft);
+  }
+
+  @media (max-width:520px){
+    /* 三个数字横着放得下，别让第三个掉到第二行单占一格 */
+    .stats{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .stats li{ padding:11px 10px; }
+    .row{ grid-template-columns:minmax(56px,78px) minmax(0,1fr) auto; gap:9px; padding:11px 13px; }
+    .search{ margin-left:0; width:100%; }
+    .search input{ width:100%; }
+    .stats b{ font-size:25px; }
+    .weeks{ gap:4px; padding:12px 12px 10px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="/class/index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M15 5l-7 7 7 7"/>
+    </svg>
+    回 811 工具箱
+  </a>
+
+  <header>
+    <p class="kicker">Class 8-11 · Report</p>
+    <h1>作业报表</h1>
+    <p class="sub">
+      从开学到现在，每科到底留过多少次作业 —— 数字全部来自
+      <code>class/data/hwk/</code> 里那些记录里的科目字段，不靠手填。
+    </p>
+  </header>
+
+  <ul class="stats" id="stats">
+    <li><b>—</b><span>天作业</span></li>
+    <li><b>—</b><span>个科目</span></li>
+    <li><b>—</b><span>条作业</span></li>
+  </ul>
+
+  <p class="state" id="state" hidden></p>
+
+  <div class="bar">
+    <h2>各科作业数</h2>
+    <span class="hint">点一科看它哪天留过</span>
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.4"/>
+        <path d="M15.8 15.8 21 21"/>
+      </svg>
+      <input type="search" id="find" placeholder="找科目…" aria-label="按科目名查找" autocomplete="off">
+    </label>
+  </div>
+
+  <section class="card" id="subjectCard" aria-label="各科作业数">
+    <div id="subjects"></div>
+    <p class="state" id="empty" hidden>还没有数据。</p>
+  </section>
+
+  <div class="bar">
+    <h2>每周留了几次</h2>
+    <span class="hint" id="weekHint">按 ISO 周（周一开始）</span>
+  </div>
+  <section class="card">
+    <div class="weeks" id="weeks"></div>
+    <p class="wk-empty" id="weekEmpty" hidden>数据太少，画不出每周分布。</p>
+  </section>
+
+  <p class="foot">
+    口径：<b>天数</b> = 有多少天的记录里出现了这一科；<b>条</b> = 这一科正文的非空行数
+    （和作业页一行一条的拆法一致）。勾选状态与完成率在作业页本机（<code>localStorage</code>），
+    这里不读、不重算 —— 少一份会走样的实现。<br>
+    数据：<code>class/data/hwk/*.json</code> · 来源 <code>class/data/hwk/index.json</code>。
+  </p>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  const IDX_PATHS = ['./data/hwk/index.json', '/class/data/hwk/index.json', '/data/hwk/index.json'];
+  const DIRS      = ['./data/hwk/', '/class/data/hwk/', '/data/hwk/'];
+
+  /* 保留字：和作业页一致 —— 这些顶层键不是科目。
+     `RESERVED_KEYS`（作业页 §科目）取 5 个，`INLINE_RESERVED`（读文件那段）取 13 个，
+     这里取两者的并集；build/test-class-pages.mjs 会比对，改一处记得跟着改。 */
+  const RESERVED = ['id','date','title','bg','name','file','subjects','notesId','eggId',
+                    'homework','notes','egg','彩蛋','笔记'];
+
+  /* 五个固定科目 + 它们的别名（记录里写 chinese / yuwen 也算语文） */
+  const BASE = [
+    { name:'语文', keys:['语文','chinese','yuwen'] },
+    { name:'数学', keys:['数学','math','shuxue'] },
+    { name:'英语', keys:['英语','english','yingyu'] },
+    { name:'科学', keys:['科学','science','kexue'] },
+    { name:'社会', keys:['社会','social','shehui'] }
+  ];
+
+  /* 科目配色：和作业页一样按科目名稳定取色（同一个科目永远是同一个颜色） */
+  const RAMP = [8, 24, 40, 96, 142, 168, 196, 212, 246, 288, 320, 344];
+
+  const elStats  = document.getElementById('stats');
+  const elState  = document.getElementById('state');
+  const elSubs   = document.getElementById('subjects');
+  const elEmpty  = document.getElementById('empty');
+  const elFind   = document.getElementById('find');
+  const elWeeks  = document.getElementById('weeks');
+  const elWeekEmpty = document.getElementById('weekEmpty');
+
+  let rows = [];          /* [{name, days:[{date,title,lines}], lines}] */
+  let openName = '';      /* 展开着的那一科 */
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function hueOf(name){
+    let h = 0;
+    for(let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 997;
+    return RAMP[h % RAMP.length];
+  }
+  function colorOf(name){ return 'hsl(' + hueOf(name) + ' 42% 52%)'; }
+
+  async function getJSON(url){
+    const res = await fetch(url, { cache:'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    return JSON.parse(String(await res.text()).replace(/,\s*([}\]])/g, '$1'));
+  }
+
+  async function firstJSON(paths){
+    let lastErr = null;
+    for(const url of paths){
+      try{ return await getJSON(url); }catch(e){ lastErr = e; }
+    }
+    throw lastErr || new Error('读不到');
+  }
+
+  /* 一行 = 一条：和作业页 splitLines 同一套拆法（也认被转义成字面量的 \\n） */
+  function splitLines(v){
+    if(Array.isArray(v)) return v.reduce(function(a, x){ return a.concat(splitLines(x)); }, []);
+    if(v === null || v === undefined) return [];
+    return String(v).replace(/\\n/g, '\n').split(/\r?\n/)
+      .map(function(s){ return s.trim(); })
+      .filter(Boolean);
+  }
+
+  /* 别名 → 固定科目名（chinese / yuwen 都算语文） */
+  function canon(key){
+    const lower = String(key).toLowerCase();
+    for(let i = 0; i < BASE.length; i++){
+      if(BASE[i].keys.indexOf(lower) !== -1) return BASE[i].name;
+    }
+    return String(key);
+  }
+
+  /* 记录 → 科目列表（每科 = 正文非空行数） */
+  function subjectsOf(rec){
+    if(!rec || typeof rec !== 'object') return [];
+    const body = (rec.homework && typeof rec.homework === 'object') ? rec.homework : rec;
+    const out = [];
+    Object.keys(body).forEach(function(k){
+      if(RESERVED.indexOf(k) !== -1) return;
+      const lines = splitLines(body[k]);
+      if(!lines.length) return;
+      out.push({ name: canon(k), lines: lines.length });
+    });
+    return out;
+  }
+
+  function pad2(n){ return n < 10 ? '0' + n : String(n); }
+  function fmtDate(d){
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ''));
+    if(!m) return String(d || '');
+    return m[1] + '-' + m[2] + '-' + m[3];
+  }
+
+  /* ISO 周：周一为一周之始，返回 "2026-W45" */
+  function isoWeek(dateStr){
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+    if(!m) return '';
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);           /* 挪到那一周的周四 */
+    const year = d.getUTCFullYear();
+    const start = new Date(Date.UTC(year, 0, 1));
+    const week = Math.ceil((((d - start) / 86400000) + 1) / 7);
+    return year + '-W' + pad2(week);
+  }
+
+  function renderStats(days, subjects, lines){
+    elStats.innerHTML =
+      '<li><b>' + days + '</b><span>天作业</span></li>' +
+      '<li><b>' + subjects + '</b><span>个科目</span></li>' +
+      '<li><b>' + lines + '</b><span>条作业</span></li>';
+  }
+
+  function renderSubjects(){
+    const q = String(elFind.value || '').trim().toLowerCase();
+    const list = rows.filter(function(r){ return !q || r.name.toLowerCase().indexOf(q) !== -1; });
+
+    if(!list.length){
+      elSubs.innerHTML = '';
+      elEmpty.hidden = false;
+      elEmpty.textContent = rows.length ? '没有匹配「' + elFind.value + '」的科目。' : '还没有数据。';
+      return;
+    }
+    elEmpty.hidden = true;
+
+    const maxDays = Math.max.apply(null, list.map(function(r){ return r.days.length; }).concat([1]));
+
+    elSubs.innerHTML = list.map(function(r){
+      const c = colorOf(r.name);
+      const pct = Math.max(6, Math.round(r.days.length / maxDays * 100));
+      const open = r.name === openName;
+      const id = 'd-' + encodeURIComponent(r.name);
+      return '' +
+        '<button class="row" type="button" data-name="' + esc(r.name) + '"' +
+          ' aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + id + '">' +
+          '<span class="row-name"><i class="dot" style="--c:' + c + '"></i>' + esc(r.name) + '</span>' +
+          '<span class="track"><i class="fill" style="--c:' + c + ';width:' + pct + '%"></i></span>' +
+          '<span class="row-num"><b>' + r.days.length + '</b> 天 · ' + r.lines + ' 条</span>' +
+        '</button>' +
+        '<div class="detail" id="' + id + '"' + (open ? '' : ' hidden') + '>' +
+          '<p>最近一次：' + esc(r.days[0] ? (fmtDate(r.days[0].date) + '（' + (r.days[0].title || '无标题') + '）') : '—') + '</p>' +
+          '<ul class="days">' +
+            r.days.slice(0, 60).map(function(d){
+              return '<li>' + esc(fmtDate(d.date)) + '</li>';
+            }).join('') +
+          '</ul>' +
+        '</div>';
+    }).join('');
+
+    Array.prototype.forEach.call(elSubs.querySelectorAll('.row'), function(btn){
+      btn.addEventListener('click', function(){
+        const name = btn.getAttribute('data-name');
+        openName = (openName === name) ? '' : name;
+        renderSubjects();
+        if(openName){
+          const el = document.getElementById('d-' + encodeURIComponent(openName));
+          if(el && el.scrollIntoView) el.scrollIntoView({ block:'nearest' });
+        }
+      });
+    });
+  }
+
+  function renderWeeks(records){
+    const byWeek = {};
+    records.forEach(function(r){
+      const w = isoWeek(r.date || '');
+      if(!w) return;
+      byWeek[w] = (byWeek[w] || 0) + 1;
+    });
+    const weeks = Object.keys(byWeek).sort();
+    if(weeks.length < 2){
+      elWeeks.innerHTML = '';
+      elWeekEmpty.hidden = false;
+      return;
+    }
+    elWeekEmpty.hidden = true;
+    const max = Math.max.apply(null, weeks.map(function(w){ return byWeek[w]; }).concat([1]));
+    elWeeks.innerHTML = weeks.map(function(w){
+      const n = byWeek[w];
+      const h = Math.max(8, Math.round(n / max * 64));
+      return '<div class="wk" title="' + esc(w) + '：' + n + ' 天">' +
+               '<b class="wk-v">' + n + '</b>' +
+               '<i class="wk-bar" style="--h:' + h + 'px"></i>' +
+               '<span class="wk-n">' + esc(w.replace(/^\d{4}-W/, 'W')) + '</span>' +
+             '</div>';
+    }).join('');
+  }
+
+  async function load(){
+    let index;
+    try{
+      index = await firstJSON(IDX_PATHS);
+    }catch(err){
+      elState.hidden = false;
+      elState.textContent = '读不到作业目录（' + err.message + '）。用本地服务器打开，或等线上那份出来再看。';
+      elEmpty.hidden = false;
+      return;
+    }
+    const entries = Array.isArray(index) ? index
+                  : (index && Array.isArray(index.entries) ? index.entries : []);
+    const files = entries.filter(function(e){ return e && typeof e.name === 'string' && /^hwk-.+\.json$/.test(e.name); });
+
+    if(!files.length){
+      elEmpty.hidden = false;
+      elEmpty.textContent = '目录里还没有 hwk-*.json。';
+      return;
+    }
+
+    /* 并发取，但别一次把几十份都怼上去 */
+    const LIMIT = 6;
+    const records = [];
+    for(let i = 0; i < files.length; i += LIMIT){
+      const chunk = files.slice(i, i + LIMIT);
+      const got = await Promise.all(chunk.map(function(f){
+        return getJSON(DIRS[0] + f.name).catch(function(){
+          return getJSON(DIRS[1] + f.name).catch(function(){
+            return getJSON(DIRS[2] + f.name).catch(function(){ return null; });
+          });
+        });
+      }));
+      got.forEach(function(rec, k){
+        if(!rec) return;
+        records.push(Object.assign({}, rec, {
+          date: rec.date || chunk[k].date || '',
+          title: rec.title || chunk[k].title || ''
+        }));
+      });
+    }
+
+    if(!records.length){
+      elState.hidden = false;
+      elState.textContent = '目录里有 ' + files.length + ' 份记录，但一份都没读回来 —— 可能是路径不对。';
+      return;
+    }
+
+    records.sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); });
+
+    /* 聚合：科目 → 它出现过的每一天 */
+    const map = Object.create(null);
+    let totalLines = 0;
+    records.forEach(function(rec){
+      subjectsOf(rec).forEach(function(sub){
+        if(!map[sub.name]) map[sub.name] = { name: sub.name, days: [], lines: 0 };
+        map[sub.name].days.push({ date: rec.date, title: rec.title, lines: sub.lines });
+        map[sub.name].lines += sub.lines;
+        totalLines += sub.lines;
+      });
+    });
+
+    rows = Object.keys(map).map(function(k){ return map[k]; });
+    rows.forEach(function(r){ r.days.sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); }); });
+    rows.sort(function(a, b){ return b.days.length - a.days.length || a.name.localeCompare(b.name); });
+
+    renderStats(records.length, rows.length, totalLines);
+    renderSubjects();
+    renderWeeks(records);
+  }
+
+  elFind.addEventListener('input', renderSubjects);
+  load().catch(function(err){
+    elState.hidden = false;
+    elState.textContent = '出错了：' + (err && err.message ? err.message : err);
+  });
+})();
+</script>
+</body>
+</html>
