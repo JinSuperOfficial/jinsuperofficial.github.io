@@ -20,7 +20,7 @@
 }
 
 /* 三个落点，样式只差外边距 */
-.hwa--head{ margin-right:2px }
+.hwa--head{ display:flex; margin:0 0 12px }
 .hwa--back{ margin:0 10px 16px 0 }
 .hwa--traffic{ margin-left:4px }
 .hwa--fixed{ position:fixed; left:12px; top:12px; z-index:80 }
