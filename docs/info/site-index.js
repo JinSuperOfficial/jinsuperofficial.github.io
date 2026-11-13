@@ -192,6 +192,9 @@ window.SITE_INDEX = {
                   "name": "hwk-n261106.json"
                 },
                 {
+                  "name": "hwk-n261110.json"
+                },
+                {
                   "name": "index.json"
                 }
               ]
