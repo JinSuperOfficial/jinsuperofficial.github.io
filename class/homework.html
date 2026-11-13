@@ -213,7 +213,7 @@
   }
   .bg::after{
     content:''; position:absolute; inset:0;
-    background:color-mix(in srgb, var(--bg) var(--bg-veil,62%), transparent);
+    background:color-mix(in srgb, var(--bg) var(--bg-veil,78%), transparent);
   }
   @media (prefers-color-scheme: dark){
     /* 深色下底图还是浅色纸，必须压得更狠，不然浅底 + 浅字没法看 */
@@ -238,11 +238,11 @@
     justify-content:space-between;
     gap:14px;
     flex-wrap:wrap;
-    margin-bottom:16px;
+    margin-bottom:20px;
   }
 
-  /* 头部右上角：切换背景 + 更多工具，两个按钮同排，窄屏自动换行 */
-  .head-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  /* 操作区保持完整，桌面上作为一条紧凑的工具栏。 */
+  .head-acts{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 
   .kicker{
     display:inline-flex;
@@ -267,16 +267,16 @@
     cursor:pointer;
     display:inline-flex;
     align-items:center;
-    gap:7px;
-    min-height:34px;
-    padding:0 14px;
-    border:1px solid var(--tint-line);
+    gap:6px;
+    min-height:36px;
+    padding:0 10px;
+    border:1px solid var(--line);
     border-radius:var(--radius-control);
-    background:var(--tint-soft);
-    color:var(--tint-text);
+    background:var(--paper);
+    color:var(--ink-soft);
     font-family:inherit;
-    font-size:13px;
-    letter-spacing:.03em;
+    font-size:12.5px;
+    letter-spacing:0;
     text-decoration:none;
     white-space:nowrap;
     transition:
@@ -296,11 +296,11 @@
   .more-btn:focus-visible{outline:2px solid var(--tint-accent);outline-offset:3px}
 
   h1{
-    font-family:var(--serif);
-    font-weight:500;
-    font-size:clamp(27px,5.4vw,42px);
-    line-height:1.26;
-    letter-spacing:-.01em;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:clamp(28px,5vw,40px);
+    line-height:1.25;
+    letter-spacing:-.035em;
   }
 
   /* ---------- 子标题（来自 JSON 的 title） ---------- */
@@ -387,8 +387,7 @@
     92%{ transform:translate3d(.4px,-.15px,0) rotate(.2deg); }
   }
   .badge.excited{
-    animation:excited-shake 3.2s cubic-bezier(.4,0,.2,1) infinite;
-    will-change:transform;
+    font-weight:600;
   }
   @media (prefers-reduced-motion: reduce){
     .badge.excited{ animation:none; }
@@ -432,12 +431,10 @@
   /* ---------- 表格卡片 ---------- */
   .card{
     background:var(--paper);
-    border:1px solid var(--tint-card);
+    border:1px solid var(--line);
     border-radius:var(--radius-card);
     overflow:hidden;
-    box-shadow:
-      0 1px 2px var(--shadow-1),
-      0 26px 52px -34px var(--shadow-2);
+    box-shadow:0 8px 28px -20px var(--shadow-2);
     transition:border-color .5s ease, background .3s ease, box-shadow .3s ease;
   }
 
@@ -474,10 +471,11 @@
   .subject{
     display:inline-flex;
     align-items:center;
-    gap:9px;
-    font-family:var(--serif);
-    font-size:15.5px;
-    letter-spacing:.05em;
+    gap:10px;
+    font-family:var(--sans);
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0;
     white-space:nowrap;
   }
   /* ---------- 科目图标（已经取代原来的小光点） ----------
@@ -527,18 +525,20 @@
     }
   }
 
-  .hw-list{list-style:none;display:grid;gap:11px}
+  .hw-list{list-style:none;display:grid;gap:4px}
 
   .hw-item{
     display:flex;
     align-items:flex-start;
-    gap:11px;
+    gap:12px;
     cursor:pointer;
-    padding:2px 0;
+    min-height:38px;
+    padding:5px 6px;
     border-radius:var(--radius-sm);
     -webkit-tap-highlight-color:transparent;
     user-select:none;
   }
+  .hw-item:hover{background:var(--tint-soft)}
   .hw-item:focus-visible{
     outline:2px solid var(--tint-accent);
     outline-offset:3px;
@@ -2575,7 +2575,7 @@
 
   <header class="head rv">
     <div class="head-top">
-      <p class="kicker">Homework · 每日清单</p>
+      <p class="kicker">八年（11）班 · 每日清单</p>
 
       <div class="head-acts" id="headActs" role="group" aria-label="页面动作">
         <!-- ★ 切换页面背景：默认(跟随 JSON) → 网格 → 水墨 → 地图 → 植物 → 游戏-MC → 游戏-UT → 默认
