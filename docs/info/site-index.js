@@ -290,6 +290,9 @@ window.SITE_INDEX = {
         },
         {
           "name": "sitemap.html"
+        },
+        {
+          "name": "terms.html"
         }
       ]
     },
@@ -302,6 +305,9 @@ window.SITE_INDEX = {
         },
         {
           "name": "account.js"
+        },
+        {
+          "name": "footer.css"
         },
         {
           "name": "icons.js"

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-no-theme-ctl>
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="JinSuper™ 用户协议：服务内容、账号与数据、用户行为规范、知识产权、免责声明、预注册账号、信息使用与联系方式。">
+<meta name="theme-color" content="#F4F7FE">
+<!-- 明暗跟随系统（theme.js 会把解析后的 data-appearance 落到 <html> 上，首屏不闪）。
+     data-no-theme-ctl：法律页不挂右上角那组主题按钮。 -->
+<script src="/lib/theme.js"></script>
+<title>用户协议 · JinSuper™</title>
+<style>
+  /* ═══════════════════════════════════════════════════════════
+     JinSuper™ 用户协议
+     -----------------------------------------------------------
+     沿用作业页的「DeepSeek 蓝极简」皮肤：同一个 --bg / --paper / --ink 体系，
+     大字标题、1px 细线、几乎没有阴影。三处和作业页对齐：
+       · 820px 正文列（.page 同宽）
+       · 右侧一条自绘刻度轨（作业页是按科目，这里是按条款）
+       · 顶部一条阅读进度（作业页按完成度，这里按滚动位置）
+
+     颜色全走 token（亮 / 暗各一套），断点统一用 max-width 覆盖：
+     桌面 ≥1024 不动 / 平板 768–1023 / 手机 ≤767 / 窄屏 ≤400。
+     ═══════════════════════════════════════════════════════════ */
+  :root{
+    color-scheme: light dark;
+
+    --bg:#F4F7FE;
+    --paper:#FFFFFF;
+    --ink:#161B2E;
+    --ink-soft:#5A6478;
+    --foot-text:#646D80;
+    --line:rgba(22,27,46,.10);
+    --line-soft:rgba(22,27,46,.06);
+    --cta-bg:#3D5AF1;
+    --mark-bg:rgba(77,107,254,.10);
+    --focus:rgba(77,107,254,.38);
+
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+
+    --radius-xs:4px;
+    --radius-sm:6px;
+    --radius-md:8px;
+    --radius-lg:10px;
+
+    --gutter:clamp(16px,4vw,40px);
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  :root[data-appearance="dark"]{
+    color-scheme:dark;
+
+    --bg:#0B0E17;
+    --paper:#121722;
+    --ink:#E9ECF5;
+    --ink-soft:#9AA3B8;
+    --foot-text:#8A93A8;
+    --line:rgba(233,236,245,.14);
+    --line-soft:rgba(233,236,245,.08);
+    --cta-bg:#5B74FF;
+    --mark-bg:rgba(122,147,255,.20);
+    --focus:rgba(122,147,255,.55);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
+
+  body{
+    margin:0;
+    min-height:100dvh;
+    padding:0 var(--gutter) clamp(40px,8vw,88px);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15.5px;
+    line-height:1.9;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    transition:background-color .4s ease, color .3s ease;
+  }
+
+  a{ color:inherit; }
+  :focus-visible{ outline:2px solid var(--focus); outline-offset:3px; border-radius:var(--radius-xs); }
+
+  /* ── 顶栏：左边回去，右边身份；底边就是阅读进度 ── */
+  .top{
+    position:sticky; top:0; z-index:30;
+    margin:0 calc(-1 * var(--gutter));
+    padding:0 var(--gutter);
+    background:color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .top-in{
+    max-width:820px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    height:56px;
+    font-size:13px;
+  }
+  .top a{
+    display:inline-flex; align-items:center; gap:6px;
+    min-height:36px;
+    color:var(--ink-soft); text-decoration:none;
+    border-bottom:1px solid transparent;
+    transition:color .16s var(--ease), border-color .16s var(--ease);
+  }
+  .top a:hover{ color:var(--ink); border-bottom-color:var(--line); }
+  .top .brand{
+    display:inline-flex; align-items:baseline; gap:8px;
+    color:var(--foot-text); font-size:12.5px; letter-spacing:.03em;
+  }
+  .top .brand b{ font-weight:600; color:var(--ink); letter-spacing:0; }
+  .prog{
+    position:absolute; left:0; right:0; bottom:-1px; height:2px;
+    background:transparent;
+  }
+  .prog i{ display:block; height:100%; width:0; background:var(--cta-bg); border-radius:0 2px 2px 0; }
+
+  /* ── 正文列 ── */
+  .page{ max-width:820px; margin:0 auto; padding-top:clamp(30px,6vw,60px); }
+
+  /* 头部：日期 / 大字标题 / 前言 */
+  .head{ padding-bottom:clamp(26px,4vw,40px); }
+  .dateline{
+    display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px;
+    margin:0 0 clamp(14px,2.4vw,22px);
+    font-size:12.5px; letter-spacing:.02em; color:var(--foot-text);
+  }
+  .dateline .sep{ width:1px; height:11px; background:var(--line); }
+  .dateline b{ font-weight:500; color:var(--ink-soft); }
+
+  h1{
+    margin:0;
+    font-size:clamp(38px,7.2vw,68px);
+    font-weight:700;
+    line-height:1.04;
+    letter-spacing:-.035em;
+  }
+  .lede{
+    margin:clamp(18px,3vw,26px) 0 0;
+    font-family:var(--serif);
+    font-size:clamp(17px,2.2vw,20px);
+    line-height:1.85;
+    color:var(--ink-soft);
+    max-width:34em;
+  }
+  .head p + p{ margin-top:14px; }
+  .head .fine{ font-size:14.5px; line-height:1.85; color:var(--ink-soft); max-width:none; }
+
+  .pledge{
+    margin:clamp(20px,3.4vw,28px) 0 0;
+    padding:14px 18px;
+    border-left:2px solid var(--cta-bg);
+    border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+    background:color-mix(in srgb, var(--cta-bg) 6%, transparent);
+    color:var(--ink);
+    font-size:14.5px;
+    line-height:1.8;
+  }
+
+  /* ── 条款速查：编号 + 标题，细线分行（不是卡片） ── */
+  .ix{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0,1fr));
+    gap:0 26px;
+    margin:clamp(30px,5vw,44px) 0 0;
+    padding:0;
+    list-style:none;
+    counter-reset:none;
+  }
+  .ix li{ margin:0; }
+  .ix a{
+    display:grid;
+    grid-template-columns:2.1em minmax(0,1fr);
+    gap:2px;
+    padding:11px 0;
+    border-top:1px solid var(--line-soft);
+    color:var(--ink-soft);
+    text-decoration:none;
+    font-size:13.5px;
+    line-height:1.55;
+    transition:color .16s var(--ease);
+  }
+  .ix a:hover{ color:var(--ink); }
+  .ix a:hover .ix-n{ color:var(--cta-bg); }
+  .ix-n{
+    font-variant-numeric:tabular-nums;
+    color:var(--foot-text);
+    font-size:12px;
+    transition:color .16s var(--ease);
+  }
+
+  /* ── 条款 ── */
+  .cl{
+    margin-top:clamp(38px,6vw,58px);
+    scroll-margin-top:76px;
+  }
+  .cl > h2{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    margin:0 0 18px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    font-size:clamp(20px,2.6vw,25px);
+    font-weight:650;
+    line-height:1.35;
+    letter-spacing:-.015em;
+  }
+  .cl > h2 .n{
+    flex:none;
+    min-width:1.1em;
+    font-size:.78em;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+    color:var(--cta-bg);
+  }
+  .cl p{ margin:0 0 12px; }
+  .cl p:last-child{ margin-bottom:0; }
+  .cl strong{ font-weight:600; color:var(--ink); }
+  .cl em{ font-style:normal; color:var(--ink); }
+  .cl code{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-size:.88em;
+    padding:1px 5px;
+    border-radius:var(--radius-xs);
+    background:color-mix(in srgb, var(--ink) 7%, transparent);
+  }
+  .cl a{
+    color:var(--cta-bg);
+    text-decoration:none;
+    border-bottom:1px solid color-mix(in srgb, var(--cta-bg) 35%, transparent);
+    transition:border-color .16s var(--ease), color .16s var(--ease);
+  }
+  .cl a:hover{ border-bottom-color:var(--cta-bg); }
+
+  /* 有序条款：编号在左侧一列，数字等宽 */
+  .clause{
+    list-style:none;
+    margin:0 0 12px;
+    padding:0;
+    counter-reset:item;
+  }
+  .clause > li{
+    position:relative;
+    counter-increment:item;
+    margin:0 0 12px;
+    padding-left:2.3em;
+  }
+  .clause > li:last-child{ margin-bottom:0; }
+  .clause > li::before{
+    content:counter(item) ".";
+    position:absolute; left:0; top:0;
+    width:1.7em;
+    text-align:right;
+    color:var(--cta-bg);
+    font-variant-numeric:tabular-nums;
+    font-size:.92em;
+    line-height:2.05;
+  }
+
+  /* 无序条款：小方块（和作业页 kicker 那个方块同一套语言） */
+  .pins{ list-style:none; margin:0 0 12px; padding:0; }
+  .pins > li{ position:relative; margin:0 0 12px; padding-left:1.5em; }
+  .pins > li::before{
+    content:"";
+    position:absolute; left:0; top:.82em;
+    width:6px; height:6px;
+    border-radius:var(--radius-xs);
+    background:var(--cta-bg);
+    opacity:.75;
+  }
+
+  /* 产品矩阵：左标签 / 右清单，细线分行 */
+  .matrix{ margin:0 0 18px; border-top:1px solid var(--line-soft); }
+  .mrow{
+    display:grid;
+    grid-template-columns:9.2em minmax(0,1fr);
+    gap:16px;
+    padding:12px 0;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .mk{ font-weight:600; color:var(--ink); font-size:14px; line-height:1.7; }
+  .mv{ color:var(--ink-soft); font-size:14px; line-height:1.8; }
+
+  /* 联系方式：标签 / 值，最后一块 */
+  .contact{ margin:0; border-top:1px solid var(--line-soft); }
+  .crow{
+    display:grid;
+    grid-template-columns:8.4em minmax(0,1fr);
+    gap:16px;
+    align-items:baseline;
+    padding:12px 0;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .ck{ font-size:13px; color:var(--foot-text); }
+  .cv{ font-size:14.5px; word-break:break-word; }
+
+  /* ── 右侧条款轨（只在宽屏出现，≤1179px 收起） ── */
+  .rail{
+    position:fixed;
+    top:50%;
+    right:max(14px, calc((100vw - 820px) / 2 - 46px));
+    transform:translateY(-50%);
+    z-index:20;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:2px;
+  }
+  .rail[hidden]{ display:none; }
+  .rail button{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    width:52px;
+    min-height:22px;
+    padding:0;
+    border:0;
+    background:none;
+    color:var(--foot-text);
+    font:inherit;
+    font-size:10.5px;
+    font-variant-numeric:tabular-nums;
+    cursor:pointer;
+  }
+  .rail .bar{
+    width:10px; height:2px;
+    border-radius:2px;
+    background:color-mix(in srgb, var(--ink) 22%, transparent);
+    transition:width .22s var(--ease), background-color .22s var(--ease);
+  }
+  .rail button:hover .bar,
+  .rail button:focus-visible .bar{ width:18px; background:color-mix(in srgb, var(--ink) 45%, transparent); }
+  .rail button[aria-current="true"] .bar{ width:26px; background:var(--cta-bg); }
+  .rail button[aria-current="true"]{ color:var(--cta-bg); }
+  .rail .name{
+    position:absolute; right:58px; top:50%;
+    transform:translateY(-50%) translateX(4px);
+    padding:3px 8px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    background:var(--paper);
+    color:var(--ink);
+    font-size:11.5px;
+    line-height:1.5;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .16s var(--ease), transform .16s var(--ease);
+  }
+  .rail button:hover .name,
+  .rail button:focus-visible .name{ opacity:1; transform:translateY(-50%) translateX(0); }
+  .rail-pct{
+    margin-top:8px;
+    font-size:10.5px;
+    font-variant-numeric:tabular-nums;
+    color:var(--foot-text);
+    letter-spacing:.04em;
+  }
+
+  /* 入场：只给首屏那几块，一次就够（≤700ms） */
+  @media (prefers-reduced-motion: no-preference){
+    .head > *{ animation:rise .62s var(--ease) both; }
+    .head > *:nth-child(2){ animation-delay:.06s; }
+    .head > *:nth-child(3){ animation-delay:.12s; }
+    .head > *:nth-child(4){ animation-delay:.18s; }
+    .ix{ animation:rise .62s var(--ease) .24s both; }
+  }
+  @keyframes rise{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:none; }
+  }
+
+  /* ── 平板 ── */
+  @media (max-width:1023px){
+    .ix{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:0 22px; }
+    .rail{ display:none; }
+  }
+
+  /* ── 手机 ── */
+  @media (max-width:767px){
+    body{
+      padding:
+        0
+        max(16px, env(safe-area-inset-right))
+        calc(32px + env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+      font-size:15.5px;
+      line-height:1.85;
+    }
+    .top-in{ height:52px; }
+    .top a{ min-height:44px; }                /* 触摸目标 */
+    .top .brand span{ display:none; }         /* 手机上只留 JinSuper™ */
+    .page{ padding-top:26px; }
+    .ix{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:0 16px; }
+    .ix a{ padding:12px 0; }
+    .cl{ margin-top:36px; scroll-margin-top:64px; }
+    .cl > h2{ gap:10px; padding-top:16px; }
+    .mrow{ grid-template-columns:1fr; gap:4px; padding:13px 0; }
+    .crow{ grid-template-columns:1fr; gap:2px; }
+    .pledge{ padding:12px 14px; }
+    .lede{ max-width:none; }
+  }
+
+  /* ── 窄屏 ── */
+  @media (max-width:400px){
+    body{ padding-right:max(14px, env(safe-area-inset-right)); padding-left:max(14px, env(safe-area-inset-left)); }
+    h1{ font-size:34px; }
+    .ix{ grid-template-columns:1fr; }
+    .ix a{ padding:10px 0; }
+    .clause > li{ padding-left:2em; }
+  }
+
+  /* ── 打印：白底黑字，别在条款中间断页 ── */
+  @media print{
+    :root{ color-scheme:light; }
+    body{ background:#fff; color:#000; padding:0; font-size:11pt; }
+    .top, .rail, .prog, .ix{ display:none !important; }
+    .page{ max-width:none; padding:0; }
+    .cl{ break-inside:auto; }
+    .cl > h2{ border-top-color:#000; }
+    .pledge{ background:none; border-left-color:#000; }
+    a{ color:#000; border-bottom:0 !important; }
+    a[href^="mailto"]::after{ content:"（" attr(href) "）"; font-size:.85em; }
+  }
+</style>
+  <link rel="stylesheet" href="/lib/footer.css?v=84ad7fcc">
+</head>
+<body>
+
+<div class="top">
+  <div class="top-in">
+    <a href="/">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+      </svg>
+      返回百宝箱
+    </a>
+    <span class="brand"><b>JinSuper™</b><span>用户协议</span></span>
+  </div>
+  <div class="prog" aria-hidden="true"><i id="progBar"></i></div>
+</div>
+
+<main class="page">
+
+  <header class="head">
+    <p class="dateline">
+      <span>最后更新 <b>2026-11-13</b></span>
+      <span class="sep" aria-hidden="true"></span>
+      <span>生效 <b>2026-11-13</b></span>
+    </p>
+
+    <h1>用户协议</h1>
+
+    <p class="lede">
+      欢迎使用 JinSuper™（以下简称“本平台”或“我们”）提供的各项产品与服务。
+      本协议由 <strong>金旭 (JinSuper™)</strong>（以下简称“开发者”）与您（以下简称“用户”或“您”）共同缔结。
+    </p>
+
+    <p class="fine">
+      请您在使用本平台提供的任何服务（包括但不限于 JinSuper™ Desktop、JinSuper™ For Android、
+      JinSuper™ SmartDock、AI 与开发者服务、开源项目等）之前，仔细阅读并充分理解本协议全部内容。
+    </p>
+
+    <p class="pledge">
+      <strong>您开始使用本平台服务，即表示您已阅读、理解并同意接受本协议的全部条款。</strong>
+    </p>
+
+    <p class="fine">
+      若您在使用任意部署在 GitHub 或其他平台上由我们研发 / 发行的开源产品，代表您还需遵守该项目的对应开源协议
+      （详见对应开源产品仓库页面）。
+    </p>
+    <p class="fine">
+      若该协议发布即代表生效，我们有权在不与您确认的情况下修改该协议，该协议生效至新协议发布。
+    </p>
+  </header>
+
+  <nav aria-label="条款速查">
+    <ol class="ix">
+      <li><a href="#s1"><span class="ix-n">1</span>服务内容与产品矩阵</a></li>
+      <li><a href="#s2"><span class="ix-n">2</span>账号注册与数据同步</a></li>
+      <li><a href="#s3"><span class="ix-n">3</span>用户行为规范</a></li>
+      <li><a href="#s4"><span class="ix-n">4</span>知识产权声明</a></li>
+      <li><a href="#s5"><span class="ix-n">5</span>免责声明</a></li>
+      <li><a href="#s6"><span class="ix-n">6</span>协议的修改与终止</a></li>
+      <li><a href="#s7"><span class="ix-n">7</span>预注册账号</a></li>
+      <li><a href="#s8"><span class="ix-n">8</span>信息使用</a></li>
+      <li><a href="#s9"><span class="ix-n">9</span>联系我们</a></li>
+    </ol>
+  </nav>
+
+  <section class="cl" id="s1" data-clause="1">
+    <h2><span class="n">1</span>服务内容与产品矩阵</h2>
+    <p>JinSuper™ 致力于提供高效、创新的软硬件生态与 AI 解决方案。我们的服务涵盖但不限于：</p>
+
+    <div class="matrix">
+      <div class="mrow">
+        <span class="mk">核心产品</span>
+        <span class="mv">JinSuper Desktop, JinSuper For Android, JinSuper SmartDock, JinSuper HomeworkEditor</span>
+      </div>
+      <div class="mrow">
+        <span class="mk">平台与网络</span>
+        <span class="mv">JINSuper CN, JINSuper Global, JinSuper SYNC, JinSuper DEMO</span>
+      </div>
+      <div class="mrow">
+        <span class="mk">AI 与开发者服务</span>
+        <span class="mv">JinSuper Text-to-Speech, JinSuper TTS API Server</span>
+      </div>
+      <div class="mrow">
+        <span class="mk">开源项目</span>
+        <span class="mv">Line Bridge (Game Software), BetterThemeSkills, dsh-visual-option 等</span>
+      </div>
+    </div>
+
+    <p>开发者有权根据业务发展需要，随时调整、新增或下线部分服务，并会尽可能提前予以公告。</p>
+    <p>您在本平台发布的内容，其知识产权归您所有。我们仅在为您提供平台服务所必需的范围内进行存储和展示。</p>
+  </section>
+
+  <section class="cl" id="s2" data-clause="2">
+    <h2><span class="n">2</span>账号注册与数据同步</h2>
+    <ol class="clause">
+      <li>对于需要使用 JinSuper Homework Checker 或部分云端服务的产品，您可能需要创建账号。您应保证提供的注册信息真实、准确，不允许冒用他人账号（包括任何在服务范围内的账号，包括但不限于目前在任的 51 位同学）。</li>
+      <li>您需妥善保管账号及密码，因您个人原因导致账号泄露而造成的损失，由您自行承担。</li>
+      <li>我们承诺不会将您的账号信息用于本协议约定之外的任何第三方商业服务。</li>
+      <li><strong>未成年人特别提示</strong>：若您未满 14 周岁，请在监护人的陪同下阅读本协议，并在取得监护人同意后使用本平台服务。</li>
+    </ol>
+  </section>
+
+  <section class="cl" id="s3" data-clause="3">
+    <h2><span class="n">3</span>用户行为规范</h2>
+    <p>您承诺在使用本平台服务时遵守中华人民共和国相关法律法规，不得利用本服务从事任何违法或损害他人权益的活动。特别是：</p>
+    <ul class="pins">
+      <li><strong>关于 JinSuper™ TTS API Server</strong>：您不得利用 API 接口生成、传播违法违规、色情、暴力或侵犯他人知识产权的内容。滥用 API 或进行恶意攻击（包括但不限于分布式拒绝服务攻击、爬虫轰炸）将被永久封禁账号及 IP。</li>
+      <li><strong>关于 JinSuper™ HomeworkEditor</strong>：该产品旨在帮助您提升学习效率。开发者不对因使用该软件导致包括具体考试成绩下降或作业被老师批评承担责任。</li>
+    </ul>
+  </section>
+
+  <section class="cl" id="s4" data-clause="4">
+    <h2><span class="n">4</span>知识产权声明</h2>
+    <ol class="clause">
+      <li>JinSuper™ 商标、相关产品界面设计、代码架构、Logo 等，其知识产权均归 金旭 (JinSuper™) 所有。</li>
+      <li>未经书面许可与允许，任何人不得私自复制、修改、反向工程、出售或用于商业用途。</li>
+      <li><strong>开源项目（Open Source）</strong>：如 Line Bridge、BetterThemeSkills 等已明确标注为开源的项目，需遵守其各自附带的开源许可证（如 MIT, GPL 等）进行使用和分发。</li>
+    </ol>
+  </section>
+
+  <section class="cl" id="s5" data-clause="5">
+    <h2><span class="n">5</span>免责声明</h2>
+    <ol class="clause">
+      <li>本平台的各项服务按“现状”提供。开发者将尽力确保服务的连续性和安全性，但不对因不可抗力、黑客攻击、网络运营商故障等原因导致的服务中断或数据丢失承担法律责任。</li>
+      <li><strong>AI 生成内容提示</strong>：JinSuper™ TTS 及其他 AI 服务生成的内容（如语音、文本）仅代表模型输出，不代表开发者立场，请用户自行甄别。</li>
+      <li>在使用过程中，请用户自行备份重要数据（如 JINSuper™ SYNC 中的重要文件）。</li>
+    </ol>
+  </section>
+
+  <section class="cl" id="s6" data-clause="6">
+    <h2><span class="n">6</span>协议的修改与终止</h2>
+    <ol class="clause">
+      <li>我们有权在必要时修改本协议条款，并在网页上公布最新版本。若您继续使用服务，即视为接受修改后的协议。</li>
+      <li>若您违反了本协议或相关法律法规，我们有权暂停或终止向您提供服务。</li>
+    </ol>
+  </section>
+
+  <section class="cl" id="s7" data-clause="7">
+    <h2><span class="n">7</span>预注册账号</h2>
+    <ol class="clause">
+      <li>为方便班级内部沟通，本平台推出了 Homework ChatService。目前系统已为班级同学预留了预注册席位。</li>
+      <li>我们根据在班级群聊内获取到的班级成员表格对目前 51 位同学的账号进行预注册，我们通常不会为该类预注册账号提供 JinSuper SYNC / 作业跨端同步等服务，只提供目前为止的 Homework ChatService 服务，并且未提供密码。</li>
+      <li>如您认为该预注册行为侵犯了您的合法权益，请联系我们，我们承诺在核实后于 48 小时内为您无条件注销并删除相关数据。</li>
+      <li>若您希望获得访问权限更高的账号，您可以<a href="#contact">联系我们</a>，我们没有义务保证对于每个同学提供其余服务。</li>
+    </ol>
+  </section>
+
+  <section class="cl" id="s8" data-clause="8">
+    <h2><span class="n">8</span>信息使用</h2>
+    <ol class="clause">
+      <li>我们承诺不会将您在本平台发布与泄露的信息用于本协议约定之外的任何第三方商业服务。</li>
+      <li>您同意该协议即代表您同意我们储存您在我们网站的 HTTP Cookie。</li>
+    </ol>
+  </section>
+
+  <section class="cl" id="s9" data-clause="9">
+    <h2><span class="n">9</span>联系我们</h2>
+    <p>如果您对本协议有任何疑问，或发现产品 Bug、安全漏洞，欢迎通过以下方式与我们联系：</p>
+
+    <div class="contact" id="contact">
+      <div class="crow">
+        <span class="ck">开发者邮箱</span>
+        <span class="cv"><a href="mailto:developer@jinsuper.cn">developer@jinsuper.cn</a></span>
+      </div>
+      <div class="crow">
+        <span class="ck">用户反馈</span>
+        <span class="cv"><a href="mailto:feedback@jinsuper.cn">feedback@jinsuper.cn</a></span>
+      </div>
+      <div class="crow">
+        <span class="ck">官方主页</span>
+        <span class="cv"><a href="https://www.JinSuper.cn">https://www.JinSuper.cn</a></span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ★ 右侧条款轨：由页面脚本按 <section data-clause> 生成（无 JS 时整条不出现，
+     上面的「条款速查」是静态 HTML，照样能跳）。 -->
+<nav class="rail" id="clauseRail" aria-label="条款目录" hidden></nav>
+
+  <!-- @footer:start · 由 build/gen-footer.mjs 生成，别手改 -->
+  <footer class="mf" role="contentinfo" aria-label="站点页脚">
+    <nav class="mf-cols" aria-label="JinSuper 站点导航">
+      <section class="mf-col">
+        <h2>核心产品<span>Products</span></h2>
+        <ul>
+          <li><a href="https://www.jinsuper.cn/download.html" target="_blank" rel="noopener">JinSuper Desktop</a></li>
+          <li><a href="https://www.jinsuper.cn/download.html" target="_blank" rel="noopener">JinSuper For Android</a></li>
+          <li><a href="https://www.jinsuper.cn/download.html" target="_blank" rel="noopener">JinSuper SmartDock</a></li>
+          <li><a href="https://www.jinsuper.cn/download.html" target="_blank" rel="noopener">JinSuper HomeworkEditor</a></li>
+        </ul>
+      </section>
+
+      <section class="mf-col">
+        <h2>平台与网络<span>Platforms</span></h2>
+        <ul>
+          <li><a href="https://www.jinsuper.cn" target="_blank" rel="noopener">JINSUPER CN</a></li>
+          <li><a href="https://github.jinsuper.cn" target="_blank" rel="noopener">JINSUPER Global</a></li>
+          <li><a href="https://jinsuper.cn" target="_blank" rel="noopener">JinSuper SYNC</a></li>
+          <li><a href="https://demo.jinsuper.cn" target="_blank" rel="noopener">JinSuper DEMO</a></li>
+        </ul>
+      </section>
+
+      <section class="mf-col">
+        <h2>AI 与开发者服务<span>Developer &amp; API</span></h2>
+        <ul>
+          <li><a href="https://tts.jinsuper.cn" target="_blank" rel="noopener">JinSuper Text-to-Speech</a></li>
+          <li><a href="https://tts.jinsuper.cn/v1" target="_blank" rel="noopener">JinSuper TTS API Server</a></li>
+        </ul>
+      </section>
+
+      <section class="mf-col">
+        <h2>开源项目<span>Open Source</span></h2>
+        <ul>
+          <li><a href="https://github.com/JinSuperOfficial/Line-Bridge" target="_blank" rel="noopener">Line Bridge (Game Software)</a></li>
+          <li><a href="https://github.com/JinSuperOfficial/better-theme" target="_blank" rel="noopener">BetterThemeSkills (Agent Productions)</a></li>
+          <li><a href="https://github.com/JinSuperOfficial/" target="_blank" rel="noopener">其他产品</a></li>
+        </ul>
+      </section>
+    </nav>
+
+    <div class="mf-legal">
+      <p>
+        ©Copyright 2026 金旭 (JinSuper™ Productions). All Rights Reserved.
+        <span class="mf-sep" aria-hidden="true">·</span>
+        <a href="/docs/terms.html">用户协议</a>
+      </p>
+    </div>
+  </footer>
+  <!-- @footer:end -->
+
+<script>
+(function(){
+  'use strict';
+
+  var reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var sections = [].slice.call(document.querySelectorAll('main .cl[data-clause]'));
+  var rail = document.getElementById('clauseRail');
+  var bar = document.getElementById('progBar');
+
+  /* ── 条款轨：9 个刻度 + 悬停出标题 ── */
+  var ticks = [];
+  if (rail && sections.length){
+    rail.innerHTML = '';
+    sections.forEach(function(sec){
+      var h = sec.querySelector('h2');
+      var num = sec.getAttribute('data-clause');
+      var title = (h ? h.textContent : '').replace(/^\s*\d+\s*/, '').trim();
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', '跳到第 ' + num + ' 条：' + title);
+      btn.innerHTML = '<span class="name">' + title.replace(/[<>&]/g, '') + '</span>' +
+                      '<span class="bar"></span>' +
+                      '<span class="num">' + num + '</span>';
+      btn.addEventListener('click', function(){
+        sec.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      });
+      rail.appendChild(btn);
+      ticks.push({ sec: sec, btn: btn });
+    });
+
+    var pct = document.createElement('span');
+    pct.className = 'rail-pct';
+    pct.id = 'railPct';
+    pct.setAttribute('aria-hidden', 'true');
+    rail.appendChild(pct);
+    rail.removeAttribute('hidden');
+  }
+
+  /* ── 进度与当前条款：滚动一帧一次 ── */
+  var ticking = false;
+  var last = -1;
+
+  function currentIndex(){
+    var probe = window.innerHeight * 0.32;
+    var idx = 0;
+    for (var i = 0; i < sections.length; i++){
+      if (sections[i].getBoundingClientRect().top <= probe) idx = i;
+    }
+    return idx;
+  }
+
+  function paint(){
+    ticking = false;
+
+    if (bar){
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      var p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+      bar.style.width = (p * 100).toFixed(1) + '%';
+    }
+
+    if (!ticks.length) return;
+    var idx = currentIndex();
+    if (idx === last) return;
+    last = idx;
+    ticks.forEach(function(t, i){
+      if (i === idx) t.btn.setAttribute('aria-current', 'true');
+      else t.btn.removeAttribute('aria-current');
+    });
+    var el = document.getElementById('railPct');
+    if (el) el.textContent = String(idx + 1).padStart(2, '0') + ' / ' + String(sections.length).padStart(2, '0');
+  }
+
+  function onScroll(){
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(paint);
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  paint();
+})();
+</script>
+
+</body>
+</html>

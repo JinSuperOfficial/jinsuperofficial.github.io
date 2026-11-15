@@ -30,6 +30,10 @@
       "priority": 0.9
     },
     {
+      "loc": "/docs/terms.html",
+      "priority": 0.5
+    },
+    {
       "loc": "/class/pick.html",
       "priority": 0.7
     },

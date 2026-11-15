@@ -1,0 +1,163 @@
+/* JinSuper Mega Footer
+   ------------------------------------------------------------
+   站点页脚的**唯一**样式表。源头 `build/template/footer.html`，
+   由 `build/gen-footer.mjs` 组装进每个页面；这里只负责长相。
+
+   两条硬规矩：
+
+   ① 不写死任何颜色。全部走各页面已有的 token ——
+        --ink          主文字（每个页面都有）
+        --ink-soft     次级文字（纸感页面）
+        --dim/--faint  次级文字（工作台页面用这两个）
+        --foot-text    页脚专用（作业页 / 下载页有）
+        --line         分隔线（每个页面都有）
+        --line-soft    细线（部分页面有，没有就退回 --line）
+        --cta-bg / --accent / --ink   焦点框
+      所以同一份样式在纸感、DeepSeek 蓝、亮色、暗色下都不会花。
+
+   ② 宽度和正文列对齐（默认 820px，和作业页 .page 同宽）。
+      个别页面正文列更宽时，在自己页面里写一句
+        .mf{ --mf-max:940px }
+      就能对上，不用来改这份文件。
+
+   响应式沿用全站口径：一律 max-width 覆盖（桌面 ≥1024 不动）。
+   ------------------------------------------------------------ */
+
+.mf{
+  /* ── token 桥接：各页面 token 名字不统一，这里一次接好 ── */
+  --mf-ink:   var(--ink);
+  --mf-soft:  var(--ink-soft, var(--dim, var(--faint)));
+  --mf-faint: var(--foot-text, var(--faint, var(--dim, var(--ink-soft))));
+  --mf-line:  var(--line);
+  --mf-line-soft: var(--line-soft, var(--line));
+  --mf-focus: var(--cta-bg, var(--accent, var(--ink)));
+  --mf-font:  var(--sans, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif);
+  --mf-max:   820px;
+
+  box-sizing: border-box;
+  max-width: var(--mf-max);
+  margin: clamp(44px, 7vw, 84px) auto 0;
+  padding-top: clamp(22px, 3vw, 32px);
+  border-top: 1px solid var(--mf-line);
+  color: var(--mf-soft);
+  font-family: var(--mf-font);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+/* 页面里常有的全局 `section` / `nav` / `h2` / `ul` 规则（0,0,1）会漏进来，
+   这里用类选择器压住，免得某页的 section 边框跑进页脚。 */
+.mf, .mf *{ box-sizing: border-box; }
+.mf-cols, .mf-col, .mf-legal{ margin: 0; padding: 0; border: 0; background: none; }
+
+.mf-cols{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 26px;
+}
+
+.mf-col h2{
+  margin: 0 0 10px;
+  font-family: var(--mf-font);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: .02em;
+  color: var(--mf-ink);
+}
+/* 英文名当副标题：小一号、灰一档，不抢中文 */
+.mf-col h2 span{
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: .07em;
+  color: var(--mf-faint);
+}
+
+.mf-col ul{
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.mf-col li{ margin: 0; }
+.mf-col a{
+  display: inline-block;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--mf-soft);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color .16s ease, border-color .16s ease;
+}
+.mf-col a:hover{
+  color: var(--mf-ink);
+  border-bottom-color: color-mix(in srgb, var(--mf-focus) 40%, transparent);
+}
+.mf-col a:focus-visible{
+  outline: 2px solid var(--mf-focus);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.mf-legal{
+  margin-top: clamp(20px, 3vw, 30px);
+  padding-top: 14px;
+  border-top: 1px solid var(--mf-line-soft);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--mf-faint);
+}
+.mf-legal p{ margin: 0; }
+.mf-sep{ margin: 0 6px; opacity: .6; }
+.mf-legal a{
+  color: var(--mf-soft);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color .16s ease, border-color .16s ease;
+}
+.mf-legal a:hover{
+  color: var(--mf-ink);
+  border-bottom-color: color-mix(in srgb, var(--mf-focus) 40%, transparent);
+}
+.mf-legal a:focus-visible{
+  outline: 2px solid var(--mf-focus);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ── 窄屏：四栏 → 两栏 → 一栏 ──
+   手机上加一条侧内距：有些页面 body 本身没有 padding（工具站、博客首页），
+   不加的话页脚会贴屏幕边。 */
+@media (max-width: 767px){
+  .mf{
+    margin-top: clamp(36px, 9vw, 56px);
+    padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+  }
+  .mf-cols{ grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 18px; }
+  .mf-col ul{ gap: 0; }
+  /* 触屏没有 hover：链接给足高度，别让手指点不中；行距交给 min-height，别叠 gap */
+  .mf-col a{
+    display: inline-flex; align-items: center;
+    min-height: 40px;
+    font-size: 12.5px;
+  }
+}
+@media (max-width: 420px){
+  .mf-cols{ grid-template-columns: 1fr; gap: 20px; }
+}
+
+/* 打印：页脚只留文字，链接不带下划线，别在版权行中间断页 */
+@media print{
+  .mf{ margin-top: 28px; max-width: none; color: #000; border-top-color: #000; }
+  .mf-col h2, .mf-col a, .mf-legal, .mf-legal a{ color: #000; }
+  .mf-col a{ border-bottom: 0; }
+  .mf, .mf-cols, .mf-legal{ break-inside: avoid; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .mf-col a, .mf-legal a{ transition: none; }
+}
