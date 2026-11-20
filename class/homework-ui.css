@@ -1,0 +1,194 @@
+/* 作业页顶栏：跟着滚动连续收放的弹簧导航 +「更多」面板。
+   ------------------------------------------------------------
+   只负责这一条顶栏，正文的标题、日期行、进度条、便签、配色一条都不碰。
+   渐进增强：html 上的 .hw-ui 由 homework-ui.js 在解析早期加上；
+   脚本没加载 / 解析失败时它不存在，页面退回原来的工具栏与底部面板。
+   ------------------------------------------------------------ */
+
+html.hw-ui body{padding-top:142px}
+.hw-header-wrap{display:none;position:fixed;inset:0 0 auto;z-index:54;pointer-events:none;padding-top:env(safe-area-inset-top,0px)}
+html.hw-ui .hw-header-wrap{display:block}
+
+/* ---------- 那条栏 ----------
+   顶部：铺满视口、完全透明，底图一路顶到最上沿；
+   滚动：宽度/高度/内边距/圆角每帧按滚动进度重算（弹簧追进度），收成一枚胶囊。
+   胶囊的白底、描边、阴影画在 ::before 上，透明度 = 同一个进度，
+   所以「收」和「浮出来」是同一口气，不会先跳一块白底。 */
+.hw-header{--header-radius:0px;--hw-morph:0;position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;height:72px;margin:0 auto;padding:0 8px;border:0;border-radius:var(--header-radius);pointer-events:auto;background:transparent}
+.hw-header::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  border-radius:inherit;pointer-events:none;
+  background:var(--paper);
+  border:1px solid var(--line);
+  box-shadow:0 6px 24px -14px var(--shadow-2);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);
+  backdrop-filter:blur(16px) saturate(140%);
+  opacity:var(--hw-morph);
+}
+/* 透明的那一大片不吃点击（右边滚动刻度才点得到），只有控件接手；
+   收成胶囊之后整块是实体，空白处也不该把点击漏给下面的正文。 */
+.hw-header:not(.is-scrolled){pointer-events:none}
+.hw-brand,.hw-nav-actions,.hw-header .head-acts{pointer-events:auto}
+
+/* ---------- 左边：班级 + 进度 ---------- */
+.hw-brand{display:flex;align-items:center;gap:10px;min-width:0;color:var(--ink);text-decoration:none;font-size:18px;font-weight:650;white-space:nowrap;letter-spacing:-.03em}
+.hw-brand > svg{width:27px;height:27px;flex:none;color:var(--cta-bg);transition:transform .3s var(--ease-out)}
+.hw-brand:hover > svg{transform:scale(1.07)}
+.hw-brand small{font-size:12px;font-weight:400;letter-spacing:0;color:var(--ink-soft);margin-left:3px;transition:opacity .25s var(--ease-out)}
+.hw-brand:focus-visible{outline:2px solid var(--cta-bg);outline-offset:4px}
+.hw-header.is-scrolled .hw-brand small{display:none}
+
+/* 进度条：位置一直预留着（visibility 切换），收起时淡进来，不会把右边的按钮推一下 */
+.hw-mini{
+  display:inline-flex;align-items:center;gap:8px;margin-left:2px;
+  font-size:12px;font-weight:400;letter-spacing:0;color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;
+  visibility:hidden;opacity:0;
+  transition:opacity .28s var(--ease-out),visibility 0s linear .28s;
+}
+.hw-header.is-scrolled .hw-mini{visibility:visible;opacity:1;transition:opacity .28s var(--ease-out),visibility 0s}
+.hw-mini-track{width:56px;height:4px;border-radius:99px;background:color-mix(in srgb,var(--ink) 12%,transparent);overflow:hidden}
+.hw-mini-fill{display:block;height:100%;width:0;border-radius:inherit;background:var(--tint-fill,var(--cta-bg));transition:width .5s var(--ease-out),background .5s ease}
+
+/* ---------- 右边：动作 ----------
+   链接感，不是一排按钮：默认无底无边，悬停才浮出一层很淡的底，按下缩一点点。 */
+.hw-nav-actions{display:flex;align-items:center;gap:6px;flex:none}
+.hw-header .more-btn{
+  min-height:38px;padding:0 12px;
+  border:1px solid transparent;border-radius:9px;
+  background:transparent;color:var(--ink);font-size:13px;
+  transform:none;
+  transition:background .18s var(--ease-out),color .18s var(--ease-out),transform .18s var(--ease-out);
+}
+.hw-header .more-btn:hover{background:var(--tint-soft);transform:none;color:var(--ink)}
+.hw-header .more-btn:active{transform:scale(.96)}
+.hw-header .more-btn:focus-visible{outline:2px solid var(--cta-bg);outline-offset:2px}
+.hw-header #shotBtn{background:var(--cta-bg);color:#fff;border-color:transparent}
+.hw-header #shotBtn:hover{background:var(--cta-bg-hover)}
+.hw-header #shotBtn:active{transform:scale(.96)}
+.hw-header #shotBtn:disabled{opacity:.65;cursor:wait;transform:none}
+
+/* ⋯ ↔ ×：两枚图标交叉淡入淡出 + 一点点转，不是把三个点干转 90° */
+.hw-header #moreToggle{position:relative;width:40px;padding:0}
+#moreToggle svg{position:absolute;inset:0;margin:auto;width:20px;height:20px;transition:opacity .16s var(--ease-out),transform .3s var(--ease-out)}
+#moreToggle .i-x{opacity:0;transform:rotate(-55deg) scale(.72)}
+#moreToggle[aria-expanded="true"]{background:var(--tint-soft)}
+#moreToggle[aria-expanded="true"] .i-dots{opacity:0;transform:rotate(55deg) scale(.72)}
+#moreToggle[aria-expanded="true"] .i-x{opacity:1;transform:none}
+
+/* ---------- 「更多」面板：桌面是下拉 ----------
+   开合都走 transition，靠 visibility 收尾 —— 既能淡入也能淡出。
+   不用 hidden：hidden 会把 display 打成 none，动画直接没了。 */
+.hw-header .head-acts{
+  position:absolute;top:calc(100% + 10px);right:0;
+  display:flex;flex-direction:column;align-items:stretch;gap:2px;
+  width:266px;max-height:calc(100dvh - 118px);overflow-y:auto;overscroll-behavior:contain;
+  margin:0;padding:8px;
+  background:var(--paper);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 20px 48px -26px var(--shadow-2);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transform:translate3d(0,-6px,0);
+  transform-origin:top right;
+  transition:opacity .16s var(--ease-out),transform .22s var(--ease-out),visibility 0s linear .22s;
+}
+.hw-header .head-acts.is-open{
+  opacity:1;visibility:visible;pointer-events:auto;transform:none;
+  transition:opacity .16s var(--ease-out),transform .34s cubic-bezier(.2,1.15,.45,1),visibility 0s;
+}
+/* 条目依次浮进来：面板先出来，每一项再按 22ms 的间隔跟上（收起时不排队，一起淡掉）。 */
+.hw-header .head-acts > *{
+  opacity:0;
+  transform:translate3d(0,-8px,0);
+  transition:opacity .1s linear,transform .1s linear;
+}
+.hw-header .head-acts.is-open > *{
+  opacity:1;
+  transform:none;
+  transition:opacity .18s var(--ease-out),transform .34s cubic-bezier(.2,.9,.3,1.18);
+}
+.hw-header .head-acts.is-open > *:nth-child(1){transition-delay:.02s}
+.hw-header .head-acts.is-open > *:nth-child(2){transition-delay:.042s}
+.hw-header .head-acts.is-open > *:nth-child(3){transition-delay:.064s}
+.hw-header .head-acts.is-open > *:nth-child(4){transition-delay:.086s}
+.hw-header .head-acts.is-open > *:nth-child(5){transition-delay:.108s}
+.hw-header .head-acts.is-open > *:nth-child(6){transition-delay:.13s}
+.hw-header .head-acts.is-open > *:nth-child(7){transition-delay:.152s}
+.hw-header .head-acts.is-open > *:nth-child(8){transition-delay:.174s}
+.hw-header .head-acts.is-open > *:nth-child(9){transition-delay:.196s}
+.hw-header .head-acts.is-open > *:nth-child(10){transition-delay:.218s}
+.hw-header .head-acts::before,.hw-header .head-acts::after{content:none}
+.hw-header .head-acts>.more-btn{
+  width:100%;min-height:42px;justify-content:flex-start;
+  padding:0 12px;font-size:13px;
+  background:transparent;border:0;border-radius:8px;
+}
+.hw-header .head-acts>.more-btn svg{width:17px;height:17px}
+.hw-header .head-acts>.more-btn:hover{background:var(--tint-soft);color:var(--ink)}
+.hw-header .head-acts>.more-btn:active{transform:scale(.985)}
+.hw-menu-label{padding:7px 12px 4px;font-size:11px;letter-spacing:.06em;color:var(--ink-soft)}
+.hw-menu-label[hidden],.hw-menu-divider[hidden]{display:none}
+.hw-menu-divider{height:1px;background:var(--line-soft);margin:5px 4px}
+.hw-menu-close{display:none}
+
+/* 手机用的遮罩：同样淡入淡出 */
+.hw-menu-shade{
+  position:fixed;inset:0;z-index:53;background:var(--overlay);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .24s var(--ease-out),visibility 0s linear .24s;
+}
+.hw-menu-shade.is-open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .24s var(--ease-out)}
+.hw-header-wrap:has(.head-acts.is-open){z-index:56}
+.hw-menu-close:focus-visible{outline:2px solid var(--cta-bg);outline-offset:4px}
+
+/* 只在新导航生效时藏掉旧的两套顶栏；降级回旧界面时它们还得能用。 */
+html.hw-ui .sb,html.hw-ui .acts-toggle{display:none!important}
+html.hw-ui .head-top{display:none}
+
+/* 固定栏会盖住跳转目标，给锚点留出它的高度（看不见的规则） */
+[id="msgCard"],tr[data-subject]{scroll-margin-top:100px}
+
+/* ---------- 手机 ---------- */
+@media(max-width:767px){
+ html.hw-ui body{padding-top:112px;padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+ .hw-header{width:100%;height:64px;gap:6px}
+ .hw-brand{font-size:16px;gap:7px}
+ .hw-brand > svg{width:24px;height:24px}
+ .hw-brand small{display:none}
+ .hw-mini{margin-left:2px;font-size:11px;gap:6px}
+ .hw-mini-num{display:none}
+ .hw-mini-track{width:40px;height:3px}
+ .hw-nav-actions{gap:2px}
+ .hw-header .more-btn{min-height:44px;padding:0 10px;font-size:12px}
+ .hw-header #tmBtn svg,.hw-header #shotBtn svg{display:none}
+ .hw-header #moreToggle{width:40px}
+ /* backdrop-filter 会给后代造 containing block，手机端的面板由 JS 搬到 <body> 下 */
+ .hw-mobile-sheet.head-acts{
+   position:fixed;inset:auto 0 0;z-index:57;
+   display:flex;flex-direction:column;align-items:stretch;gap:2px;
+   width:100%;max-height:78dvh;overflow-y:auto;overscroll-behavior:contain;
+   padding:12px max(16px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+   background:var(--paper);border:1px solid var(--line);border-bottom:0;
+   border-radius:16px 16px 0 0;box-shadow:0 -12px 36px -20px var(--shadow-2);
+   visibility:hidden;pointer-events:none;
+   transform:translate3d(0,102%,0);
+   transition:transform .3s var(--ease-out),visibility 0s linear .3s;
+ }
+ .hw-mobile-sheet.head-acts.is-open{transform:none;visibility:visible;pointer-events:auto;transition:transform .32s var(--ease-out),visibility 0s}
+ .hw-mobile-sheet.head-acts::before,.hw-mobile-sheet.head-acts::after{content:none}
+ .hw-mobile-sheet.head-acts>.more-btn{width:100%;min-height:48px;padding:0 12px;justify-content:flex-start;background:transparent;border:0;font-size:15px}
+ .hw-menu-close{display:block;position:absolute;right:12px;top:8px;width:44px;height:44px;background:transparent;color:var(--ink-soft);border:0;border-radius:8px;font-size:22px;line-height:1;cursor:pointer}
+ .hw-menu-close:active{background:var(--tint-soft)}
+ .hw-menu-label:first-of-type{padding-top:10px;padding-bottom:12px}
+ .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
+}
+@media(max-width:400px){
+ html.hw-ui body{padding-top:108px;padding-bottom:calc(36px + env(safe-area-inset-bottom))}
+ .hw-brand{font-size:14px}
+ .hw-brand > svg{width:22px;height:22px}
+ .hw-header .more-btn{padding:0 8px}
+}
+
+/* 减少动态效果：状态照变，过渡全关 */
+@media(prefers-reduced-motion:reduce){
+ .hw-header,.hw-header *,.hw-menu-shade,.hw-mobile-sheet.head-acts{transition:none!important;animation:none!important}
+}

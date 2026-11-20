@@ -250,6 +250,12 @@ window.SITE_INDEX = {
           "name": "function.html"
         },
         {
+          "name": "homework-ui.css"
+        },
+        {
+          "name": "homework-ui.js"
+        },
+        {
           "name": "homework.html"
         },
         {

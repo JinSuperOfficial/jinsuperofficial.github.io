@@ -2552,10 +2552,34 @@
   }
   </style>
 <link rel="stylesheet" href="../lib/account.css">
+<link rel="stylesheet" href="homework-ui.css?v=5">
+<script src="homework-ui.js?v=5"></script>
 <script src="../lib/account.js" defer></script>
   <link rel="stylesheet" href="/lib/footer.css?v=84ad7fcc">
 </head>
 <body>
+
+<!-- ★ 顶栏：一条跟着滚动连续收放的导航（样式在 homework-ui.css，逻辑在 homework-ui.js）。
+     页面里原来的那排按钮不复制、不重写，由脚本整条搬进这里的「⋯」菜单里。 -->
+<div class="hw-header-wrap">
+  <nav class="hw-header" id="hwHeader" aria-label="作业页面导航">
+    <a class="hw-brand" href="/class/homework.html" aria-label="811 作业，返回最新作业">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m7 12 3 3 7-7"/></svg>
+      <span>811 作业</span><small>每日清单</small>
+      <span class="hw-mini" aria-hidden="true">
+        <span class="hw-mini-num" id="hwMiniProgress">0 / 0</span>
+        <span class="hw-mini-track"><i class="hw-mini-fill" id="hwMiniFill"></i></span>
+      </span>
+    </a>
+    <div class="hw-nav-actions" id="hwNavActions">
+      <button class="more-btn" id="moreToggle" type="button" aria-expanded="false" aria-controls="headActs" aria-label="打开更多操作" title="更多操作">
+        <svg class="i-dots" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+        <svg class="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+  </nav>
+</div>
+<div class="hw-menu-shade" id="hwMenuShade" aria-hidden="true"></div>
 
 <!-- 页面底纹层：档位由 JS 决定 —— 默认是四张 bg_*.jpg 随机拼一条；
      当天记录里写 "bg" 可以指定「游戏-MC / 游戏-UT / 彩蛋」等（见「页面背景」一节）；
@@ -2664,7 +2688,7 @@
         </button>
 
         <!-- ★ 更多 811 工具 → /class/index.html -->
-        <a class="more-btn" href="/class/index.html">
+        <a class="more-btn" id="toolsLink" href="/class/index.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/>
@@ -4671,6 +4695,12 @@
     if(sbProg) sbProg.textContent = done + ' / ' + total;
     if(sbFill) sbFill.style.width = (total > 0 ? (done / total) * 100 : 0) + '%';
 
+    /* 胶囊顶栏里的进度条：数字 + 填充宽度，和上面那根同步 */
+    const miniProgress = document.getElementById('hwMiniProgress');
+    if(miniProgress) miniProgress.textContent = done + ' / ' + total;
+    const miniFill = document.getElementById('hwMiniFill');
+    if(miniFill) miniFill.style.width = (total > 0 ? (done / total) * 100 : 0) + '%';
+
     if(total === 0){
       progressText.textContent = '今天没有作业 🎉';
       applyTint(0, 1);
@@ -4731,16 +4761,27 @@
   /* ============ 恭喜弹窗 ============ */
   let lastFocus = null;
 
+  /* 引用计数：时光机 / 更新日志 / 恭喜弹窗 / 底部菜单可能先后叠开。
+     谁开谁占一份，只有最后一份还回来时才真正恢复滚动 ——
+     否则关掉上面那层会把下面那层一起解锁（背景能跟着滚）。 */
+  let scrollLocks = 0;
+
   function lockScroll(on){
     if(on){
+      scrollLocks += 1;
+      if(scrollLocks > 1) return;                 /* 已经锁着了：占个名额就走 */
       const sw = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
       if(sw > 0) document.body.style.paddingRight = sw + 'px';
     }else{
+      scrollLocks = Math.max(0, scrollLocks - 1);
+      if(scrollLocks > 0) return;                 /* 还有别的浮层开着：继续锁 */
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     }
   }
+  /* 给顶栏菜单（homework-ui.js）用：浮层共用同一把可嵌套的锁。 */
+  window.HWLock = lockScroll;
 
   function openCongrats(count){
     if(congrats.classList.contains('show')) return;
@@ -4887,7 +4928,7 @@
   }
 
   async function openLog(){
-    logLastFocus = document.activeElement;
+    logLastFocus = document.getElementById('moreToggle') || document.activeElement;
     logWin.classList.add('show');
     lockScroll(true);
     logClose.focus();
@@ -4926,12 +4967,23 @@
     if(!logWin.classList.contains('show')) return;
     logWin.classList.remove('show');
     lockScroll(false);
-    if(logLastFocus && document.contains(logLastFocus)) logLastFocus.focus();
+    if(logLastFocus && document.contains(logLastFocus) && logLastFocus.getClientRects().length) logLastFocus.focus();
+    else document.getElementById('moreToggle')?.focus({ preventScroll: true });
   }
 
   if(logBtn)   logBtn.addEventListener('click', openLog);
   if(logClose) logClose.addEventListener('click', closeLog);
   if(logWin)   logWin.addEventListener('click', e => { if(e.target === logWin) closeLog(); });
+  /* 日志弹窗的焦点圈定：Tab 别跑到背后的导航里去 */
+  if(logWin) logWin.addEventListener('keydown', e => {
+    if(e.key !== 'Tab') return;
+    const items = [...logWin.querySelectorAll('button:not([disabled]):not([hidden]), [href], [tabindex]:not([tabindex="-1"])')]
+      .filter(el => el.getClientRects().length);
+    if(!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
   if(logList)  logList.addEventListener('keydown', e => {
     const dir = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
     if(!dir) return;
@@ -5893,7 +5945,7 @@
        ② 管开 / 关、遮罩点击、焦点归位；
        ③ 视口变宽（转到桌面）时把状态收拾干净。
      —— 这也是为什么 Tab 顺序天然正确：DOM 顺序就是视觉顺序，没有用 CSS order 去改。 */
-  const actsApi = (function initMobileActs(){
+  const actsApi = (window.HomeworkUI && window.HomeworkUI.initMenu()) || (function initMobileActs(){
     const acts = document.getElementById('headActs');
     if(!acts || !document.querySelectorAll) return null;
 
